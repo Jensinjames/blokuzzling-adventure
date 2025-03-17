@@ -17,7 +17,7 @@ export const supabase = createClient<Database>(
       persistSession: true
     },
     db: {
-      schema: 'public' // Explicitly set the schema to 'public'
+      schema: 'api' // Changed from 'public' to 'api' to match the expected schema
     }
   }
 );

@@ -18,6 +18,9 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
   
   const getErrorMessage = (error: string) => {
     if (error.includes("The schema must be one of the following: api")) {
+      return "Database schema configuration error. The system is configured to use the 'api' schema.";
+    }
+    if (error.includes("schema")) {
       return "Database schema configuration error. Please try again or contact support.";
     }
     return error;
