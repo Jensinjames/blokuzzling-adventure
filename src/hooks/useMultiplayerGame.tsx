@@ -2,7 +2,7 @@
 import { useGameData } from './useGameData';
 import { useGameStateManager } from './useGameStateManager';
 import { useGameCompletion } from './useGameCompletion';
-import { BoardPosition, Piece } from '@/types/game';
+import { BoardPosition, Piece, GameState } from '@/types/game';
 
 export function useMultiplayerGame(gameId: string) {
   const {
@@ -34,6 +34,6 @@ export function useMultiplayerGame(gameId: string) {
     isMyTurn,
     updateGameState,
     makeMove,
-    endGame: (winnerId: number | null) => endGame(gameState, winnerId)
+    endGame: (winnerId: number | null) => gameState && endGame(gameState, winnerId)
   };
 }
