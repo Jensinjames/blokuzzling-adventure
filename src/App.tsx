@@ -1,46 +1,46 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import Index from "./pages/Index";
-import Home from "./pages/Home";
-import Game from "./pages/Game";
-import Auth from "./pages/Auth";
-import Profile from "./pages/Profile";
-import Lobby from "./pages/Lobby";
-import MultiplayerGame from "./pages/MultiplayerGame";
-import Rules from "./pages/Rules";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import SupabaseRealtimeProvider from '@/components/SupabaseRealtimeProvider';
+import DatabaseConnectionStatus from '@/components/DatabaseConnectionStatus';
 
-const queryClient = new QueryClient();
+// Import all pages
+import Index from '@/pages/Index';
+import Game from '@/pages/Game';
+import Rules from '@/pages/Rules';
+import Profile from '@/pages/Profile';
+import Auth from '@/pages/Auth';
+import NotFound from '@/pages/NotFound';
+import Home from '@/pages/Home';
+import Settings from '@/pages/Settings';
+import Lobby from '@/pages/Lobby';
+import MultiplayerGame from '@/pages/MultiplayerGame';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner position="top-center" />
-      <BrowserRouter>
-        <AuthProvider>
+function App() {
+  return (
+    <ThemeProvider defaultTheme="system" storageKey="blockr-theme">
+      <SupabaseRealtimeProvider>
+        <Router>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/home" element={<Home />} />
             <Route path="/game" element={<Game />} />
-            <Route path="/multiplayer/:id" element={<MultiplayerGame />} />
-            <Route path="/lobby/:id" element={<Lobby />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/profile" element={<Profile />} />
             <Route path="/rules" element={<Rules />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/home" element={<Home />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/lobby/:id" element={<Lobby />} />
+            <Route path="/multiplayer/:id" element={<MultiplayerGame />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+        </Router>
+        <DatabaseConnectionStatus />
+        <Toaster />
+      </SupabaseRealtimeProvider>
+    </ThemeProvider>
+  );
+}
 
 export default App;

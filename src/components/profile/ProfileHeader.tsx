@@ -1,125 +1,88 @@
+
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Calendar, Star, X, Save, Loader2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { Profile } from '@/types/database';
-import PlayerRank from './PlayerRank';
+import { getAvatarUrl } from '@/integrations/supabase/client';
 
 interface ProfileHeaderProps {
-  profile: Profile;
+  profile: {
+    username: string;
+    avatar_url: string | any[];
+    wins?: number;
+    losses?: number;
+    draws?: number;
+  };
+  isEditing: boolean;
   username: string;
-  setUsername: (username: string) => void;
-  editing: boolean;
-  setEditing: (editing: boolean) => void;
+  setUsername: (value: string) => void;
+  onSave: () => void;
+  onEdit: () => void;
+  onCancel: () => void;
   saving: boolean;
-  handleUpdateProfile: () => Promise<void>;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   profile,
+  isEditing,
   username,
   setUsername,
-  editing,
-  setEditing,
-  saving,
-  handleUpdateProfile
+  onSave,
+  onEdit,
+  onCancel,
+  saving
 }) => {
-  // Helper function to get the avatar URL from the array format
-  const getAvatarUrl = () => {
-    if (!profile.avatar_url || profile.avatar_url.length === 0) {
-      return null;
-    }
-    // Use the first item in the array
-    return profile.avatar_url[0]?.toString();
-  };
-
+  // Extract avatar URL safely using our helper
+  const avatarUrl = getAvatarUrl(profile.avatar_url) || '';
+  
   return (
-    <div className="relative">
-      {/* Profile header with gradient background */}
-      <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-r from-purple-500/90 to-indigo-600/90 rounded-t-xl" />
+    <div className="flex flex-col items-center justify-center space-y-4">
+      <Avatar className="h-24 w-24">
+        {avatarUrl ? (
+          <AvatarImage src={avatarUrl} alt={profile.username} />
+        ) : (
+          <AvatarFallback>{profile.username?.substring(0, 2)?.toUpperCase() || '??'}</AvatarFallback>
+        )}
+      </Avatar>
       
-      <div className="relative pt-16 px-6">
-        <div className="flex justify-between items-start">
-          <div className="flex items-start space-x-4">
-            <Avatar className="h-20 w-20 border-4 border-white dark:border-gray-800 shadow-md">
-              {profile.avatar_url && profile.avatar_url.length > 0 ? (
-                <AvatarImage src={getAvatarUrl()} alt={profile.username} />
-              ) : (
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  {profile.username.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            
-            {editing ? (
-              <div className="flex-1 mt-2">
-                <Input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Username"
-                  className="text-lg font-semibold"
-                  maxLength={20}
-                />
-              </div>
-            ) : (
-              <div className="mt-2">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.username}</h2>
-                <div className="flex items-center mt-1">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                    <Calendar className="h-3.5 w-3.5 mr-1" />
-                    Joined {formatDistanceToNow(new Date(profile.created_at), { addSuffix: true })}
-                  </p>
-                </div>
-                <div className="flex items-center mt-1">
-                  <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                  <PlayerRank profile={profile} />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {editing ? (
-            <div className="space-x-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setEditing(false);
-                  setUsername(profile.username);
-                }}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleUpdateProfile}
-                disabled={saving}
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    Saving
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-1" />
-                    Save
-                  </>
-                )}
-              </Button>
-            </div>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setEditing(true)}
-            >
-              Edit Profile
+      {isEditing ? (
+        <div className="flex flex-col gap-2 w-full max-w-xs">
+          <Input 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            placeholder="Username" 
+            className="text-center"
+          />
+          <div className="flex gap-2">
+            <Button onClick={onCancel} variant="outline" className="flex-1">
+              Cancel
             </Button>
-          )}
+            <Button onClick={onSave} className="flex-1" disabled={saving}>
+              {saving ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold">{profile.username}</h1>
+          <Button onClick={onEdit} variant="outline" size="sm">
+            Edit Profile
+          </Button>
+        </div>
+      )}
+      
+      <div className="flex gap-4 text-center">
+        <div>
+          <p className="font-semibold">{profile.wins || 0}</p>
+          <p className="text-sm text-muted-foreground">Wins</p>
+        </div>
+        <div>
+          <p className="font-semibold">{profile.losses || 0}</p>
+          <p className="text-sm text-muted-foreground">Losses</p>
+        </div>
+        <div>
+          <p className="font-semibold">{profile.draws || 0}</p>
+          <p className="text-sm text-muted-foreground">Draws</p>
         </div>
       </div>
     </div>
