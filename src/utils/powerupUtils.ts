@@ -1,5 +1,6 @@
 
 import { GameState, BoardPosition } from '@/types/game';
+import { powerupCorners } from './gameConstants';
 
 // Handle using the destroy powerup
 export function useDestroyPowerup(gameState: GameState, position: BoardPosition): GameState {

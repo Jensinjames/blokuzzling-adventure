@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Piece, BoardPosition } from '@/types/game';
+import { Piece, BoardPosition, GameState } from '@/types/game';
 import { usePieceActions } from '@/hooks/usePieceActions';
 import { useBoardActions } from '@/hooks/useBoardActions';
 import PlayerInfo from '@/components/PlayerInfo';
@@ -33,6 +32,14 @@ const MultiplayerGame = () => {
     updateGameState
   } = useMultiplayerGame(id || '');
 
+  const handleSetGameState = (newState: GameState) => {
+    setGameState(newState);
+    if (isMyTurn) {
+      updateGameState(newState);
+    }
+    return true;
+  };
+
   const {
     handleCellHover,
     handleSelectPiece,
@@ -49,15 +56,7 @@ const MultiplayerGame = () => {
       gameStatus: 'playing', 
       winner: null 
     },
-    async (newState) => {
-      if (gameState) {
-        setGameState(newState);
-        if (isMyTurn) {
-          await updateGameState(newState);
-        }
-      }
-      return true;
-    },
+    handleSetGameState,
     selectedPiece,
     setSelectedPiece,
     previewPosition,
@@ -79,15 +78,7 @@ const MultiplayerGame = () => {
       gameStatus: 'playing', 
       winner: null 
     },
-    async (newState) => {
-      if (gameState) {
-        setGameState(newState);
-        if (isMyTurn) {
-          await updateGameState(newState);
-        }
-      }
-      return true;
-    },
+    handleSetGameState,
     selectedPiece,
     setSelectedPiece,
     setPreviewPosition,
@@ -114,7 +105,6 @@ const MultiplayerGame = () => {
     toast.info('Game reset is not available in multiplayer mode');
   };
 
-  // Handler for using powerup from player info card
   const handlePlayerUsePowerup = (playerId: number, powerupType: string) => {
     if (!isMyTurn) {
       toast.info("It's not your turn");
