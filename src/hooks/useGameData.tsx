@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, safeDataCast, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { GameSession, GamePlayer, Profile } from '@/types/database';
 import { GameState } from '@/types/game';
@@ -42,7 +42,7 @@ export function useGameData(gameId: string) {
         }
         
         // Safely cast to GameSession
-        const typedSessionData = sessionData as unknown as GameSession;
+        const typedSessionData = safeSingleDataCast<GameSession>(sessionData);
         setGameSession(typedSessionData);
 
         // Fetch players with profiles
@@ -66,7 +66,7 @@ export function useGameData(gameId: string) {
         }
 
         // Safely cast to the expected type
-        const typedPlayersData = playersData as unknown as (GamePlayer & { profile: Profile })[];
+        const typedPlayersData = safeDataCast<GamePlayer & { profile: Profile }>(playersData);
         setPlayers(typedPlayersData);
         console.log('Game players loaded:', typedPlayersData.length);
 
@@ -110,7 +110,7 @@ export function useGameData(gameId: string) {
           const { error: updateError } = await supabase
             .from('game_sessions')
             .update({ 
-              game_state: jsonSafeGameState
+              game_state: jsonSafeGameState 
             })
             .eq('id', gameId);
             

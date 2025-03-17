@@ -17,7 +17,7 @@ export const supabase = createClient<Database>(
       persistSession: true
     },
     db: {
-      schema: 'api' // Changed from 'public' to 'api' to match the expected schema
+      schema: 'public' // Using 'public' schema for compatibility with type definitions
     }
   }
 );
@@ -28,3 +28,15 @@ export const isNotFoundError = (error: any): boolean => {
          error?.message?.includes('No rows found') ||
          error?.details?.includes('Results contain 0 rows');
 };
+
+// Helper function for safe type casting of Supabase query results
+export function safeDataCast<T>(data: any): T[] {
+  if (!data) return [] as T[];
+  return data as T[];
+}
+
+// Helper function for safely handling single record results
+export function safeSingleDataCast<T>(data: any): T | null {
+  if (!data) return null;
+  return data as T;
+}

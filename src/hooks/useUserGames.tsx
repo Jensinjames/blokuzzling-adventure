@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, safeDataCast } from '@/integrations/supabase/client';
 import { GameSession, Profile } from '@/types/database';
 import { toast } from 'sonner';
 
@@ -54,11 +54,12 @@ export function useUserGames(profile: Profile | null) {
         let allGames: GameSession[] = [];
         
         if (createdGames) {
-          allGames = [...createdGames] as GameSession[];
+          allGames = safeDataCast<GameSession>(createdGames);
         }
         
         if (participatedGames && participatedGames.length > 0) {
-          const gameIds = participatedGames.map(pg => pg.game_id);
+          const participatedData = safeDataCast<{game_id: string}>(participatedGames);
+          const gameIds = participatedData.map(pg => pg.game_id);
           
           const { data: gameData, error: gameDataError } = await supabase
             .from('game_sessions')
@@ -75,12 +76,13 @@ export function useUserGames(profile: Profile | null) {
           
           // Combine both sets of games and remove duplicates
           if (gameData) {
+            const gameSessionsData = safeDataCast<GameSession>(gameData);
             const uniqueGameIds = new Set();
             allGames.forEach(game => uniqueGameIds.add(game.id));
             
-            gameData.forEach(game => {
+            gameSessionsData.forEach(game => {
               if (!uniqueGameIds.has(game.id)) {
-                allGames.push(game as GameSession);
+                allGames.push(game);
                 uniqueGameIds.add(game.id);
               }
             });

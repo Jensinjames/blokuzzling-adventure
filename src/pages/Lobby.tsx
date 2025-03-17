@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, safeSingleDataCast, safeDataCast } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Play } from 'lucide-react';
 import { toast } from 'sonner';
@@ -43,7 +43,7 @@ const Lobby = () => {
         if (!session) throw new Error("Game session not found");
 
         // Safely cast the session data
-        const typedSession = session as unknown as GameSession;
+        const typedSession = safeSingleDataCast<GameSession>(session);
         setGameSession(typedSession);
         setIsCreator(typedSession.creator_id === user.id);
 
@@ -61,7 +61,7 @@ const Lobby = () => {
         if (!playersData) throw new Error("No players found");
 
         // Safely cast the players data
-        const typedPlayers = playersData as unknown as (GamePlayer & { profile: Profile })[];
+        const typedPlayers = safeDataCast<GamePlayer & { profile: Profile }>(playersData);
         setPlayers(typedPlayers);
 
         // If game is already active, redirect to game

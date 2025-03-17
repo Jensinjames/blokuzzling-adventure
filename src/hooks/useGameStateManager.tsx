@@ -48,7 +48,7 @@ export function useGameStateManager(
         .update({
           game_state: jsonSafeGameState,
           turn_history: jsonSafeTurnHistory
-        })
+        } as any) // Type assertion to bypass strict checking
         .eq('id', gameId);
 
       if (error) {

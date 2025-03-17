@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, safeDataCast, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { GameInvite } from '@/types/database';
 import { toast } from 'sonner';
@@ -28,7 +28,7 @@ export function useGameInvites() {
 
       if (error) throw error;
       
-      setInvites((data || []) as GameInvite[]);
+      setInvites(safeDataCast<GameInvite>(data));
     } catch (error) {
       console.error('Error fetching game invites:', error);
     } finally {
@@ -85,12 +85,14 @@ export function useGameInvites() {
         return false;
       }
 
+      const recipientData = safeSingleDataCast<{ id: string }>(userData);
+
       // Check if invite already exists
       const { data: existingInvite, error: inviteCheckError } = await supabase
         .from('game_invites')
         .select('*')
         .eq('game_id', gameId)
-        .eq('recipient_id', userData.id)
+        .eq('recipient_id', recipientData.id)
         .not('status', 'in', '("declined", "expired")');
 
       if (inviteCheckError) throw inviteCheckError;
@@ -103,23 +105,23 @@ export function useGameInvites() {
       // Create the invite
       const { error: inviteError } = await supabase
         .from('game_invites')
-        .insert([{
+        .insert({
           game_id: gameId,
           sender_id: user.id,
-          recipient_id: userData.id,
+          recipient_id: recipientData.id,
           status: 'pending'
-        }]);
+        });
 
       if (inviteError) throw inviteError;
 
       // Create notification for the recipient
       const { error: notificationError } = await supabase
         .from('notifications')
-        .insert([{
-          user_id: userData.id,
+        .insert({
+          user_id: recipientData.id,
           content: 'You have been invited to a game',
           type: 'game_invite'
-        }]);
+        });
 
       if (notificationError) console.error('Error creating notification:', notificationError);
 
@@ -151,19 +153,23 @@ export function useGameInvites() {
       // Update invite status
       const { error: updateError } = await supabase
         .from('game_invites')
-        .update({ status: accept ? 'accepted' : 'declined' })
+        .update({ 
+          status: accept ? 'accepted' : 'declined' 
+        })
         .eq('id', inviteId);
 
       if (updateError) throw updateError;
 
-      if (accept && inviteData.game) {
+      const typedInviteData = safeSingleDataCast<GameInvite & { game: any }>(inviteData);
+
+      if (accept && typedInviteData.game) {
         // Check if game is still available
-        if (inviteData.game.status !== 'waiting') {
+        if (typedInviteData.game.status !== 'waiting') {
           toast.error('This game is no longer accepting players');
           return;
         }
 
-        if (inviteData.game.current_players >= inviteData.game.max_players) {
+        if (typedInviteData.game.current_players >= typedInviteData.game.max_players) {
           toast.error('This game is full');
           return;
         }

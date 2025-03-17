@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Send, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, safeSingleDataCast } from '@/integrations/supabase/client';
 
 interface InviteFormProps {
   gameId: string;
@@ -32,15 +32,17 @@ const InviteForm: React.FC<InviteFormProps> = ({ gameId, userId }) => {
         return;
       }
 
+      const recipient = safeSingleDataCast<{ id: string }>(userData);
+      
       // Create invite
       const { error: inviteError } = await supabase
         .from('game_invites')
-        .insert([{
+        .insert({
           game_id: gameId,
           sender_id: userId,
-          recipient_id: userData.id,
+          recipient_id: recipient.id,
           status: 'pending'
-        }]);
+        });
 
       if (inviteError) throw inviteError;
 

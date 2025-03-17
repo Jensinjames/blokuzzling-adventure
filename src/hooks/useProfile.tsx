@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, isNotFoundError } from '@/integrations/supabase/client';
+import { supabase, isNotFoundError, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Profile } from '@/types/database';
 import { toast } from 'sonner';
@@ -25,7 +25,7 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Using the 'api' schema as configured in the Supabase client
+        // Using the schema configured in Supabase client
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -43,14 +43,15 @@ export function useProfile() {
 
         if (data) {
           console.log("Profile loaded successfully:", data);
-          setProfile(data as Profile);
+          const profileData = safeSingleDataCast<Profile>(data);
+          setProfile(profileData);
         } else {
           console.log("No profile found, creating a new one");
           
           // Create a new profile
           const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
-            .insert([{
+            .insert({
               id: user.id,
               username: user.email?.split('@')[0] || 'User',
               wins: 0,
@@ -59,7 +60,7 @@ export function useProfile() {
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               avatar_url: null
-            }])
+            })
             .select()
             .single();
             
@@ -69,7 +70,8 @@ export function useProfile() {
           }
           
           console.log("New profile created:", createdProfile);
-          setProfile(createdProfile as Profile);
+          const newProfileData = safeSingleDataCast<Profile>(createdProfile);
+          setProfile(newProfileData);
         }
       } catch (e: any) {
         const errorMessage = e.message || 'Unknown error';
@@ -94,7 +96,7 @@ export function useProfile() {
       console.log('Updating profile for user:', user.id, 'with data:', updates);
       
       // Create a properly structured update object
-      const updateObject: Record<string, any> = {
+      const updateObject = {
         ...updates,
         updated_at: new Date().toISOString()
       };
@@ -123,7 +125,8 @@ export function useProfile() {
       if (fetchError) {
         console.warn('Error refreshing profile after update:', fetchError);
       } else if (data) {
-        setProfile(data as Profile);
+        const updatedProfileData = safeSingleDataCast<Profile>(data);
+        setProfile(updatedProfileData);
       }
       
     } catch (e: any) {

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, safeDataCast, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { GameSession } from '@/types/database';
 import { toast } from 'sonner';
@@ -35,8 +35,8 @@ export function useGameSessions() {
 
         if (userError) throw userError;
 
-        setActiveSessions((activeSessionsData || []) as GameSession[]);
-        setUserSessions((userSessionsData || []) as GameSession[]);
+        setActiveSessions(safeDataCast<GameSession>(activeSessionsData));
+        setUserSessions(safeDataCast<GameSession>(userSessionsData));
       } catch (error) {
         console.error('Error fetching game sessions:', error);
       } finally {
@@ -81,31 +81,33 @@ export function useGameSessions() {
       // Create game session
       const { data: sessionData, error: sessionError } = await supabase
         .from('game_sessions')
-        .insert([{
+        .insert({
           creator_id: user.id,
           max_players: maxPlayers,
           current_players: 1,
           status: 'waiting'
-        }])
+        })
         .select()
         .single();
 
       if (sessionError) throw sessionError;
       if (!sessionData) throw new Error("Failed to create game session");
 
+      const typedSessionData = safeSingleDataCast<GameSession>(sessionData);
+
       // Add creator as first player
       const { error: playerError } = await supabase
         .from('game_players')
-        .insert([{
-          game_id: sessionData.id,
+        .insert({
+          game_id: typedSessionData.id,
           player_id: user.id,
           player_number: 0 // First player is always 0
-        }]);
+        });
 
       if (playerError) throw playerError;
 
       toast.success('Game created successfully!');
-      return sessionData.id;
+      return typedSessionData.id;
     } catch (error: any) {
       toast.error(`Failed to create game: ${error.message}`);
       return null;
@@ -143,14 +145,16 @@ export function useGameSessions() {
 
       if (sessionError || !sessionData) throw sessionError || new Error("Game not found");
 
+      const typedSessionData = safeSingleDataCast<GameSession>(sessionData);
+
       // Check if game is full
-      if (sessionData.current_players >= sessionData.max_players) {
+      if (typedSessionData.current_players >= typedSessionData.max_players) {
         toast.error('This game is full');
         return false;
       }
 
       // Check if game is already started
-      if (sessionData.status !== 'waiting') {
+      if (typedSessionData.status !== 'waiting') {
         toast.error('This game has already started');
         return false;
       }
@@ -164,18 +168,19 @@ export function useGameSessions() {
 
       if (listError) throw listError;
 
-      const nextPlayerNumber = (playersData && playersData.length > 0) 
-        ? (playersData[0].player_number + 1) 
+      const typedPlayersData = safeDataCast<{ player_number: number }>(playersData);
+      const nextPlayerNumber = (typedPlayersData && typedPlayersData.length > 0) 
+        ? (typedPlayersData[0].player_number + 1) 
         : 0;
 
       // Add player to game
       const { error: joinError } = await supabase
         .from('game_players')
-        .insert([{
+        .insert({
           game_id: gameId,
           player_id: user.id,
           player_number: nextPlayerNumber
-        }]);
+        });
 
       if (joinError) throw joinError;
 
@@ -183,7 +188,7 @@ export function useGameSessions() {
       const { error: updateError } = await supabase
         .from('game_sessions')
         .update({
-          current_players: sessionData.current_players + 1
+          current_players: typedSessionData.current_players + 1
         })
         .eq('id', gameId);
 
@@ -214,7 +219,9 @@ export function useGameSessions() {
 
       if (sessionError || !sessionData) throw sessionError || new Error("Game not found");
 
-      if (sessionData.creator_id !== user.id) {
+      const typedSessionData = safeSingleDataCast<GameSession>(sessionData);
+      
+      if (typedSessionData.creator_id !== user.id) {
         toast.error('Only the game creator can start the game');
         return false;
       }

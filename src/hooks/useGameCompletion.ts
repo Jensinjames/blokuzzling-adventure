@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { GameState } from '@/types/game';
 import { checkGameOver, determineWinner } from '@/utils/gameStateUtils';
 import { calculateScore } from '@/utils/pieceManipulation';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 export function useGameCompletion(
@@ -58,20 +58,22 @@ export function useGameCompletion(
         return;
       }
       
+      const profileData = safeSingleDataCast<{wins: number, losses: number, draws: number}>(data);
+      
       // Determine what to update
       const playerIndex = gameState.players.findIndex(
         p => p.id.toString() === user.id.toString()
       );
       
       if (playerIndex >= 0) {
-        let updateObj: Record<string, number> = {};
+        let updateObj: {wins?: number, losses?: number, draws?: number} = {};
         
         if (winner === playerIndex) {
-          updateObj.wins = (data.wins || 0) + 1;
+          updateObj.wins = (profileData.wins || 0) + 1;
         } else if (winner === null) {
-          updateObj.draws = (data.draws || 0) + 1;
+          updateObj.draws = (profileData.draws || 0) + 1;
         } else {
-          updateObj.losses = (data.losses || 0) + 1;
+          updateObj.losses = (profileData.losses || 0) + 1;
         }
         
         // Update profile stats
