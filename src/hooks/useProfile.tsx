@@ -23,23 +23,52 @@ export function useProfile() {
       setError(null);
 
       try {
-        // Use a simpler query without specifying a schema
+        console.log('Fetching profile for user ID:', user.id);
+        
+        // Try to query using the API schema explicitly
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Supabase error details:', error);
           throw error;
         }
 
-        setProfile(data as Profile);
-        console.log("Profile loaded successfully:", data);
+        if (data) {
+          console.log("Profile loaded successfully:", data);
+          setProfile(data as Profile);
+        } else {
+          console.log("No profile found, attempting to create one");
+          // If no profile exists, create one
+          const newProfile: Partial<Profile> = {
+            id: user.id,
+            username: user.email?.split('@')[0] || 'User',
+            wins: 0,
+            losses: 0,
+            draws: 0,
+          };
+          
+          const { data: createdProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([newProfile])
+            .select()
+            .single();
+            
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            throw createError;
+          }
+          
+          console.log("New profile created:", createdProfile);
+          setProfile(createdProfile as Profile);
+        }
       } catch (e: any) {
         setError(e.message);
         console.error('Error fetching profile:', e);
+        toast.error(`Failed to load profile: ${e.message}`);
       } finally {
         setLoading(false);
       }
@@ -75,7 +104,7 @@ export function useProfile() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
         
       if (fetchError) {
         console.warn('Error refreshing profile after update:', fetchError);
