@@ -44,6 +44,7 @@ export type GameInvite = {
   status: InviteStatus | string; // Allow string from database but constrain in app logic
   created_at: string;
   updated_at: string;
+  expires_at: string | null; // Add the expires_at field
   sender?: Partial<Profile>; // Make Profile fields optional for flexibility
   recipient?: Partial<Profile>; // Make Profile fields optional for flexibility
 };
