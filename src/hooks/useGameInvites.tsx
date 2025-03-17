@@ -16,7 +16,7 @@ export function useGameInvites() {
 
     try {
       // Fetch pending invites for the user
-      const { data: inviteData } = await supabase
+      const { data, error } = await supabase
         .from('game_invites')
         .select(`
           *,
@@ -26,7 +26,9 @@ export function useGameInvites() {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      setInvites(inviteData as GameInvite[] || []);
+      if (error) throw error;
+      
+      setInvites((data || []) as GameInvite[]);
     } catch (error) {
       console.error('Error fetching game invites:', error);
     } finally {
@@ -75,10 +77,10 @@ export function useGameInvites() {
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('username', username)
+        .ilike('username', username)
         .single();
 
-      if (userError) {
+      if (userError || !userData) {
         toast.error('User not found');
         return false;
       }
@@ -91,6 +93,8 @@ export function useGameInvites() {
         .eq('recipient_id', userData.id)
         .not('status', 'in', '("declined", "expired")');
 
+      if (inviteCheckError) throw inviteCheckError;
+
       if (existingInvite && existingInvite.length > 0) {
         toast.info('An invite has already been sent to this player');
         return true;
@@ -99,23 +103,25 @@ export function useGameInvites() {
       // Create the invite
       const { error: inviteError } = await supabase
         .from('game_invites')
-        .insert({
+        .insert([{
           game_id: gameId,
           sender_id: user.id,
           recipient_id: userData.id,
           status: 'pending'
-        });
+        }]);
 
       if (inviteError) throw inviteError;
 
       // Create notification for the recipient
-      await supabase
+      const { error: notificationError } = await supabase
         .from('notifications')
-        .insert({
+        .insert([{
           user_id: userData.id,
           content: 'You have been invited to a game',
           type: 'game_invite'
-        });
+        }]);
+
+      if (notificationError) console.error('Error creating notification:', notificationError);
 
       toast.success(`Invite sent to ${username}`);
       return true;
@@ -140,19 +146,17 @@ export function useGameInvites() {
         .eq('id', inviteId)
         .single();
 
-      if (inviteError) throw inviteError;
+      if (inviteError || !inviteData) throw inviteError;
 
       // Update invite status
       const { error: updateError } = await supabase
         .from('game_invites')
-        .update({
-          status: accept ? 'accepted' : 'declined'
-        })
+        .update({ status: accept ? 'accepted' : 'declined' })
         .eq('id', inviteId);
 
       if (updateError) throw updateError;
 
-      if (accept) {
+      if (accept && inviteData.game) {
         // Check if game is still available
         if (inviteData.game.status !== 'waiting') {
           toast.error('This game is no longer accepting players');

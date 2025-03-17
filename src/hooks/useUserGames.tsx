@@ -49,14 +49,19 @@ export function useUserGames(profile: Profile | null) {
         console.log('Participated game IDs:', participatedGames);
         
         // Get full game details for participated games
-        const participatedGameIds = participatedGames?.map(pg => pg.game_id) || [];
-        let allGames = [...(createdGames || [])];
+        let allGames: GameSession[] = [];
         
-        if (participatedGameIds.length > 0) {
+        if (createdGames) {
+          allGames = [...createdGames] as GameSession[];
+        }
+        
+        if (participatedGames && participatedGames.length > 0) {
+          const gameIds = participatedGames.map(pg => pg.game_id);
+          
           const { data: gameData, error: gameDataError } = await supabase
             .from('game_sessions')
             .select('*')
-            .in('id', participatedGameIds)
+            .in('id', gameIds)
             .order('created_at', { ascending: false });
             
           if (gameDataError) {
@@ -73,7 +78,7 @@ export function useUserGames(profile: Profile | null) {
             
             gameData.forEach(game => {
               if (!uniqueGameIds.has(game.id)) {
-                allGames.push(game);
+                allGames.push(game as GameSession);
                 uniqueGameIds.add(game.id);
               }
             });

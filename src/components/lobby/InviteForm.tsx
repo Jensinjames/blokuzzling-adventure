@@ -24,10 +24,10 @@ const InviteForm: React.FC<InviteFormProps> = ({ gameId, userId }) => {
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('username', username)
+        .ilike('username', username)
         .single();
 
-      if (userError) {
+      if (userError || !userData) {
         toast.error('User not found');
         return;
       }
@@ -35,12 +35,12 @@ const InviteForm: React.FC<InviteFormProps> = ({ gameId, userId }) => {
       // Create invite
       const { error: inviteError } = await supabase
         .from('game_invites')
-        .insert({
+        .insert([{
           game_id: gameId,
           sender_id: userId,
           recipient_id: userData.id,
           status: 'pending'
-        });
+        }]);
 
       if (inviteError) throw inviteError;
 

@@ -47,36 +47,37 @@ export function useGameCompletion(
     
     try {
       // Get current profile
-      const { data: profile, error: fetchError } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('wins, losses, draws')
         .eq('id', user.id)
         .single();
       
-      if (fetchError) {
+      if (fetchError || !data) {
         console.error('Error fetching profile stats:', fetchError);
         return;
       }
       
       // Determine what to update
-      let updates = {};
       const playerIndex = gameState.players.findIndex(
         p => p.id.toString() === user.id.toString()
       );
       
       if (playerIndex >= 0) {
+        let updateObj: Record<string, number> = {};
+        
         if (winner === playerIndex) {
-          updates = { wins: (profile.wins || 0) + 1 };
+          updateObj.wins = (data.wins || 0) + 1;
         } else if (winner === null) {
-          updates = { draws: (profile.draws || 0) + 1 };
+          updateObj.draws = (data.draws || 0) + 1;
         } else {
-          updates = { losses: (profile.losses || 0) + 1 };
+          updateObj.losses = (data.losses || 0) + 1;
         }
         
         // Update profile stats
         const { error: updateError } = await supabase
           .from('profiles')
-          .update(updates)
+          .update(updateObj)
           .eq('id', user.id);
         
         if (updateError) {

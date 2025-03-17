@@ -30,6 +30,11 @@ export function useGameData(gameId: string) {
           .single();
 
         if (sessionError) throw sessionError;
+        if (!sessionData) throw new Error("Game session not found");
+        
+        // Safely cast to GameSession
+        const typedSessionData = sessionData as unknown as GameSession;
+        setGameSession(typedSessionData);
 
         // Fetch players with profiles
         const { data: playersData, error: playersError } = await supabase
@@ -42,24 +47,26 @@ export function useGameData(gameId: string) {
           .order('player_number', { ascending: true });
 
         if (playersError) throw playersError;
+        if (!playersData) throw new Error("No players found for this game");
 
-        setGameSession(sessionData as GameSession);
-        setPlayers(playersData as any);
+        // Safely cast to the expected type
+        const typedPlayersData = playersData as unknown as (GamePlayer & { profile: Profile })[];
+        setPlayers(typedPlayersData);
 
         // Find current player's number
-        const currentPlayer = playersData.find((p: GamePlayer) => p.player_id === user.id);
+        const currentPlayer = typedPlayersData.find((p) => p.player_id === user.id);
         if (currentPlayer) {
           setPlayerNumber(currentPlayer.player_number);
         }
 
         // Initialize or load game state
-        if (sessionData.game_state && Object.keys(sessionData.game_state).length === 0) {
+        if (typedSessionData.game_state && Object.keys(typedSessionData.game_state).length === 0) {
           // New game, initialize state
-          const initialState = createInitialGameState(playersData.length);
+          const initialState = createInitialGameState(typedPlayersData.length);
           
           // Update player names and colors
           const updatedPlayers = initialState.players.map((p, idx) => {
-            const playerData = playersData.find((pd: any) => pd.player_number === idx);
+            const playerData = typedPlayersData.find((pd) => pd.player_number === idx);
             if (playerData) {
               return {
                 ...p,
@@ -77,16 +84,14 @@ export function useGameData(gameId: string) {
 
           setGameState(newGameState);
           
-          // Save initial state to database - need to handle JSON serialization
+          // Save initial state to database
           await supabase
             .from('game_sessions')
-            .update({
-              game_state: newGameState as any
-            })
+            .update({ game_state: newGameState })
             .eq('id', gameId);
         } else {
           // Load existing game state
-          const loadedState = sessionData.game_state as unknown as GameState;
+          const loadedState = typedSessionData.game_state as unknown as GameState;
           setGameState(loadedState);
         }
 
@@ -113,8 +118,9 @@ export function useGameData(gameId: string) {
         },
         (payload) => {
           if (payload.new && 'id' in payload.new) {
-            setGameSession(payload.new as GameSession);
-            setGameState(payload.new.game_state as unknown as GameState);
+            const newSession = payload.new as unknown as GameSession;
+            setGameSession(newSession);
+            setGameState(newSession.game_state as unknown as GameState);
           }
         }
       )

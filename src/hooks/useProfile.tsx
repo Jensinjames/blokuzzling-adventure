@@ -25,7 +25,7 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Fetch the profile using the api schema
+        // Fetch the profile using the public schema
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -43,23 +43,20 @@ export function useProfile() {
         } else {
           console.log("No profile found, attempting to create one");
           
-          // Create a new profile with required fields
-          const newProfile = {
-            id: user.id,
-            username: user.email?.split('@')[0] || 'User',
-            wins: 0,
-            losses: 0,
-            draws: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            avatar_url: null
-          };
-          
-          // Insert the profile as a single object, not an array
+          // Create a new profile
           const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
-            .insert(newProfile)
-            .select('*')
+            .insert([{
+              id: user.id,
+              username: user.email?.split('@')[0] || 'User',
+              wins: 0,
+              losses: 0,
+              draws: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              avatar_url: null
+            }])
+            .select()
             .single();
             
           if (createError) {
@@ -91,9 +88,19 @@ export function useProfile() {
     try {
       console.log('Updating profile for user:', user.id, 'with data:', updates);
       
+      // Create a properly structured update object
+      const updateObject: Record<string, any> = {};
+      
+      // Only include fields that exist in the updates object
+      if ('username' in updates) updateObject.username = updates.username;
+      if ('avatar_url' in updates) updateObject.avatar_url = updates.avatar_url;
+      if ('wins' in updates) updateObject.wins = updates.wins;
+      if ('losses' in updates) updateObject.losses = updates.losses;
+      if ('draws' in updates) updateObject.draws = updates.draws;
+
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(updateObject)
         .eq('id', user.id);
 
       if (error) {

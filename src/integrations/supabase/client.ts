@@ -14,7 +14,7 @@ export const supabase = createClient<Database>(
   SUPABASE_PUBLISHABLE_KEY, 
   {
     db: {
-      schema: 'api'
+      schema: 'public'
     }
   }
 );

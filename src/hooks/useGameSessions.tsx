@@ -18,21 +18,25 @@ export function useGameSessions() {
     const fetchGameSessions = async () => {
       try {
         // Fetch active sessions
-        const { data: activeSessionsData } = await supabase
+        const { data: activeSessionsData, error: activeError } = await supabase
           .from('game_sessions')
           .select('*')
-          .eq('status', 'waiting')
+          .ilike('status', 'waiting')
           .order('created_at', { ascending: false });
 
+        if (activeError) throw activeError;
+
         // Fetch user's sessions
-        const { data: userSessionsData } = await supabase
+        const { data: userSessionsData, error: userError } = await supabase
           .from('game_sessions')
           .select('*')
           .eq('creator_id', user.id)
           .order('created_at', { ascending: false });
 
-        setActiveSessions(activeSessionsData as GameSession[] || []);
-        setUserSessions(userSessionsData as GameSession[] || []);
+        if (userError) throw userError;
+
+        setActiveSessions((activeSessionsData || []) as GameSession[]);
+        setUserSessions((userSessionsData || []) as GameSession[]);
       } catch (error) {
         console.error('Error fetching game sessions:', error);
       } finally {
@@ -77,25 +81,26 @@ export function useGameSessions() {
       // Create game session
       const { data: sessionData, error: sessionError } = await supabase
         .from('game_sessions')
-        .insert({
+        .insert([{
           creator_id: user.id,
           max_players: maxPlayers,
           current_players: 1,
           status: 'waiting'
-        })
+        }])
         .select()
         .single();
 
       if (sessionError) throw sessionError;
+      if (!sessionData) throw new Error("Failed to create game session");
 
       // Add creator as first player
       const { error: playerError } = await supabase
         .from('game_players')
-        .insert({
+        .insert([{
           game_id: sessionData.id,
           player_id: user.id,
           player_number: 0 // First player is always 0
-        });
+        }]);
 
       if (playerError) throw playerError;
 
@@ -116,11 +121,13 @@ export function useGameSessions() {
 
     try {
       // Check if player is already in the game
-      const { data: existingPlayer } = await supabase
+      const { data: existingPlayer, error: playerError } = await supabase
         .from('game_players')
         .select('*')
         .eq('game_id', gameId)
         .eq('player_id', user.id);
+
+      if (playerError) throw playerError;
 
       if (existingPlayer && existingPlayer.length > 0) {
         toast.info('You are already in this game');
@@ -134,7 +141,7 @@ export function useGameSessions() {
         .eq('id', gameId)
         .single();
 
-      if (sessionError) throw sessionError;
+      if (sessionError || !sessionData) throw sessionError || new Error("Game not found");
 
       // Check if game is full
       if (sessionData.current_players >= sessionData.max_players) {
@@ -149,26 +156,28 @@ export function useGameSessions() {
       }
 
       // Get next player number
-      const { data: playersData } = await supabase
+      const { data: playersData, error: listError } = await supabase
         .from('game_players')
         .select('player_number')
         .eq('game_id', gameId)
         .order('player_number', { ascending: false });
 
+      if (listError) throw listError;
+
       const nextPlayerNumber = (playersData && playersData.length > 0) 
-        ? playersData[0].player_number + 1 
+        ? (playersData[0].player_number + 1) 
         : 0;
 
       // Add player to game
-      const { error: playerError } = await supabase
+      const { error: joinError } = await supabase
         .from('game_players')
-        .insert({
+        .insert([{
           game_id: gameId,
           player_id: user.id,
           player_number: nextPlayerNumber
-        });
+        }]);
 
-      if (playerError) throw playerError;
+      if (joinError) throw joinError;
 
       // Update game session player count
       const { error: updateError } = await supabase
@@ -203,7 +212,7 @@ export function useGameSessions() {
         .eq('id', gameId)
         .single();
 
-      if (sessionError) throw sessionError;
+      if (sessionError || !sessionData) throw sessionError || new Error("Game not found");
 
       if (sessionData.creator_id !== user.id) {
         toast.error('Only the game creator can start the game');

@@ -40,6 +40,12 @@ const Lobby = () => {
           .single();
 
         if (sessionError) throw sessionError;
+        if (!session) throw new Error("Game session not found");
+
+        // Safely cast the session data
+        const typedSession = session as unknown as GameSession;
+        setGameSession(typedSession);
+        setIsCreator(typedSession.creator_id === user.id);
 
         // Fetch players
         const { data: playersData, error: playersError } = await supabase
@@ -52,15 +58,16 @@ const Lobby = () => {
           .order('player_number', { ascending: true });
 
         if (playersError) throw playersError;
+        if (!playersData) throw new Error("No players found");
 
-        setGameSession(session as GameSession);
-        setPlayers(playersData as any);
-        setIsCreator(session.creator_id === user.id);
+        // Safely cast the players data
+        const typedPlayers = playersData as unknown as (GamePlayer & { profile: Profile })[];
+        setPlayers(typedPlayers);
 
         // If game is already active, redirect to game
-        if (session.status === 'active') {
+        if (typedSession.status === 'active') {
           navigate(`/multiplayer/${id}`);
-        } else if (session.status === 'completed') {
+        } else if (typedSession.status === 'completed') {
           toast.error('This game has already been completed');
           navigate('/home');
         }
@@ -87,12 +94,14 @@ const Lobby = () => {
           filter: `id=eq.${id}`
         },
         (payload) => {
-          const updatedSession = payload.new as GameSession;
-          setGameSession(updatedSession);
-          
-          // If game becomes active, redirect to game
-          if (updatedSession.status === 'active') {
-            navigate(`/multiplayer/${id}`);
+          if (payload.new) {
+            const updatedSession = payload.new as unknown as GameSession;
+            setGameSession(updatedSession);
+            
+            // If game becomes active, redirect to game
+            if (updatedSession.status === 'active') {
+              navigate(`/multiplayer/${id}`);
+            }
           }
         }
       )

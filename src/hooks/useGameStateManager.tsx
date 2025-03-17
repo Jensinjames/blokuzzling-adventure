@@ -28,17 +28,24 @@ export function useGameStateManager(
     }
 
     try {
-      await supabase
+      // Properly structured update object
+      const updateObj = {
+        game_state: newState,
+        turn_history: [...(gameState?.turnHistory || []), {
+          player: playerNumber,
+          timestamp: Date.now(),
+          action: 'move'
+        }]
+      };
+
+      const { error } = await supabase
         .from('game_sessions')
-        .update({
-          game_state: newState as any,
-          turn_history: [...(gameState?.turnHistory || []), {
-            player: playerNumber,
-            timestamp: Date.now(),
-            action: 'move'
-          }] as any
-        })
+        .update(updateObj)
         .eq('id', gameId);
+
+      if (error) {
+        throw error;
+      }
 
       return true;
     } catch (error) {
