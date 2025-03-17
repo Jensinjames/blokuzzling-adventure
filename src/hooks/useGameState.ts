@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Piece, BoardPosition, GameState } from '@/types/game';
@@ -17,7 +16,13 @@ export function useGameState(numPlayers: number = 2) {
   const [isValidPlacement, setIsValidPlacement] = useState<boolean>(false);
 
   const initGame = useCallback(() => {
-    setGameState(createInitialGameState(numPlayers));
+    const initialGameState = createInitialGameState(numPlayers);
+    
+    if (numPlayers === 2) {
+      initialGameState.currentPlayer = 0; // First player starts
+    }
+    
+    setGameState(initialGameState);
     setSelectedPiece(null);
     setPreviewPosition(null);
     setIsValidPlacement(false);

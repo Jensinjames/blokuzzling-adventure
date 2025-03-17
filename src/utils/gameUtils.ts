@@ -1,4 +1,3 @@
-
 import { BoardCell, BoardPosition, GameState, Piece } from '@/types/game';
 
 export const BOARD_SIZE = 14;
@@ -81,11 +80,12 @@ export const PIECE_SHAPES = [
   ]
 ];
 
+// Modified starting corners to ensure players start at opposite corners
 export const startingCorners: BoardPosition[] = [
-  { row: 0, col: 0 },
-  { row: 0, col: BOARD_SIZE - 1 },
-  { row: BOARD_SIZE - 1, col: BOARD_SIZE - 1 },
-  { row: BOARD_SIZE - 1, col: 0 },
+  { row: 0, col: 0 },                    // Player 0: top-left
+  { row: BOARD_SIZE - 1, col: BOARD_SIZE - 1 }, // Player 1: bottom-right
+  { row: BOARD_SIZE - 1, col: 0 },             // Player 2: bottom-left
+  { row: 0, col: BOARD_SIZE - 1 },             // Player 3: top-right
 ];
 
 export const getStartingCorner = (currentPlayer: number): BoardPosition => startingCorners[currentPlayer];
@@ -386,10 +386,14 @@ export const createInitialGameState = (numPlayers = 2): GameState => {
     };
   });
   
+  // For 2 players, ensure they start at opposite corners (player 0 and 1)
+  // For more players, the default corner assignment works fine
+  const currentPlayer = 0; // Always start with player 0
+  
   return {
     board,
     players,
-    currentPlayer: 0,
+    currentPlayer,
     turnHistory: [],
     gameStats: {
       totalMoves: 0,

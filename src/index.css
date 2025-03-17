@@ -84,13 +84,13 @@
   }
   
   .game-board {
-    @apply grid bg-white shadow-md rounded-lg overflow-hidden transition-all duration-300;
+    @apply grid bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden transition-all duration-300;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(5px);
   }
   
   .board-cell {
-    @apply border border-gray-200 transition-all duration-200;
+    @apply border border-gray-200 dark:border-gray-700 transition-all duration-200;
   }
   
   .piece-preview {
@@ -115,7 +115,7 @@
   }
   
   .glass-panel {
-    @apply bg-white/80 backdrop-blur-lg rounded-xl p-4 shadow-lg border border-white/20;
+    @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl p-4 shadow-lg border border-white/20 dark:border-gray-700/20;
   }
   
   .control-button {
