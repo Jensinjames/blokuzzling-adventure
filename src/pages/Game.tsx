@@ -67,7 +67,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
         };
       });
     }
-  }, [gameStarted, user]);
+  }, [gameStarted, user, setGameState]);
 
   const handleHome = () => {
     navigate('/');
