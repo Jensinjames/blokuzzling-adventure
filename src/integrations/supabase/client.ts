@@ -17,7 +17,7 @@ export const supabase = createClient<Database>(
       persistSession: true
     },
     db: {
-      schema: 'public' // Using 'public' schema for compatibility with type definitions
+      schema: 'api' // Changed from 'public' to 'api' based on the error message
     }
   }
 );
