@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Piece, BoardPosition, GameState } from '@/types/game';
@@ -32,7 +31,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
   const [isValidPlacement, setIsValidPlacement] = useState<boolean>(false);
   const navigate = useNavigate();
 
-  // Initialize or reset game
   const initGame = useCallback(() => {
     setGameState(createInitialGameState(numPlayers));
     setSelectedPiece(null);
@@ -44,10 +42,8 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     initGame();
   }, [initGame]);
 
-  // Check for game over condition
   useEffect(() => {
     if (gameState.gameStatus === 'playing' && checkGameOver(gameState)) {
-      // Update player scores
       const updatedPlayers = gameState.players.map(player => ({
         ...player,
         score: calculateScore(player.pieces)
@@ -66,7 +62,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     }
   }, [gameState]);
 
-  // Update preview position and validation on mouse move
   const handleCellHover = (position: BoardPosition) => {
     if (selectedPiece) {
       setPreviewPosition(position);
@@ -80,7 +75,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     }
   };
 
-  // Place piece on the board
   const handleCellClick = (position: BoardPosition) => {
     if (!selectedPiece) {
       toast.error("Select a piece first!");
@@ -97,7 +91,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       return;
     }
     
-    // Place the piece on the board
     const newBoard = [...gameState.board.map(row => [...row])];
     
     for (let i = 0; i < selectedPiece.shape.length; i++) {
@@ -114,7 +107,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       }
     }
     
-    // Mark the piece as used
     const updatedPlayers = [...gameState.players];
     const currentPlayerIndex = gameState.currentPlayer;
     
@@ -122,7 +114,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       piece => piece.id === selectedPiece.id ? { ...piece, used: true } : piece
     );
     
-    // Add move to history
     updatedPlayers[currentPlayerIndex].moveHistory.push({
       type: 'place',
       piece: selectedPiece.id,
@@ -130,7 +121,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       timestamp: Date.now()
     });
     
-    // Add to turn history
     const turnHistoryItem = {
       type: 'place',
       player: currentPlayerIndex,
@@ -139,22 +129,18 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       timestamp: Date.now()
     };
     
-    // Find next player who can make a move
     let nextPlayer = (currentPlayerIndex + 1) % updatedPlayers.length;
     let attempts = 0;
     
-    // Skip players who have no valid moves
     while (!hasValidMoves(gameState, nextPlayer) && nextPlayer !== currentPlayerIndex) {
       nextPlayer = (nextPlayer + 1) % updatedPlayers.length;
       attempts++;
       
       if (attempts >= updatedPlayers.length) {
-        // If all players have been checked and none can move, end the game
         break;
       }
     }
     
-    // Update game state
     setGameState(prev => ({
       ...prev,
       board: newBoard,
@@ -168,13 +154,11 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       }
     }));
     
-    // Reset selection
     setSelectedPiece(null);
     setPreviewPosition(null);
     setIsValidPlacement(false);
   };
 
-  // Handle piece selection
   const handleSelectPiece = (piece: Piece) => {
     if (piece.used) {
       toast.error("This piece has already been used!");
@@ -186,7 +170,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     setIsValidPlacement(false);
   };
 
-  // Rotate selected piece
   const handleRotatePiece = () => {
     if (!selectedPiece) return;
     
@@ -197,7 +180,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       shape: rotatedShape
     });
     
-    // Re-check placement validity if there's a preview position
     if (previewPosition) {
       const updatedPiece = {
         ...selectedPiece,
@@ -215,7 +197,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     }
   };
 
-  // Flip selected piece
   const handleFlipPiece = () => {
     if (!selectedPiece) return;
     
@@ -226,7 +207,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       shape: flippedShape
     });
     
-    // Re-check placement validity if there's a preview position
     if (previewPosition) {
       const updatedPiece = {
         ...selectedPiece,
@@ -244,7 +224,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     }
   };
 
-  // Pass turn
   const handlePassTurn = () => {
     if (!hasValidMoves(gameState, gameState.currentPlayer)) {
       toast("No valid moves available, passing turn");
@@ -256,24 +235,20 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       timestamp: Date.now()
     });
     
-    // Add to turn history
     const turnHistoryItem = {
       type: 'pass',
       player: gameState.currentPlayer,
       timestamp: Date.now()
     };
     
-    // Find next player
     let nextPlayer = (gameState.currentPlayer + 1) % updatedPlayers.length;
     let attempts = 0;
     
-    // Skip players who have no valid moves
     while (!hasValidMoves(gameState, nextPlayer) && nextPlayer !== gameState.currentPlayer) {
       nextPlayer = (nextPlayer + 1) % updatedPlayers.length;
       attempts++;
       
       if (attempts >= updatedPlayers.length) {
-        // If all players have been checked and none can move, end the game
         break;
       }
     }
@@ -290,7 +265,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     setIsValidPlacement(false);
   };
 
-  // Undo last move
   const handleUndo = () => {
     if (gameState.turnHistory.length === 0) {
       toast.error("No moves to undo!");
@@ -301,10 +275,8 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     const newTurnHistory = gameState.turnHistory.slice(0, -1);
     
     if (lastMove.type === 'place' && lastMove.piece) {
-      // Undo piece placement
       const newBoard = gameState.board.map(row => [...row]);
       
-      // Remove the piece from the board
       for (let row = 0; row < BOARD_SIZE; row++) {
         for (let col = 0; col < BOARD_SIZE; col++) {
           if (newBoard[row][col].player === lastMove.player && 
@@ -314,14 +286,12 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
         }
       }
       
-      // Mark the piece as unused
       const updatedPlayers = [...gameState.players];
       
       updatedPlayers[lastMove.player].pieces = updatedPlayers[lastMove.player].pieces.map(
         piece => piece.id === lastMove.piece ? { ...piece, used: false } : piece
       );
       
-      // Remove move from history
       updatedPlayers[lastMove.player].moveHistory = updatedPlayers[lastMove.player].moveHistory.filter(
         move => move.type !== 'place' || (move.timestamp !== lastMove.timestamp)
       );
@@ -336,7 +306,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
         winner: null
       }));
     } else if (lastMove.type === 'pass') {
-      // Undo pass turn
       const updatedPlayers = [...gameState.players];
       
       updatedPlayers[lastMove.player].moveHistory = updatedPlayers[lastMove.player].moveHistory.filter(
@@ -356,7 +325,6 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     setIsValidPlacement(false);
   };
 
-  // Navigate back to home
   const handleHome = () => {
     navigate('/');
   };
@@ -373,7 +341,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
             Back
           </button>
           <h1 className="text-xl font-bold text-center">Multiplayer Game</h1>
-          <div className="w-6"></div> {/* Spacer for balance */}
+          <div className="w-6"></div>
         </header>
         
         <PlayerInfo

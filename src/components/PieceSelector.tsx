@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Piece } from '@/types/game';
 import { Button } from '@/components/ui/button';
-import { RotateCw, Flip } from 'lucide-react';
+import { RotateCw, FlipHorizontal } from 'lucide-react';
 
 interface PieceSelectorProps {
   pieces: Piece[];
@@ -126,7 +125,7 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
             size="sm"
             className="control-button"
           >
-            <Flip className="h-4 w-4 mr-1" /> Flip
+            <FlipHorizontal className="h-4 w-4 mr-1" /> Flip
           </Button>
         </div>
       )}
