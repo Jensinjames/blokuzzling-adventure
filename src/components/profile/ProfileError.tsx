@@ -23,6 +23,9 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
     if (error.includes("supabase.from(...).schema is not a function")) {
       return "Database schema configuration error. The application is trying to access the database incorrectly.";
     }
+    if (error.includes("has no call signatures")) {
+      return "Database client configuration error. The application needs to be updated to match the new schema.";
+    }
     return error;
   };
   

@@ -154,6 +154,21 @@ export type Database = {
           },
         ]
       }
+      lobby: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           content: string
@@ -191,7 +206,7 @@ export type Database = {
       }
       profiles: {
         Row: {
-          avatar_url: string | null
+          avatar_url: Json[] | null
           created_at: string
           draws: number
           id: string
@@ -201,7 +216,7 @@ export type Database = {
           wins: number
         }
         Insert: {
-          avatar_url?: string | null
+          avatar_url?: Json[] | null
           created_at?: string
           draws?: number
           id: string
@@ -211,7 +226,7 @@ export type Database = {
           wins?: number
         }
         Update: {
-          avatar_url?: string | null
+          avatar_url?: Json[] | null
           created_at?: string
           draws?: number
           id?: string

@@ -29,6 +29,7 @@ export const apiSchema = {
   game_players: () => supabase.from('game_players'),
   game_invites: () => supabase.from('game_invites'),
   notifications: () => supabase.from('notifications'),
+  lobby: () => supabase.from('lobby')
 };
 
 // Helper function to check if a Supabase error is a 'not found' error
