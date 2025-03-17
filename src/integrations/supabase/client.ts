@@ -24,11 +24,11 @@ export const supabase = createClient<Database>(
 
 // Alias for api schema tables
 export const apiSchema = {
-  profiles: () => supabase.from('profiles').schema('api'),
-  game_sessions: () => supabase.from('game_sessions').schema('api'),
-  game_players: () => supabase.from('game_players').schema('api'),
-  game_invites: () => supabase.from('game_invites').schema('api'),
-  notifications: () => supabase.from('notifications').schema('api'),
+  profiles: () => supabase.from('profiles'),
+  game_sessions: () => supabase.from('game_sessions'),
+  game_players: () => supabase.from('game_players'),
+  game_invites: () => supabase.from('game_invites'),
+  notifications: () => supabase.from('notifications'),
 };
 
 // Helper function to check if a Supabase error is a 'not found' error

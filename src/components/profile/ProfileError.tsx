@@ -17,11 +17,11 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
   };
   
   const getErrorMessage = (error: string) => {
-    if (error.includes("The schema must be one of the following: api")) {
-      return "Database schema configuration error. The database is using the 'api' schema but the application is trying to access the 'public' schema.";
-    }
     if (error.includes("schema")) {
       return "Database schema configuration error. Please try again or contact support.";
+    }
+    if (error.includes("supabase.from(...).schema is not a function")) {
+      return "Database schema configuration error. The application is trying to access the database incorrectly.";
     }
     return error;
   };
