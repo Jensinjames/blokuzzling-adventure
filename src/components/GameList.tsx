@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { GameSession, GameInvite } from '@/types/database';
-import { Trophy, Users, Calendar, AlertCircle, Clock, X, Check } from 'lucide-react';
+import { Trophy, Users, Calendar, AlertCircle, Clock, X, Check, Info } from 'lucide-react';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { motion } from 'framer-motion';
 
@@ -39,6 +39,26 @@ const GameList: React.FC<GameListProps> = ({
     await respondToInvite(inviteId, accept);
   };
 
+  // Format the time remaining for an invite
+  const formatTimeRemaining = (expiresAt: string) => {
+    if (!expiresAt) return 'Unknown';
+    
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diffMs = expiry.getTime() - now.getTime();
+    
+    if (diffMs <= 0) return 'Expired';
+    
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (diffHrs > 0) {
+      return `${diffHrs}h ${diffMins}m`;
+    } else {
+      return `${diffMins}m`;
+    }
+  };
+
   if (loading) {
     return (
       <div className="glass-panel flex justify-center items-center py-12">
@@ -72,10 +92,23 @@ const GameList: React.FC<GameListProps> = ({
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="font-medium">{invite.sender?.username} invited you to a game</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
                       <Clock className="h-3 w-3 inline mr-1" />
-                      {new Date(invite.created_at).toLocaleString()}
-                    </p>
+                      <span className="mr-2">{new Date(invite.created_at).toLocaleString()}</span>
+                      
+                      {invite.expires_at && (
+                        <span className="flex items-center">
+                          <Info className="h-3 w-3 mr-1" />
+                          <span className={`${
+                            new Date(invite.expires_at).getTime() - Date.now() < 3600000 
+                              ? 'text-orange-500' 
+                              : 'text-gray-500'
+                          }`}>
+                            Expires in: {formatTimeRemaining(invite.expires_at)}
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex space-x-2">
                     <Button

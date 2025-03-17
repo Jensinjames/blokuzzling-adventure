@@ -24,6 +24,7 @@ export function useGameInvites() {
         `)
         .eq('recipient_id', user.id)
         .eq('status', 'pending')
+        .lt('expires_at', new Date(Date.now() + 10000).toISOString()) // Only get non-expired invites
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -102,6 +103,10 @@ export function useGameInvites() {
         return true;
       }
 
+      // Calculate expiration time (24 hours from now)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
       // Create the invite
       const { error: inviteError } = await supabase
         .from('game_invites')
@@ -109,7 +114,8 @@ export function useGameInvites() {
           game_id: gameId,
           sender_id: user.id,
           recipient_id: recipientData.id,
-          status: 'pending'
+          status: 'pending',
+          expires_at: expiresAt.toISOString()
         });
 
       if (inviteError) throw inviteError;
@@ -150,6 +156,19 @@ export function useGameInvites() {
 
       if (inviteError || !inviteData) throw inviteError;
 
+      // Check if invite has expired
+      const typedInviteData = safeSingleDataCast<GameInvite & { game: any }>(inviteData);
+      if (typedInviteData.expires_at && new Date(typedInviteData.expires_at) < new Date()) {
+        // Update invite status to expired
+        await supabase
+          .from('game_invites')
+          .update({ status: 'expired' })
+          .eq('id', inviteId);
+          
+        toast.error('This invite has expired');
+        return;
+      }
+
       // Update invite status
       const { error: updateError } = await supabase
         .from('game_invites')
@@ -159,8 +178,6 @@ export function useGameInvites() {
         .eq('id', inviteId);
 
       if (updateError) throw updateError;
-
-      const typedInviteData = safeSingleDataCast<GameInvite & { game: any }>(inviteData);
 
       if (accept && typedInviteData.game) {
         // Check if game is still available

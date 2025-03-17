@@ -12,6 +12,7 @@ export type Database = {
       game_invites: {
         Row: {
           created_at: string
+          expires_at: string | null
           game_id: string
           id: string
           recipient_id: string
@@ -21,6 +22,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          expires_at?: string | null
           game_id: string
           id?: string
           recipient_id: string
@@ -30,6 +32,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          expires_at?: string | null
           game_id?: string
           id?: string
           recipient_id?: string
@@ -242,6 +245,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_waiting_games: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_profile_with_avatar: {
         Args: {
           user_id: string
