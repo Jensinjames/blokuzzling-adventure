@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Profile, GameSession } from '@/types/database';
 import ProfileHeader from './profile/ProfileHeader';
@@ -79,7 +79,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({
             <Separator className="my-2" />
 
             <div className="flex justify-center p-4">
-              <Button variant="outline" onClick={signOut} className="text-gray-600 dark:text-gray-400">
+              <Button 
+                variant="outline" 
+                onClick={signOut} 
+                className="text-gray-600 dark:text-gray-400 flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
                 Sign Out
               </Button>
             </div>

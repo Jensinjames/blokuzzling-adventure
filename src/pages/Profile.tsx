@@ -10,7 +10,7 @@ import { GameSession } from '@/types/database';
 
 const Profile = () => {
   const { profile, loading: profileLoading, updateProfile } = useProfile();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [editing, setEditing] = useState(false);
@@ -24,6 +24,13 @@ const Profile = () => {
       fetchUserGames();
     }
   }, [profile]);
+
+  useEffect(() => {
+    // If no user is logged in, redirect to auth page
+    if (!user && !profileLoading) {
+      navigate('/auth');
+    }
+  }, [user, profileLoading, navigate]);
 
   const fetchUserGames = async () => {
     if (!profile) return;
@@ -95,6 +102,11 @@ const Profile = () => {
     setEditing(false);
   };
 
+  const handleSignOut = async () => {
+    console.log('Initiating sign out from Profile page');
+    await signOut();
+  };
+
   const handleBack = () => {
     navigate('/home');
   };
@@ -120,7 +132,7 @@ const Profile = () => {
       saving={saving}
       handleUpdateProfile={handleUpdateProfile}
       handleBack={handleBack}
-      signOut={signOut}
+      signOut={handleSignOut}
       games={games}
       gamesLoading={gamesLoading}
     />

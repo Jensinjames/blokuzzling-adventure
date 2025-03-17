@@ -55,6 +55,8 @@ export function useProfile() {
     }
 
     try {
+      console.log('Updating profile for user:', user.id, 'with data:', updates);
+      
       const { error } = await supabase
         .from('profiles')
         .update(updates)
