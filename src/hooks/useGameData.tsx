@@ -22,6 +22,8 @@ export function useGameData(gameId: string) {
     const fetchGameData = async () => {
       setLoading(true);
       try {
+        console.log('Fetching game data for game ID:', gameId);
+        
         // Fetch game session data
         const { data: sessionData, error: sessionError } = await supabase
           .from('game_sessions')
@@ -29,8 +31,15 @@ export function useGameData(gameId: string) {
           .eq('id', gameId)
           .single();
 
-        if (sessionError) throw sessionError;
-        if (!sessionData) throw new Error("Game session not found");
+        if (sessionError) {
+          console.error('Error fetching game session:', sessionError);
+          throw sessionError;
+        }
+        
+        if (!sessionData) {
+          console.error('Game session not found');
+          throw new Error("Game session not found");
+        }
         
         // Safely cast to GameSession
         const typedSessionData = sessionData as unknown as GameSession;
@@ -46,21 +55,31 @@ export function useGameData(gameId: string) {
           .eq('game_id', gameId)
           .order('player_number', { ascending: true });
 
-        if (playersError) throw playersError;
-        if (!playersData || !Array.isArray(playersData)) throw new Error("No players found for this game");
+        if (playersError) {
+          console.error('Error fetching game players:', playersError);
+          throw playersError;
+        }
+        
+        if (!playersData || !Array.isArray(playersData)) {
+          console.error('No players found for this game');
+          throw new Error("No players found for this game");
+        }
 
         // Safely cast to the expected type
         const typedPlayersData = playersData as unknown as (GamePlayer & { profile: Profile })[];
         setPlayers(typedPlayersData);
+        console.log('Game players loaded:', typedPlayersData.length);
 
         // Find current player's number
         const currentPlayer = typedPlayersData.find((p) => p.player_id === user.id);
         if (currentPlayer) {
           setPlayerNumber(currentPlayer.player_number);
+          console.log('Current player number:', currentPlayer.player_number);
         }
 
         // Initialize or load game state
         if (!typedSessionData.game_state || Object.keys(typedSessionData.game_state).length === 0) {
+          console.log('Initializing new game state');
           // New game, initialize state
           const initialState = createInitialGameState(typedPlayersData.length);
           
@@ -71,7 +90,7 @@ export function useGameData(gameId: string) {
               return {
                 ...p,
                 name: playerData.profile.username,
-                id: idx
+                id: playerData.player_id // Use the actual player UUID
               };
             }
             return p;
@@ -88,21 +107,26 @@ export function useGameData(gameId: string) {
           // Convert complex objects to JSON-compatible format
           const jsonSafeGameState = JSON.parse(JSON.stringify(newGameState));
           
-          await supabase
+          const { error: updateError } = await supabase
             .from('game_sessions')
             .update({ 
               game_state: jsonSafeGameState
             })
             .eq('id', gameId);
+            
+          if (updateError) {
+            console.error('Error updating game state:', updateError);
+          }
         } else {
           // Load existing game state
+          console.log('Loading existing game state');
           const loadedState = typedSessionData.game_state as unknown as GameState;
           setGameState(loadedState);
         }
 
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching game data:', error);
-        toast.error('Failed to load game data');
+        toast.error('Failed to load game data: ' + (error.message || 'Unknown error'));
       } finally {
         setLoading(false);
       }
@@ -122,6 +146,7 @@ export function useGameData(gameId: string) {
           filter: `id=eq.${gameId}`
         },
         (payload) => {
+          console.log('Game session updated:', payload.new);
           if (payload.new && 'id' in payload.new) {
             const newSession = payload.new as unknown as GameSession;
             setGameSession(newSession);

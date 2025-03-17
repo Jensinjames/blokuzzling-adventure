@@ -11,7 +11,15 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
-  SUPABASE_PUBLISHABLE_KEY
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true
+    },
+    db: {
+      schema: 'public' // Explicitly set the schema to 'public'
+    }
+  }
 );
 
 // Helper function to check if a Supabase error is a 'not found' error
@@ -20,4 +28,3 @@ export const isNotFoundError = (error: any): boolean => {
          error?.message?.includes('No rows found') ||
          error?.details?.includes('Results contain 0 rows');
 };
-

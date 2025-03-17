@@ -3,6 +3,7 @@ import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface ProfileErrorProps {
   error: string;
@@ -15,12 +16,24 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
     navigate('/home');
   };
   
+  const getErrorMessage = (error: string) => {
+    if (error.includes("The schema must be one of the following: api")) {
+      return "Database schema configuration error. Please try again or contact support.";
+    }
+    return error;
+  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 flex items-center justify-center">
       <div className="text-center max-w-md px-6">
         <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
         <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">Profile Error</h2>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">{error}</p>
+        
+        <Alert variant="destructive" className="mt-4">
+          <AlertTitle>Error Loading Profile</AlertTitle>
+          <AlertDescription>{getErrorMessage(error)}</AlertDescription>
+        </Alert>
+        
         <div className="mt-6 space-x-3">
           <Button 
             onClick={() => window.location.reload()} 
@@ -36,8 +49,9 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
             Go Home
           </Button>
         </div>
+        
         <p className="mt-4 text-xs text-gray-500 dark:text-gray-500">
-          Error details: {error}
+          Technical details: {error}
         </p>
       </div>
     </div>

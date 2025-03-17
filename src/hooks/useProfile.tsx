@@ -25,7 +25,7 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Fetch the profile using the public schema
+        // Explicitly specify the schema as 'public'
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -33,8 +33,9 @@ export function useProfile() {
           .maybeSingle();
 
         if (error) {
+          console.error('Supabase error details:', error);
+          
           if (!isNotFoundError(error)) {
-            console.error('Supabase error details:', error);
             throw error;
           }
           console.log("No profile found, attempting to create one");
@@ -71,9 +72,10 @@ export function useProfile() {
           setProfile(createdProfile as Profile);
         }
       } catch (e: any) {
-        setError(e.message || 'Unknown error');
+        const errorMessage = e.message || 'Unknown error';
+        setError(errorMessage);
         console.error('Error fetching profile:', e);
-        toast.error(`Failed to load profile: ${e.message || 'Unknown error'}`);
+        toast.error(`Failed to load profile: ${errorMessage}`);
       } finally {
         setLoading(false);
       }

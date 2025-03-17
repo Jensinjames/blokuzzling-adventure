@@ -19,7 +19,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   onUsePowerup,
   isViewerCurrentPlayer = true 
 }) => {
-  // Function to format player ID for display (first 8 chars)
+  // Function to format player ID for display
   const formatPlayerId = (id: string | number) => {
     if (!id) return 'Guest';
     if (typeof id === 'number') return `Player ${id + 1}`;
