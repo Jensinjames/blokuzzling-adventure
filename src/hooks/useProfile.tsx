@@ -25,7 +25,7 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Fetch the profile using the public schema
+        // Fetch the profile using the api schema
         const { data, error } = await supabase
           .from('profiles')
           .select('*')

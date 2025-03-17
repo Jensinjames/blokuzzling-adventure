@@ -8,6 +8,7 @@ import ProfileLoading from '@/components/profile/ProfileLoading';
 import ProfileError from '@/components/profile/ProfileError';
 import ProfileNotFound from '@/components/profile/ProfileNotFound';
 import { useUserGames } from '@/hooks/useUserGames';
+import { toast } from 'sonner';
 
 const Profile = () => {
   const { profile, loading: profileLoading, error: profileError, updateProfile } = useProfile();
@@ -34,19 +35,32 @@ const Profile = () => {
 
   const handleUpdateProfile = async () => {
     if (!username.trim()) {
+      toast.error('Username cannot be empty');
       return;
     }
     
     setSaving(true);
-    await updateProfile({ username });
-    setSaving(false);
-    setEditing(false);
+    try {
+      await updateProfile({ username });
+      toast.success('Profile updated successfully');
+      setEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSignOut = async () => {
     console.log('Initiating sign out from Profile page');
-    await signOut();
-    navigate('/auth');
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out');
+    }
   };
 
   const handleBack = () => {

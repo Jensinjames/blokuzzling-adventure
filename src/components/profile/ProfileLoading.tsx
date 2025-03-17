@@ -8,6 +8,9 @@ const ProfileLoading = () => {
       <div className="text-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
         <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your profile...</p>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">
+          This may take a moment while we connect to the database.
+        </p>
       </div>
     </div>
   );
