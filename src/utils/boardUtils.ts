@@ -43,7 +43,7 @@ export function placeSelectedPiece(
   
   // Mark the piece as used
   updatedPlayers[currentPlayerIndex].pieces = updatedPlayers[currentPlayerIndex].pieces.map(
-    piece => piece.id === selectedPiece.id ? { ...piece, used: true } : piece
+    piece => piece.id === selectedPiece.id ? { ...piece, used: true, hidden: true } : piece
   );
   
   // Record the move in player's history

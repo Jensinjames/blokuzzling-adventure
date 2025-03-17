@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Piece } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -21,11 +22,17 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
   onFlipPiece,
   selectedPiece
 }) => {
-  const [displayedPieces, setDisplayedPieces] = useState<Piece[]>(pieces.filter(p => !p.used).slice(0, 5));
+  // Filter out pieces that are marked as hidden (already played)
+  const availablePieces = pieces.filter(p => !p.hidden && !p.used);
+  const [displayedPieces, setDisplayedPieces] = useState<Piece[]>(availablePieces.slice(0, 5));
   const [page, setPage] = useState(0);
   
-  const unusedPieces = pieces.filter(p => !p.used);
-  const totalPages = Math.ceil(unusedPieces.length / 5);
+  // Update displayed pieces whenever available pieces change
+  useEffect(() => {
+    setDisplayedPieces(availablePieces.slice(page * 5, (page + 1) * 5));
+  }, [availablePieces, page]);
+  
+  const totalPages = Math.ceil(availablePieces.length / 5);
   
   const getPlayerColor = (player: number): string => {
     const colors = ['bg-player1', 'bg-player2', 'bg-player3', 'bg-player4'];
@@ -35,7 +42,7 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < totalPages) {
       setPage(newPage);
-      setDisplayedPieces(unusedPieces.slice(newPage * 5, (newPage + 1) * 5));
+      setDisplayedPieces(availablePieces.slice(newPage * 5, (newPage + 1) * 5));
     }
   };
 
@@ -71,16 +78,22 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
           <button
             key={piece.id}
             onClick={() => onSelectPiece(piece)}
-            disabled={piece.used}
+            disabled={piece.used || piece.hidden}
             className={cn(
               "p-2 rounded-lg transition-all duration-200 bg-white/90 border",
-              piece.used ? "opacity-50 cursor-not-allowed" : "hover:shadow-md active:scale-95",
+              (piece.used || piece.hidden) ? "opacity-50 cursor-not-allowed" : "hover:shadow-md active:scale-95",
               selectedPiece?.id === piece.id ? "ring-2 ring-primary shadow-lg scale-105" : "border-gray-200"
             )}
           >
             {renderPieceShape(piece)}
           </button>
         ))}
+        
+        {availablePieces.length === 0 && (
+          <div className="text-center text-gray-500 py-2 w-full">
+            No pieces available
+          </div>
+        )}
       </div>
       
       {totalPages > 1 && (

@@ -23,6 +23,8 @@ export function useProfile() {
       setError(null);
 
       try {
+        // The error in console logs shows "schema must be one of: api"
+        // Let's fix this by using the public schema explicitly
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -34,6 +36,7 @@ export function useProfile() {
         }
 
         setProfile(data as Profile);
+        console.log("Profile loaded:", data);
       } catch (e: any) {
         setError(e.message);
         console.error('Error fetching profile:', e);

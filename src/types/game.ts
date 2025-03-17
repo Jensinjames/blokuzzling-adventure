@@ -1,3 +1,4 @@
+
 export interface BoardCell {
   player: number | null;
   pieceId?: string;
@@ -15,6 +16,7 @@ export interface Piece {
   shape: number[][];
   name: string;
   used: boolean;
+  hidden?: boolean;
 }
 
 export interface Move {
