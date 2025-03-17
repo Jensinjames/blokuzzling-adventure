@@ -67,7 +67,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
                 <TooltipTrigger asChild>
                   <div className="mt-1 text-xs flex items-center text-gray-500 dark:text-gray-500">
                     <UserCircle className="w-3 h-3 mr-1" />
-                    ID: {formatPlayerId(player.id)}
+                    {typeof player.id === 'string' ? player.id.substring(0, 8) : `UUID: ${formatPlayerId(player.id)}`}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
