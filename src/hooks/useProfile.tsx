@@ -43,17 +43,22 @@ export function useProfile() {
         } else {
           console.log("No profile found, attempting to create one");
           // If no profile exists, create one
-          const newProfile: Partial<Profile> = {
+          
+          // Create a properly typed profile object with required fields
+          const newProfile = {
             id: user.id,
             username: user.email?.split('@')[0] || 'User',
             wins: 0,
             losses: 0,
             draws: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            avatar_url: null
           };
           
           const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
-            .insert([newProfile])
+            .insert(newProfile)
             .select()
             .single();
             
