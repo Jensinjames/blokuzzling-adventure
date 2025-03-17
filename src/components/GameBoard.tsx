@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { BoardCell, GameState, BoardPosition } from '@/types/game';
+import { Wand2 } from 'lucide-react';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -11,6 +12,7 @@ interface GameBoardProps {
   selectedPiecePreview: { shape: number[][] } | null;
   previewPosition: BoardPosition | null;
   isValidPlacement: boolean;
+  isPowerupActive?: boolean;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -20,7 +22,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   onCellHover,
   selectedPiecePreview,
   previewPosition,
-  isValidPlacement
+  isValidPlacement,
+  isPowerupActive = false
 }) => {
   const [boardSize, setBoardSize] = useState(Math.min(window.innerWidth - 40, 500));
   const cellSize = boardSize / size;
@@ -73,27 +76,56 @@ const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   const renderCornerMarkers = () => {
+    // Only show player 1 and player 2 corners in 2-player game
+    // Add powerup markers to corners 2, 3 and 4 in single player mode
+    const isPowerupCell = (row: number, col: number) => {
+      if (gameState.players.length === 2) {
+        // In 2-player game, corners 2 and 3 are powerup cells
+        return (
+          (row === size - 1 && col === 0) || // Corner 3 (bottom-left)
+          (row === 0 && col === size - 1)     // Corner 2 (top-right)
+        );
+      }
+      return false;
+    };
+
     const markers = [
-      { row: 0, col: 0 },
-      { row: 0, col: size - 1 },
-      { row: size - 1, col: size - 1 },
-      { row: size - 1, col: 0 }
+      { row: 0, col: 0 },                  // Player 1: top-left
+      { row: size - 1, col: size - 1 },    // Player 2: bottom-right
+      { row: 0, col: size - 1 },           // Corner 2 (top-right): powerup in single player
+      { row: size - 1, col: 0 }            // Corner 3 (bottom-left): powerup in single player
     ];
 
-    return markers.map((marker, index) => (
-      <div
-        key={`corner-${index}`}
-        className={cn(
-          'absolute w-3 h-3 rounded-full',
-          `bg-player${index + 1}`,
-          'transition-all duration-300 animate-pulse-subtle'
-        )}
-        style={{
-          top: marker.row * cellSize + (cellSize / 2) - 6,
-          left: marker.col * cellSize + (cellSize / 2) - 6,
-        }}
-      />
-    ));
+    return markers.map((marker, index) => {
+      // Check if this is a powerup corner in single player mode
+      const isAPowerupCell = isPowerupCell(marker.row, marker.col);
+      
+      // Only show player 1 and 2 corners in regular case, or powerup cells
+      if (index > 1 && !isAPowerupCell) {
+        return null;
+      }
+
+      return (
+        <div
+          key={`corner-${index}`}
+          className={cn(
+            'absolute w-3 h-3 rounded-full flex items-center justify-center',
+            isAPowerupCell 
+              ? 'bg-amber-400 animate-pulse-subtle' 
+              : `bg-player${index + 1}`,
+            'transition-all duration-300'
+          )}
+          style={{
+            top: marker.row * cellSize + (cellSize / 2) - 6,
+            left: marker.col * cellSize + (cellSize / 2) - 6,
+          }}
+        >
+          {isAPowerupCell && (
+            <Wand2 className="w-2 h-2 text-white" />
+          )}
+        </div>
+      );
+    }).filter(Boolean);
   };
 
   return (
@@ -114,12 +146,23 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 key={`cell-${rowIndex}-${colIndex}`}
                 className={cn(
                   "board-cell cursor-pointer",
-                  cell.player !== null ? getPlayerColor(cell.player) : "hover:bg-gray-100"
+                  cell.player !== null 
+                    ? getPlayerColor(cell.player) 
+                    : isPowerupActive 
+                      ? "hover:bg-red-200" 
+                      : "hover:bg-gray-100",
+                  cell.hasPowerup && "ring-2 ring-amber-400"
                 )}
                 style={{ width: cellSize, height: cellSize }}
                 onClick={() => onCellClick({ row: rowIndex, col: colIndex })}
                 onMouseEnter={() => onCellHover({ row: rowIndex, col: colIndex })}
-              />
+              >
+                {cell.hasPowerup && (
+                  <div className="flex items-center justify-center h-full">
+                    <Wand2 className="w-4 h-4 text-white animate-pulse" />
+                  </div>
+                )}
+              </div>
             ))}
           </React.Fragment>
         ))}

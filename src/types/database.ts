@@ -10,10 +10,12 @@ export type Profile = {
   draws: number;
 };
 
+export type GameStatus = 'waiting' | 'active' | 'completed';
+
 export type GameSession = {
   id: string;
   creator_id: string;
-  status: 'waiting' | 'active' | 'completed';
+  status: GameStatus | string; // Allow string from database but constrain in app logic
   max_players: number;
   current_players: number;
   game_state: any;
@@ -32,12 +34,14 @@ export type GamePlayer = {
   profile?: Profile;
 };
 
+export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired';
+
 export type GameInvite = {
   id: string;
   game_id: string;
   sender_id: string;
   recipient_id: string;
-  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  status: InviteStatus | string; // Allow string from database but constrain in app logic
   created_at: string;
   updated_at: string;
   sender?: Profile;
@@ -51,4 +55,15 @@ export type Notification = {
   type: string;
   read: boolean;
   created_at: string;
+};
+
+// Add new types for powerups
+export type PowerupType = 'destroy';
+
+export type Powerup = {
+  id: string;
+  type: PowerupType;
+  position: { row: number; col: number };
+  collected: boolean;
+  used: boolean;
 };

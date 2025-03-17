@@ -88,6 +88,12 @@ export const startingCorners: BoardPosition[] = [
   { row: 0, col: BOARD_SIZE - 1 },             // Player 3: top-right
 ];
 
+// Define powerup corners specifically for 2-player single-player games
+export const powerupCorners: BoardPosition[] = [
+  { row: 0, col: BOARD_SIZE - 1 },       // Top-right corner
+  { row: BOARD_SIZE - 1, col: 0 },       // Bottom-left corner
+];
+
 export const getStartingCorner = (currentPlayer: number): BoardPosition => startingCorners[currentPlayer];
 
 export const isWithinBounds = (row: number, col: number): boolean => {
@@ -361,6 +367,105 @@ export const determineWinner = (players: GameState['players']): number | null =>
   return hasTie ? null : maxPlayerIndex;
 };
 
+export const isPowerupCorner = (position: BoardPosition, numPlayers: number): boolean => {
+  if (numPlayers !== 2) return false;
+  
+  return powerupCorners.some(corner => 
+    corner.row === position.row && corner.col === position.col
+  );
+};
+
+export const collectPowerup = (
+  gameState: GameState,
+  position: BoardPosition
+): GameState => {
+  const { row, col } = position;
+  const cell = gameState.board[row][col];
+  
+  if (!cell.hasPowerup) return gameState;
+  
+  const updatedBoard = [...gameState.board.map(row => [...row])];
+  updatedBoard[row][col] = { ...cell, hasPowerup: false };
+  
+  const updatedPlayers = [...gameState.players];
+  const currentPlayer = updatedPlayers[gameState.currentPlayer];
+  
+  // Find powerup type or use default
+  const powerupType = cell.powerupType || 'destroy';
+  
+  // Add powerup to player inventory
+  const existingPowerupIndex = currentPlayer.powerups?.findIndex(p => p.type === powerupType) || -1;
+  
+  if (existingPowerupIndex >= 0 && currentPlayer.powerups) {
+    currentPlayer.powerups[existingPowerupIndex].count += 1;
+  } else {
+    if (!currentPlayer.powerups) {
+      currentPlayer.powerups = [];
+    }
+    currentPlayer.powerups.push({ type: powerupType, count: 1 });
+  }
+  
+  return {
+    ...gameState,
+    board: updatedBoard,
+    players: updatedPlayers
+  };
+};
+
+export const useDestroyPowerup = (
+  gameState: GameState,
+  position: BoardPosition
+): GameState => {
+  const { row, col } = position;
+  const cell = gameState.board[row][col];
+  
+  // Can only destroy occupied cells
+  if (cell.player === null) return gameState;
+  
+  const currentPlayer = gameState.players[gameState.currentPlayer];
+  const destroyPowerup = currentPlayer.powerups?.find(p => p.type === 'destroy');
+  
+  // Check if player has the powerup
+  if (!destroyPowerup || destroyPowerup.count <= 0) return gameState;
+  
+  // Update powerup count
+  const updatedPlayers = [...gameState.players];
+  const updatedPowerups = [...(currentPlayer.powerups || [])];
+  const powerupIndex = updatedPowerups.findIndex(p => p.type === 'destroy');
+  
+  if (powerupIndex >= 0) {
+    updatedPowerups[powerupIndex] = {
+      ...updatedPowerups[powerupIndex],
+      count: updatedPowerups[powerupIndex].count - 1
+    };
+  }
+  
+  updatedPlayers[gameState.currentPlayer] = {
+    ...currentPlayer,
+    powerups: updatedPowerups
+  };
+  
+  // Clear the cell
+  const updatedBoard = [...gameState.board.map(row => [...row])];
+  updatedBoard[row][col] = { player: null };
+  
+  // If this was an opponent's piece, let them know by adding to turn history
+  const turnHistoryItem = {
+    type: 'use-powerup',
+    player: gameState.currentPlayer,
+    powerupType: 'destroy',
+    targetPosition: position,
+    timestamp: Date.now()
+  };
+  
+  return {
+    ...gameState,
+    board: updatedBoard,
+    players: updatedPlayers,
+    turnHistory: [...gameState.turnHistory, turnHistoryItem]
+  };
+};
+
 export const createInitialGameState = (numPlayers = 2): GameState => {
   // Create empty board
   const board: BoardCell[][] = Array(BOARD_SIZE).fill(0).map(() => 
@@ -382,9 +487,21 @@ export const createInitialGameState = (numPlayers = 2): GameState => {
       color: `player${i + 1}`,
       moveHistory: [],
       pieces: playerPieces,
-      score: 0
+      score: 0,
+      powerups: []
     };
   });
+  
+  // Add powerups to the board for 2-player games
+  if (numPlayers === 2) {
+    powerupCorners.forEach(corner => {
+      board[corner.row][corner.col] = {
+        player: null,
+        hasPowerup: true,
+        powerupType: 'destroy'
+      };
+    });
+  }
   
   // For 2 players, ensure they start at opposite corners (player 0 and 1)
   // For more players, the default corner assignment works fine
@@ -401,6 +518,7 @@ export const createInitialGameState = (numPlayers = 2): GameState => {
       lastMoveTime: Date.now()
     },
     gameStatus: 'playing',
-    winner: null
+    winner: null,
+    powerupCells: numPlayers === 2 ? [...powerupCorners] : []
   };
 };

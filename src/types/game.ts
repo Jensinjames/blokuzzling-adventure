@@ -2,6 +2,8 @@
 export interface BoardCell {
   player: number | null;
   pieceId?: string;
+  hasPowerup?: boolean;
+  powerupType?: string;
 }
 
 export interface BoardPosition {
@@ -17,9 +19,11 @@ export interface Piece {
 }
 
 export interface Move {
-  type: 'place' | 'pass';
+  type: 'place' | 'pass' | 'use-powerup';
   piece?: string;
   position?: BoardPosition;
+  powerupType?: string;
+  targetPosition?: BoardPosition;
   timestamp: number;
 }
 
@@ -30,6 +34,10 @@ export interface Player {
   moveHistory: Move[];
   pieces: Piece[];
   score: number;
+  powerups: {
+    type: string;
+    count: number;
+  }[];
 }
 
 export interface TurnHistoryItem {
@@ -37,6 +45,8 @@ export interface TurnHistoryItem {
   player: number;
   piece?: string;
   position?: BoardPosition;
+  powerupType?: string;
+  targetPosition?: BoardPosition;
   timestamp: number;
 }
 
@@ -52,4 +62,5 @@ export interface GameState {
   };
   gameStatus: 'waiting' | 'playing' | 'finished';
   winner: number | null;
+  powerupCells?: BoardPosition[];
 }

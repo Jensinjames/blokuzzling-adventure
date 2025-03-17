@@ -1,7 +1,13 @@
 
 import { toast } from 'sonner';
 import { Piece, BoardPosition, GameState } from '@/types/game';
-import { validatePiecePlacement, hasValidMoves, BOARD_SIZE } from '@/utils/gameUtils';
+import { 
+  validatePiecePlacement, 
+  hasValidMoves, 
+  BOARD_SIZE, 
+  collectPowerup, 
+  useDestroyPowerup 
+} from '@/utils/gameUtils';
 
 export function useBoardActions(
   gameState: GameState,
@@ -9,9 +15,25 @@ export function useBoardActions(
   selectedPiece: Piece | null,
   setSelectedPiece: React.Dispatch<React.SetStateAction<Piece | null>>,
   setPreviewPosition: React.Dispatch<React.SetStateAction<BoardPosition | null>>,
-  setIsValidPlacement: React.Dispatch<React.SetStateAction<boolean>>
+  setIsValidPlacement: React.Dispatch<React.SetStateAction<boolean>>,
+  isPowerupActive: boolean = false,
+  setIsPowerupActive?: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   const handleCellClick = (position: BoardPosition) => {
+    // If powerup mode is active, use the powerup
+    if (isPowerupActive) {
+      if (setIsPowerupActive) setIsPowerupActive(false);
+      const updatedGameState = useDestroyPowerup(gameState, position);
+      
+      if (updatedGameState !== gameState) {
+        setGameState(updatedGameState);
+        toast.success("Block destroyed!");
+      } else {
+        toast.error("Cannot use powerup on this cell");
+      }
+      return;
+    }
+    
     if (!selectedPiece) {
       toast.error("Select a piece first!");
       return;
@@ -28,12 +50,19 @@ export function useBoardActions(
     }
     
     const newBoard = [...gameState.board.map(row => [...row])];
+    let updatedGameState = { ...gameState, board: newBoard };
+    let powerupCollected = false;
     
     for (let i = 0; i < selectedPiece.shape.length; i++) {
       for (let j = 0; j < selectedPiece.shape[i].length; j++) {
         if (selectedPiece.shape[i][j] === 1) {
           const boardRow = position.row + i;
           const boardCol = position.col + j;
+          
+          // Check if we're placing on a powerup cell
+          if (newBoard[boardRow][boardCol].hasPowerup) {
+            powerupCollected = true;
+          }
           
           newBoard[boardRow][boardCol] = {
             player: gameState.currentPlayer,
@@ -43,8 +72,14 @@ export function useBoardActions(
       }
     }
     
-    const updatedPlayers = [...gameState.players];
-    const currentPlayerIndex = gameState.currentPlayer;
+    // Check if a powerup was collected and update game state
+    if (powerupCollected) {
+      updatedGameState = collectPowerup(updatedGameState, position);
+      toast.success("Powerup collected!");
+    }
+    
+    const updatedPlayers = [...updatedGameState.players];
+    const currentPlayerIndex = updatedGameState.currentPlayer;
     
     updatedPlayers[currentPlayerIndex].pieces = updatedPlayers[currentPlayerIndex].pieces.map(
       piece => piece.id === selectedPiece.id ? { ...piece, used: true } : piece
@@ -68,7 +103,7 @@ export function useBoardActions(
     let nextPlayer = (currentPlayerIndex + 1) % updatedPlayers.length;
     let attempts = 0;
     
-    while (!hasValidMoves(gameState, nextPlayer) && nextPlayer !== currentPlayerIndex) {
+    while (!hasValidMoves(updatedGameState, nextPlayer) && nextPlayer !== currentPlayerIndex) {
       nextPlayer = (nextPlayer + 1) % updatedPlayers.length;
       attempts++;
       
@@ -79,7 +114,7 @@ export function useBoardActions(
     
     setGameState(prev => ({
       ...prev,
-      board: newBoard,
+      board: updatedGameState.board,
       players: updatedPlayers,
       currentPlayer: nextPlayer,
       turnHistory: [...prev.turnHistory, turnHistoryItem],
@@ -111,7 +146,14 @@ export function useBoardActions(
         for (let col = 0; col < BOARD_SIZE; col++) {
           if (newBoard[row][col].player === lastMove.player && 
               newBoard[row][col].pieceId === lastMove.piece) {
-            newBoard[row][col] = { player: null };
+            // Restore powerup cells if applicable
+            const isPowerupCell = gameState.powerupCells?.some(
+              pos => pos.row === row && pos.col === col
+            );
+            
+            newBoard[row][col] = isPowerupCell 
+              ? { player: null, hasPowerup: true, powerupType: 'destroy' } 
+              : { player: null };
           }
         }
       }
@@ -148,15 +190,58 @@ export function useBoardActions(
         currentPlayer: lastMove.player,
         turnHistory: newTurnHistory
       }));
+    } else if (lastMove.type === 'use-powerup' && lastMove.targetPosition) {
+      // Handle undoing powerup usage
+      const updatedPlayers = [...gameState.players];
+      const currentPlayer = updatedPlayers[lastMove.player];
+      
+      // Return the powerup to the player's inventory
+      const powerupType = lastMove.powerupType || 'destroy';
+      const existingPowerupIndex = currentPlayer.powerups?.findIndex(p => p.type === powerupType) || -1;
+      
+      if (existingPowerupIndex >= 0 && currentPlayer.powerups) {
+        currentPlayer.powerups[existingPowerupIndex].count += 1;
+      } else {
+        if (!currentPlayer.powerups) {
+          currentPlayer.powerups = [];
+        }
+        currentPlayer.powerups.push({ type: powerupType, count: 1 });
+      }
+      
+      setGameState(prev => ({
+        ...prev,
+        players: updatedPlayers,
+        currentPlayer: lastMove.player,
+        turnHistory: newTurnHistory
+      }));
     }
     
     setSelectedPiece(null);
     setPreviewPosition(null);
     setIsValidPlacement(false);
+    if (setIsPowerupActive) setIsPowerupActive(false);
+  };
+
+  const handleUsePowerup = (type: string) => {
+    const currentPlayer = gameState.players[gameState.currentPlayer];
+    const powerup = currentPlayer.powerups?.find(p => p.type === type);
+    
+    if (!powerup || powerup.count <= 0) {
+      toast.error("You don't have this powerup!");
+      return;
+    }
+    
+    if (type === 'destroy') {
+      if (setIsPowerupActive) {
+        setIsPowerupActive(true);
+        toast.info("Select a block to destroy");
+      }
+    }
   };
 
   return {
     handleCellClick,
-    handleUndo
+    handleUndo,
+    handleUsePowerup
   };
 }

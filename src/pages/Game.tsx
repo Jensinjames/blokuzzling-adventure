@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BOARD_SIZE } from '@/utils/gameUtils';
 import GameBoard from '@/components/GameBoard';
@@ -7,10 +7,12 @@ import PieceSelector from '@/components/PieceSelector';
 import PlayerInfo from '@/components/PlayerInfo';
 import GameControls from '@/components/GameControls';
 import GameResult from '@/components/GameResult';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Wand2 } from 'lucide-react';
 import { useGameState } from '@/hooks/useGameState';
 import { usePieceActions } from '@/hooks/usePieceActions';
 import { useBoardActions } from '@/hooks/useBoardActions';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface GameProps {
   numPlayers?: number;
@@ -18,6 +20,7 @@ interface GameProps {
 
 const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
   const navigate = useNavigate();
+  const [isPowerupActive, setIsPowerupActive] = useState(false);
   
   const {
     gameState,
@@ -49,18 +52,49 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
 
   const {
     handleCellClick,
-    handleUndo
+    handleUndo,
+    handleUsePowerup
   } = useBoardActions(
     gameState,
     setGameState,
     selectedPiece,
     setSelectedPiece,
     setPreviewPosition,
-    setIsValidPlacement
+    setIsValidPlacement,
+    isPowerupActive,
+    setIsPowerupActive
   );
 
   const handleHome = () => {
     navigate('/');
+  };
+
+  const renderPowerups = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayer];
+    const destroyPowerup = currentPlayer.powerups?.find(p => p.type === 'destroy');
+    
+    if (!destroyPowerup || destroyPowerup.count <= 0) return null;
+    
+    return (
+      <div className="flex justify-center mb-4">
+        <Button 
+          variant={isPowerupActive ? "destructive" : "outline"}
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => {
+            if (isPowerupActive) {
+              setIsPowerupActive(false);
+              toast.info("Powerup mode cancelled");
+            } else {
+              handleUsePowerup('destroy');
+            }
+          }}
+        >
+          <Wand2 className="h-4 w-4" />
+          {isPowerupActive ? "Cancel" : `Use Destroy Powerup (${destroyPowerup.count})`}
+        </Button>
+      </div>
+    );
   };
 
   return (
@@ -83,14 +117,17 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
           currentPlayer={gameState.currentPlayer}
         />
         
+        {renderPowerups()}
+        
         <GameBoard
           gameState={gameState}
           size={BOARD_SIZE}
           onCellClick={handleCellClick}
-          selectedPiecePreview={selectedPiece}
+          selectedPiecePreview={isPowerupActive ? null : selectedPiece}
           previewPosition={previewPosition}
           isValidPlacement={isValidPlacement}
           onCellHover={handleCellHover}
+          isPowerupActive={isPowerupActive}
         />
         
         {gameState.gameStatus === 'finished' ? (
@@ -103,17 +140,21 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
         ) : (
           <>
             <div className="text-center text-sm text-gray-600 dark:text-gray-400 mb-3">
-              Select a piece from your inventory
+              {isPowerupActive 
+                ? "Select a block to destroy" 
+                : "Select a piece from your inventory"}
             </div>
             
-            <PieceSelector
-              pieces={gameState.players[gameState.currentPlayer].pieces}
-              currentPlayer={gameState.currentPlayer}
-              onSelectPiece={handleSelectPiece}
-              onRotatePiece={handleRotatePiece}
-              onFlipPiece={handleFlipPiece}
-              selectedPiece={selectedPiece}
-            />
+            {!isPowerupActive && (
+              <PieceSelector
+                pieces={gameState.players[gameState.currentPlayer].pieces}
+                currentPlayer={gameState.currentPlayer}
+                onSelectPiece={handleSelectPiece}
+                onRotatePiece={handleRotatePiece}
+                onFlipPiece={handleFlipPiece}
+                selectedPiece={selectedPiece}
+              />
+            )}
             
             <div className="mt-4">
               <GameControls
