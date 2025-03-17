@@ -129,7 +129,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
           isPowerupActive={isPowerupActive}
         />
         
-        {gameState.gameStatus === "finished" || gameState.gameStatus === "completed" ? (
+        {gameState?.gameStatus === "finished" || gameState?.gameStatus === "completed" ? (
           <GameResult
             players={gameState.players}
             winner={gameState.winner}
