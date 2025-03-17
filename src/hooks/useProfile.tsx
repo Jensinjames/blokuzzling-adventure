@@ -23,8 +23,8 @@ export function useProfile() {
       setError(null);
 
       try {
-        // The error in console logs shows "schema must be one of: api"
-        // Let's fix this by using the public schema explicitly
+        // Fix the schema issue by NOT specifying schema explicitly
+        // Let Supabase use the default schema configuration
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
