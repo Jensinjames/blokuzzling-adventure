@@ -20,9 +20,19 @@ export function useMultiplayerGame(gameId: string) {
     makeMove
   } = useGameStateManager(gameId, gameState, playerNumber);
 
-  const {
-    endGame
-  } = useGameCompletion(gameId, players);
+  // Use useGameCompletion with the correct parameters
+  useGameCompletion(
+    gameState || { 
+      board: [], 
+      players: [], 
+      currentPlayer: 0, 
+      turnHistory: [], 
+      gameStats: { totalMoves: 0, gameStartTime: 0, lastMoveTime: 0 }, 
+      gameStatus: 'playing', 
+      winner: null 
+    },
+    setGameState
+  );
 
   return {
     gameSession,
@@ -33,7 +43,6 @@ export function useMultiplayerGame(gameId: string) {
     playerNumber,
     isMyTurn,
     updateGameState,
-    makeMove,
-    endGame: (winnerId: number | null) => gameState && endGame(gameState, winnerId)
+    makeMove
   };
 }
