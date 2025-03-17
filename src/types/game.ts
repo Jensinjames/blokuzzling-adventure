@@ -1,4 +1,3 @@
-
 export interface BoardCell {
   player: number | null;
   pieceId?: string;
@@ -60,7 +59,7 @@ export interface GameState {
     gameStartTime: number;
     lastMoveTime: number;
   };
-  gameStatus: 'waiting' | 'playing' | 'finished';
+  gameStatus: 'waiting' | 'playing' | 'finished' | 'completed';
   winner: number | null;
   powerupCells?: BoardPosition[];
 }

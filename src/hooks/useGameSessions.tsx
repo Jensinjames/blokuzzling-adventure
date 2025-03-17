@@ -4,63 +4,47 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { GameSession } from '@/types/database';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 
 export function useGameSessions() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [activeSessions, setActiveSessions] = useState<GameSession[]>([]);
   const [userSessions, setUserSessions] = useState<GameSession[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch game sessions
-  const fetchGameSessions = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      // Fetch all waiting/active sessions
-      const { data: sessionData } = await supabase
-        .from('game_sessions')
-        .select('*')
-        .in('status', ['waiting', 'active'])
-        .order('created_at', { ascending: false });
-
-      // Fetch sessions where user is a player
-      const { data: playerData } = await supabase
-        .from('game_players')
-        .select('game_id')
-        .eq('player_id', user.id);
-
-      if (playerData && playerData.length > 0) {
-        const gameIds = playerData.map(p => p.game_id);
-        
-        const { data: userSessionData } = await supabase
-          .from('game_sessions')
-          .select('*')
-          .in('id', gameIds)
-          .order('updated_at', { ascending: false });
-          
-        setUserSessions(userSessionData as GameSession[] || []);
-      }
-
-      setActiveSessions(sessionData as GameSession[] || []);
-    } catch (error) {
-      console.error('Error fetching game sessions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Subscribe to game sessions
   useEffect(() => {
     if (!user) return;
+
+    const fetchGameSessions = async () => {
+      try {
+        // Fetch active sessions
+        const { data: activeSessionsData } = await supabase
+          .from('game_sessions')
+          .select('*')
+          .eq('status', 'waiting')
+          .order('created_at', { ascending: false });
+
+        // Fetch user's sessions
+        const { data: userSessionsData } = await supabase
+          .from('game_sessions')
+          .select('*')
+          .eq('creator_id', user.id)
+          .order('created_at', { ascending: false });
+
+        setActiveSessions(activeSessionsData as GameSession[] || []);
+        setUserSessions(userSessionsData as GameSession[] || []);
+      } catch (error) {
+        console.error('Error fetching game sessions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
     fetchGameSessions();
 
     // Subscribe to game sessions
-    const sessionChannel = supabase
-      .channel('custom-all-channel')
+    const sessionsChannel = supabase
+      .channel('schema-db-changes')
       .on(
         'postgres_changes',
         {
@@ -69,9 +53,8 @@ export function useGameSessions() {
           table: 'game_sessions'
         },
         (payload) => {
-          // If one of user's sessions - check if payload.new exists and has an id before using it
-          if (payload.new && typeof payload.new === 'object' && 'id' in payload.new && 
-              userSessions.some(s => s.id === payload.new.id)) {
+          if (payload.new && 'id' in payload.new) {
+            // Refresh sessions when there's a change
             fetchGameSessions();
           }
         }
@@ -79,53 +62,52 @@ export function useGameSessions() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(sessionChannel);
+      supabase.removeChannel(sessionsChannel);
     };
   }, [user]);
 
   // Create a new game session
-  const createGameSession = async (maxPlayers: number) => {
+  const createGameSession = async (maxPlayers: number = 2) => {
     if (!user) {
       toast.error('You must be logged in to create a game');
       return null;
     }
 
     try {
-      // Create the game session
+      // Create game session
       const { data: sessionData, error: sessionError } = await supabase
         .from('game_sessions')
         .insert({
           creator_id: user.id,
-          status: 'waiting',
           max_players: maxPlayers,
-          current_players: 1
+          current_players: 1,
+          status: 'waiting'
         })
         .select()
         .single();
 
       if (sessionError) throw sessionError;
 
-      // Add the creator as player 0
+      // Add creator as first player
       const { error: playerError } = await supabase
         .from('game_players')
         .insert({
           game_id: sessionData.id,
           player_id: user.id,
-          player_number: 0
+          player_number: 0 // First player is always 0
         });
 
       if (playerError) throw playerError;
 
-      toast.success('Game session created successfully');
-      navigate(`/lobby/${sessionData.id}`);
-      return sessionData;
+      toast.success('Game created successfully!');
+      return sessionData.id;
     } catch (error: any) {
       toast.error(`Failed to create game: ${error.message}`);
       return null;
     }
   };
 
-  // Join an existing game session
+  // Join a game session
   const joinGameSession = async (gameId: string) => {
     if (!user) {
       toast.error('You must be logged in to join a game');
@@ -133,54 +115,72 @@ export function useGameSessions() {
     }
 
     try {
-      // Check if session exists and has space
+      // Check if player is already in the game
+      const { data: existingPlayer } = await supabase
+        .from('game_players')
+        .select('*')
+        .eq('game_id', gameId)
+        .eq('player_id', user.id);
+
+      if (existingPlayer && existingPlayer.length > 0) {
+        toast.info('You are already in this game');
+        return true;
+      }
+
+      // Get current game session info
       const { data: sessionData, error: sessionError } = await supabase
         .from('game_sessions')
-        .select('*, game_players(*)')
+        .select('*')
         .eq('id', gameId)
         .single();
 
       if (sessionError) throw sessionError;
 
-      if (sessionData.status !== 'waiting') {
-        toast.error('This game is no longer accepting players');
-        return false;
-      }
-
+      // Check if game is full
       if (sessionData.current_players >= sessionData.max_players) {
         toast.error('This game is full');
         return false;
       }
 
-      // Check if player is already in the game
-      if (sessionData.game_players.some((p: any) => p.player_id === user.id)) {
-        navigate(`/lobby/${gameId}`);
-        return true;
+      // Check if game is already started
+      if (sessionData.status !== 'waiting') {
+        toast.error('This game has already started');
+        return false;
       }
 
-      // Add player to the game
+      // Get next player number
+      const { data: playersData } = await supabase
+        .from('game_players')
+        .select('player_number')
+        .eq('game_id', gameId)
+        .order('player_number', { ascending: false });
+
+      const nextPlayerNumber = (playersData && playersData.length > 0) 
+        ? playersData[0].player_number + 1 
+        : 0;
+
+      // Add player to game
       const { error: playerError } = await supabase
         .from('game_players')
         .insert({
           game_id: gameId,
           player_id: user.id,
-          player_number: sessionData.current_players
+          player_number: nextPlayerNumber
         });
 
       if (playerError) throw playerError;
 
-      // Update current player count
+      // Update game session player count
       const { error: updateError } = await supabase
         .from('game_sessions')
-        .update({ 
-          current_players: sessionData.current_players + 1 
+        .update({
+          current_players: sessionData.current_players + 1
         })
         .eq('id', gameId);
 
       if (updateError) throw updateError;
 
-      toast.success('Joined game successfully');
-      navigate(`/lobby/${gameId}`);
+      toast.success('Joined game successfully!');
       return true;
     } catch (error: any) {
       toast.error(`Failed to join game: ${error.message}`);
@@ -196,10 +196,10 @@ export function useGameSessions() {
     }
 
     try {
-      // Verify user is the creator
+      // Check if user is the creator
       const { data: sessionData, error: sessionError } = await supabase
         .from('game_sessions')
-        .select('*, game_players(*)')
+        .select('*')
         .eq('id', gameId)
         .single();
 
@@ -210,23 +210,17 @@ export function useGameSessions() {
         return false;
       }
 
-      if (sessionData.current_players < 2) {
-        toast.error('You need at least 2 players to start a game');
-        return false;
-      }
-
-      // Update game state to active
+      // Update game status
       const { error: updateError } = await supabase
         .from('game_sessions')
         .update({
-          status: 'active'
+          status: 'playing'
         })
         .eq('id', gameId);
 
       if (updateError) throw updateError;
 
       toast.success('Game started!');
-      navigate(`/multiplayer/${gameId}`);
       return true;
     } catch (error: any) {
       toast.error(`Failed to start game: ${error.message}`);
@@ -240,7 +234,6 @@ export function useGameSessions() {
     loading,
     createGameSession,
     joinGameSession,
-    startGameSession,
-    fetchGameSessions
+    startGameSession
   };
 }
