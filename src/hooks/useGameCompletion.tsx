@@ -27,19 +27,22 @@ export function useGameCompletion(
         }
       }
 
-      // Update game session status
+      // Update game state
       const updatedGameState = {
         ...gameState,
         gameStatus: 'finished',
         winner: winnerId
       };
 
+      // Convert to JSON-safe format
+      const jsonSafeGameState = JSON.parse(JSON.stringify(updatedGameState));
+
       await supabase
         .from('game_sessions')
         .update({
           status: 'completed',
           winner_id: winnerProfileId,
-          game_state: updatedGameState as any
+          game_state: jsonSafeGameState
         })
         .eq('id', gameId);
 
@@ -47,32 +50,58 @@ export function useGameCompletion(
       if (winnerId !== null) {
         for (const player of players) {
           if (player.player_number === winnerId) {
-            // Winner
-            await supabase
+            // Winner - Get current stats first
+            const { data: winnerData } = await supabase
               .from('profiles')
-              .update({
-                wins: player.profile.wins + 1
-              })
-              .eq('id', player.player_id);
+              .select('wins')
+              .eq('id', player.player_id)
+              .single();
+              
+            if (winnerData) {
+              // Update with incremented wins
+              await supabase
+                .from('profiles')
+                .update({
+                  wins: (winnerData.wins || 0) + 1
+                })
+                .eq('id', player.player_id);
+            }
           } else {
-            // Loser
-            await supabase
+            // Loser - Get current stats first
+            const { data: loserData } = await supabase
               .from('profiles')
-              .update({
-                losses: player.profile.losses + 1
-              })
-              .eq('id', player.player_id);
+              .select('losses')
+              .eq('id', player.player_id)
+              .single();
+              
+            if (loserData) {
+              // Update with incremented losses
+              await supabase
+                .from('profiles')
+                .update({
+                  losses: (loserData.losses || 0) + 1
+                })
+                .eq('id', player.player_id);
+            }
           }
         }
       } else {
-        // Draw
+        // Draw - update all players
         for (const player of players) {
-          await supabase
+          const { data: playerData } = await supabase
             .from('profiles')
-            .update({
-              draws: player.profile.draws + 1
-            })
-            .eq('id', player.player_id);
+            .select('draws')
+            .eq('id', player.player_id)
+            .single();
+            
+          if (playerData) {
+            await supabase
+              .from('profiles')
+              .update({
+                draws: (playerData.draws || 0) + 1
+              })
+              .eq('id', player.player_id);
+          }
         }
       }
 

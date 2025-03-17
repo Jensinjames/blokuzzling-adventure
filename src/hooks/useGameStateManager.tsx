@@ -28,14 +28,24 @@ export function useGameStateManager(
     }
 
     try {
+      // Convert complex objects to JSON-compatible format
+      const jsonSafeGameState = JSON.parse(JSON.stringify(newState));
+      
+      // Add to turn history
+      const newHistoryItem = {
+        player: playerNumber,
+        timestamp: Date.now(),
+        action: 'move'
+      };
+      
+      const jsonSafeTurnHistory = JSON.parse(
+        JSON.stringify([...(gameState?.turnHistory || []), newHistoryItem])
+      );
+
       // Properly structured update object
       const updateObj = {
-        game_state: newState,
-        turn_history: [...(gameState?.turnHistory || []), {
-          player: playerNumber,
-          timestamp: Date.now(),
-          action: 'move'
-        }]
+        game_state: jsonSafeGameState,
+        turn_history: jsonSafeTurnHistory
       };
 
       const { error } = await supabase

@@ -47,7 +47,7 @@ export function useGameData(gameId: string) {
           .order('player_number', { ascending: true });
 
         if (playersError) throw playersError;
-        if (!playersData) throw new Error("No players found for this game");
+        if (!playersData || !Array.isArray(playersData)) throw new Error("No players found for this game");
 
         // Safely cast to the expected type
         const typedPlayersData = playersData as unknown as (GamePlayer & { profile: Profile })[];
@@ -60,7 +60,7 @@ export function useGameData(gameId: string) {
         }
 
         // Initialize or load game state
-        if (typedSessionData.game_state && Object.keys(typedSessionData.game_state).length === 0) {
+        if (!typedSessionData.game_state || Object.keys(typedSessionData.game_state).length === 0) {
           // New game, initialize state
           const initialState = createInitialGameState(typedPlayersData.length);
           
@@ -87,7 +87,9 @@ export function useGameData(gameId: string) {
           // Save initial state to database
           await supabase
             .from('game_sessions')
-            .update({ game_state: newGameState })
+            .update({ 
+              game_state: JSON.parse(JSON.stringify(newGameState)) 
+            })
             .eq('id', gameId);
         } else {
           // Load existing game state
@@ -120,7 +122,9 @@ export function useGameData(gameId: string) {
           if (payload.new && 'id' in payload.new) {
             const newSession = payload.new as unknown as GameSession;
             setGameSession(newSession);
-            setGameState(newSession.game_state as unknown as GameState);
+            if (newSession.game_state) {
+              setGameState(newSession.game_state as unknown as GameState);
+            }
           }
         }
       )
