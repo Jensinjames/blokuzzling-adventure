@@ -22,7 +22,7 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Alias for api schema tables
+// Alias for table access functions
 export const apiSchema = {
   profiles: () => supabase.from('profiles'),
   game_sessions: () => supabase.from('game_sessions'),
