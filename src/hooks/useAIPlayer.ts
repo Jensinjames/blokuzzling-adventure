@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { GameState, Piece, BoardPosition } from '@/types/game';
-import { findAIMove, AIDifficulty } from '@/utils/aiPlayerUtils';
+import { AIDifficulty, findAIMove } from '@/utils/aiPlayerUtils';
 import { placeSelectedPiece } from '@/utils/boardUtils';
 import { hasValidMoves } from '@/utils/gameLogic';
 import { toast } from 'sonner';
