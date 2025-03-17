@@ -39,6 +39,7 @@ const Profile = () => {
     
     try {
       setGamesLoading(true);
+      console.log('Fetching games for user:', profile.id);
       
       // Get games created by this user
       const { data: createdGames, error: createdGamesError } = await supabase
@@ -48,7 +49,12 @@ const Profile = () => {
         .order('created_at', { ascending: false })
         .limit(20);
         
-      if (createdGamesError) throw createdGamesError;
+      if (createdGamesError) {
+        console.error('Error fetching created games:', createdGamesError);
+        throw createdGamesError;
+      }
+      
+      console.log('Created games:', createdGames);
       
       // Get games participated in by this user through game_players
       const { data: participatedGames, error: participatedGamesError } = await supabase
@@ -56,10 +62,15 @@ const Profile = () => {
         .select('game_id')
         .eq('player_id', profile.id);
         
-      if (participatedGamesError) throw participatedGamesError;
+      if (participatedGamesError) {
+        console.error('Error fetching participated games:', participatedGamesError);
+        throw participatedGamesError;
+      }
+      
+      console.log('Participated game IDs:', participatedGames);
       
       // Get full game details for participated games
-      const participatedGameIds = participatedGames.map(pg => pg.game_id);
+      const participatedGameIds = participatedGames?.map(pg => pg.game_id) || [];
       let allGames = [...(createdGames || [])];
       
       if (participatedGameIds.length > 0) {
@@ -69,7 +80,12 @@ const Profile = () => {
           .in('id', participatedGameIds)
           .order('created_at', { ascending: false });
           
-        if (gameDataError) throw gameDataError;
+        if (gameDataError) {
+          console.error('Error fetching game details:', gameDataError);
+          throw gameDataError;
+        }
+        
+        console.log('Game details for participated games:', gameData);
         
         // Combine both sets of games and remove duplicates
         if (gameData) {
@@ -87,6 +103,7 @@ const Profile = () => {
       
       // Sort combined games by date
       allGames.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      console.log('Final game list:', allGames);
       setGames(allGames);
     } catch (error: any) {
       console.error('Error fetching user games:', error);

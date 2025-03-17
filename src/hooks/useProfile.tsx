@@ -25,7 +25,7 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Use maybeSingle to handle both cases where profile exists or not
+        // Using the correct format for Supabase queries
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -59,7 +59,7 @@ export function useProfile() {
           const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
             .insert(newProfile)
-            .select()
+            .select('*')
             .single();
             
           if (createError) {
