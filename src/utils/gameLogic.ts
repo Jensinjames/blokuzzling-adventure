@@ -1,5 +1,5 @@
 
-import { GameState, Piece, BoardPosition } from '@/types/game';
+import { GameState, Piece, BoardPosition, BoardCell } from '@/types/game';
 import { validatePiecePlacement } from './boardValidation';
 import { rotatePiece, flipPiece } from './pieceManipulation';
 import { BOARD_SIZE, PIECE_SHAPES, powerupCorners } from './gameConstants';
@@ -73,7 +73,7 @@ export const hasValidMoves = (gameState: GameState, playerIndex: number): boolea
 export const createInitialGameState = (numPlayers = 2): GameState => {
   // Create empty board
   const board = Array(BOARD_SIZE).fill(0).map(() => 
-    Array(BOARD_SIZE).fill(0).map(() => ({ player: null }))
+    Array(BOARD_SIZE).fill(0).map(() => ({ player: null } as BoardCell))
   );
   
   // Create players with their pieces

@@ -35,6 +35,7 @@ export const determineWinner = (players: GameState['players']): number | null =>
 export const isPowerupCorner = (position: BoardPosition, numPlayers: number): boolean => {
   if (numPlayers !== 2) return false;
   
+  // Import directly to avoid circular dependency
   const { powerupCorners } = require('./gameConstants');
   
   return powerupCorners.some((corner: BoardPosition) => 
