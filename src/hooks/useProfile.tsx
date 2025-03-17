@@ -25,7 +25,7 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Using the correct format for Supabase queries
+        // Fetch the profile using the public schema
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -55,7 +55,7 @@ export function useProfile() {
             avatar_url: null
           };
           
-          // Insert single object, not an array
+          // Insert the profile as a single object, not an array
           const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
             .insert(newProfile)
