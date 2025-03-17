@@ -249,23 +249,28 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      update_profile_with_avatar: {
-        Args: {
-          user_id: string
-          new_username: string
-          new_avatar_url: Json[]
-        }
-        Returns: {
-          avatar_url: Json[] | null
-          created_at: string
-          draws: number
-          id: string
-          losses: number
-          updated_at: string
-          username: string
-          wins: number
-        }
-      }
+      update_profile_with_avatar:
+        | {
+            Args: Record<PropertyKey, never>
+            Returns: undefined
+          }
+        | {
+            Args: {
+              user_id: string
+              new_username: string
+              new_avatar_url: Json[]
+            }
+            Returns: {
+              avatar_url: Json[] | null
+              created_at: string
+              draws: number
+              id: string
+              losses: number
+              updated_at: string
+              username: string
+              wins: number
+            }
+          }
     }
     Enums: {
       [_ in never]: never

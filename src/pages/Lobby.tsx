@@ -17,7 +17,7 @@ import PlayerList from '@/components/lobby/PlayerList';
 import InviteForm from '@/components/lobby/InviteForm';
 
 const Lobby = () => {
-  const { id } = useParams<{ id: string }>();
+  const { gameId } = useParams<{ gameId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { startGameSession } = useMultiplayer();
@@ -27,7 +27,7 @@ const Lobby = () => {
   const [isCreator, setIsCreator] = useState(false);
 
   useEffect(() => {
-    if (!user || !id) return;
+    if (!user || !gameId) return;
 
     const fetchGameData = async () => {
       setLoading(true);
@@ -36,7 +36,7 @@ const Lobby = () => {
         const { data: session, error: sessionError } = await supabase
           .from('game_sessions')
           .select('*')
-          .eq('id', id)
+          .eq('id', gameId)
           .single();
 
         if (sessionError) throw sessionError;
@@ -54,7 +54,7 @@ const Lobby = () => {
             *,
             profile:profiles(*)
           `)
-          .eq('game_id', id)
+          .eq('game_id', gameId)
           .order('player_number', { ascending: true });
 
         if (playersError) throw playersError;
@@ -66,7 +66,7 @@ const Lobby = () => {
 
         // If game is already active, redirect to game
         if (typedSession.status === 'active') {
-          navigate(`/multiplayer/${id}`);
+          navigate(`/multiplayer/${gameId}`);
         } else if (typedSession.status === 'completed') {
           toast.error('This game has already been completed');
           navigate('/home');
@@ -91,7 +91,7 @@ const Lobby = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'game_sessions',
-          filter: `id=eq.${id}`
+          filter: `id=eq.${gameId}`
         },
         (payload) => {
           if (payload.new) {
@@ -100,7 +100,7 @@ const Lobby = () => {
             
             // If game becomes active, redirect to game
             if (updatedSession.status === 'active') {
-              navigate(`/multiplayer/${id}`);
+              navigate(`/multiplayer/${gameId}`);
             }
           }
         }
@@ -116,7 +116,7 @@ const Lobby = () => {
           event: '*',
           schema: 'public',
           table: 'game_players',
-          filter: `game_id=eq.${id}`
+          filter: `game_id=eq.${gameId}`
         },
         () => {
           // Refetch players when there are changes
@@ -129,11 +129,11 @@ const Lobby = () => {
       supabase.removeChannel(gameChannel);
       supabase.removeChannel(playersChannel);
     };
-  }, [id, user, navigate]);
+  }, [gameId, user, navigate]);
 
   const handleStartGame = async () => {
-    if (!id) return;
-    await startGameSession(id);
+    if (!gameId) return;
+    await startGameSession(gameId);
   };
 
   const handleBack = () => {
@@ -174,7 +174,7 @@ const Lobby = () => {
               transition={{ delay: 0.1 }}
               className="glass-panel"
             >
-              <InviteForm gameId={id || ''} userId={user?.id} />
+              <InviteForm gameId={gameId || ''} userId={user?.id} />
             </motion.div>
 
             <div className="flex justify-center mt-6">

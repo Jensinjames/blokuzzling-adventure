@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
@@ -13,7 +14,7 @@ import MultiplayerHeader from '@/components/multiplayer/MultiplayerHeader';
 import MultiplayerGameContent from '@/components/multiplayer/MultiplayerGameContent';
 
 const MultiplayerGame = () => {
-  const { id } = useParams<{ id: string }>();
+  const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
   const [previewPosition, setPreviewPosition] = useState<BoardPosition | null>(null);
@@ -30,7 +31,7 @@ const MultiplayerGame = () => {
     playerNumber,
     isMyTurn,
     updateGameState
-  } = useMultiplayerGame(id || '');
+  } = useMultiplayerGame(gameId || '');
 
   const handleSetGameState = (newState: GameState) => {
     setGameState(newState);
