@@ -7,6 +7,8 @@ import GameSetup from '@/components/game/GameSetup';
 import GamePlayArea from '@/components/game/GamePlayArea';
 import { useGameController } from '@/hooks/useGameController';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface GameProps {
   numPlayers?: number;
@@ -68,6 +70,54 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
       });
     }
   }, [gameStarted, user, setGameState]);
+
+  // Update game history when game is completed
+  useEffect(() => {
+    const saveGameHistory = async () => {
+      if (isGameOver() && user && gameStarted) {
+        try {
+          // Calculate some game metrics
+          const gameLength = gameState.turnHistory.length;
+          const winner = gameState.winner !== null ? gameState.players[gameState.winner].id : null;
+          const humanPlayer = gameState.players[0];
+          const aiPlayer = gameState.players[1];
+          
+          // Determine result for the human player
+          let result = 'draw';
+          if (gameState.winner === 0) {
+            result = 'win';
+          } else if (gameState.winner === 1) {
+            result = 'loss';
+          }
+          
+          // Save game record
+          const { error } = await supabase
+            .from('game_history')
+            .insert({
+              user_id: user.id,
+              game_type: 'single_player',
+              opponent_id: 'ai-player',
+              difficulty: aiDifficulty,
+              result: result,
+              player_score: humanPlayer.score,
+              opponent_score: aiPlayer.score,
+              moves_count: gameLength,
+              game_state: gameState
+            });
+            
+          if (error) {
+            console.error("Error saving game history:", error);
+          } else {
+            console.log("Game history saved successfully");
+          }
+        } catch (err) {
+          console.error("Failed to save game history:", err);
+        }
+      }
+    };
+    
+    saveGameHistory();
+  }, [isGameOver, gameState, user, gameStarted, aiDifficulty]);
 
   const handleHome = () => {
     navigate('/');

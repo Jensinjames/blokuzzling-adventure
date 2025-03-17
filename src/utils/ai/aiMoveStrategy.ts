@@ -1,6 +1,6 @@
 
 import { GameState, Piece, BoardPosition } from '@/types/game';
-import { validatePiecePlacement, isWithinBounds } from '../boardValidation';
+import { validatePiecePlacement } from '../boardValidation';
 import { rotatePiece, flipPiece } from '../pieceManipulation';
 import { BOARD_SIZE } from '../gameConstants';
 import { AIDifficulty, AIMove } from './aiTypes';
@@ -14,10 +14,12 @@ export const findAIMove = (
   aiPlayerIndex: number,
   difficulty: AIDifficulty
 ): { piece: Piece; position: BoardPosition } | null => {
+  console.log(`Finding AI move with difficulty: ${difficulty} for player ${aiPlayerIndex}`);
   const aiPlayer = gameState.players[aiPlayerIndex];
   const unusedPieces = aiPlayer.pieces.filter(p => !p.used);
   
   if (unusedPieces.length === 0) {
+    console.log("AI has no unused pieces left");
     return null;
   }
   
@@ -87,9 +89,13 @@ export const findAIMove = (
   }
   
   if (possibleMoves.length === 0) {
+    console.log("AI found no valid moves");
     return null;
   }
   
+  console.log(`AI found ${possibleMoves.length} possible moves`);
   // Choose the move based on difficulty
-  return chooseMove(possibleMoves, difficulty);
+  const selectedMove = chooseMove(possibleMoves, difficulty);
+  console.log(`AI selected move with piece ${selectedMove.piece.id} at position (${selectedMove.position.row}, ${selectedMove.position.col})`);
+  return selectedMove;
 };
