@@ -64,17 +64,17 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 px-4 py-6">
       <div className="max-w-lg mx-auto">
         <header className="flex justify-between items-center mb-4">
           <button 
             onClick={handleHome}
-            className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </button>
-          <h1 className="text-xl font-bold text-center">Multiplayer Game</h1>
+          <h1 className="text-xl font-bold text-center dark:text-white">Multiplayer Game</h1>
           <div className="w-6"></div>
         </header>
         
@@ -102,7 +102,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
           />
         ) : (
           <>
-            <div className="text-center text-sm text-gray-600 mb-3">
+            <div className="text-center text-sm text-gray-600 dark:text-gray-400 mb-3">
               Select a piece from your inventory
             </div>
             
