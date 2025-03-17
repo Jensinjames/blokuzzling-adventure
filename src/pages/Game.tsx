@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BOARD_SIZE } from '@/utils/gameUtils';
 import GameBoard from '@/components/GameBoard';
@@ -7,10 +7,13 @@ import PieceSelector from '@/components/PieceSelector';
 import PlayerInfo from '@/components/PlayerInfo';
 import GameControls from '@/components/GameControls';
 import GameResult from '@/components/GameResult';
+import AIDifficultySelector from '@/components/AIDifficultySelector';
 import { ArrowLeft, Wand2 } from 'lucide-react';
 import { useGameState } from '@/hooks/useGameState';
 import { usePieceActions } from '@/hooks/usePieceActions';
 import { useBoardActions } from '@/hooks/useBoardActions';
+import { useAIPlayer } from '@/hooks/useAIPlayer';
+import { AIDifficulty } from '@/utils/aiPlayerUtils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -22,6 +25,8 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
   const navigate = useNavigate();
   const [isPowerupActive, setIsPowerupActive] = useState(false);
   const [activePowerupType, setActivePowerupType] = useState<string | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>('medium');
   
   const {
     gameState,
@@ -66,8 +71,32 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     setIsPowerupActive
   );
 
+  // AI Player hooks (only for player 1 in a 2-player game)
+  const {
+    isAIThinking
+  } = useAIPlayer(
+    gameState,
+    setGameState,
+    1, // AI is always player 2 (index 1)
+    aiDifficulty,
+    gameStarted && numPlayers === 2 // Only enable AI in 2-player games
+  );
+
   const handleHome = () => {
     navigate('/');
+  };
+
+  // Start the game with the selected settings
+  const handleStartGame = () => {
+    // Reset the game with current settings
+    initGame();
+    setGameStarted(true);
+    toast.success(`Game started with ${aiDifficulty} AI difficulty`);
+  };
+
+  // Handle AI difficulty selection
+  const handleSelectDifficulty = (difficulty: AIDifficulty) => {
+    setAiDifficulty(difficulty);
   };
 
   // Handler for using powerup from player info card
@@ -109,76 +138,106 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </button>
-          <h1 className="text-xl font-bold text-center dark:text-white">Multiplayer Game</h1>
+          <h1 className="text-xl font-bold text-center dark:text-white">
+            {gameStarted ? "Single Player Game" : "Game Setup"}
+          </h1>
           <div className="w-6"></div>
         </header>
         
-        <PlayerInfo
-          players={gameState.players}
-          currentPlayer={gameState.currentPlayer}
-          onUsePowerup={handlePlayerUsePowerup}
-        />
-        
-        {isPowerupActive && (
-          <div className="flex justify-center mb-4">
+        {!gameStarted ? (
+          <div className="glass-panel p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Choose AI Difficulty</h2>
+            
+            <AIDifficultySelector 
+              difficulty={aiDifficulty} 
+              onSelectDifficulty={handleSelectDifficulty}
+              className="mb-6"
+            />
+            
             <Button 
-              variant="destructive"
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={cancelPowerupMode}
+              className="w-full" 
+              size="lg"
+              onClick={handleStartGame}
             >
-              Cancel {activePowerupType} Powerup
+              Start Game
             </Button>
           </div>
-        )}
-        
-        <GameBoard
-          gameState={gameState}
-          size={BOARD_SIZE}
-          onCellClick={handleCellClick}
-          selectedPiecePreview={isPowerupActive ? null : selectedPiece}
-          previewPosition={previewPosition}
-          isValidPlacement={isValidPlacement}
-          onCellHover={handleCellHover}
-          isPowerupActive={isPowerupActive}
-        />
-        
-        {isGameOver() ? (
-          <GameResult
-            players={gameState.players}
-            winner={gameState.winner}
-            onRestart={initGame}
-            onHome={handleHome}
-          />
         ) : (
           <>
-            <div className="text-center text-sm text-gray-600 dark:text-gray-400 mb-3">
-              {isPowerupActive 
-                ? `Select a block to use ${activePowerupType} powerup` 
-                : "Select a piece from your inventory"}
-            </div>
+            <PlayerInfo
+              players={gameState.players}
+              currentPlayer={gameState.currentPlayer}
+              onUsePowerup={handlePlayerUsePowerup}
+            />
             
-            {!isPowerupActive && (
-              <PieceSelector
-                pieces={gameState.players[gameState.currentPlayer].pieces}
-                currentPlayer={gameState.currentPlayer}
-                onSelectPiece={handleSelectPiece}
-                onRotatePiece={handleRotatePiece}
-                onFlipPiece={handleFlipPiece}
-                selectedPiece={selectedPiece}
-              />
+            {isAIThinking && gameState.currentPlayer === 1 && (
+              <div className="text-center py-2 mb-2 text-sm bg-amber-100 dark:bg-amber-900 rounded-md">
+                AI is thinking...
+              </div>
             )}
             
-            <div className="mt-4">
-              <GameControls
-                onUndo={handleUndo}
-                onReset={initGame}
-                onPass={handlePassTurn}
+            {isPowerupActive && (
+              <div className="flex justify-center mb-4">
+                <Button 
+                  variant="destructive"
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={cancelPowerupMode}
+                >
+                  Cancel {activePowerupType} Powerup
+                </Button>
+              </div>
+            )}
+            
+            <GameBoard
+              gameState={gameState}
+              size={BOARD_SIZE}
+              onCellClick={handleCellClick}
+              selectedPiecePreview={isPowerupActive ? null : selectedPiece}
+              previewPosition={previewPosition}
+              isValidPlacement={isValidPlacement}
+              onCellHover={handleCellHover}
+              isPowerupActive={isPowerupActive}
+            />
+            
+            {isGameOver() ? (
+              <GameResult
+                players={gameState.players}
+                winner={gameState.winner}
+                onRestart={initGame}
                 onHome={handleHome}
-                canUndo={gameState.turnHistory.length > 0}
-                isGameOver={isGameOver()}
               />
-            </div>
+            ) : (
+              <>
+                <div className="text-center text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  {isPowerupActive 
+                    ? `Select a block to use ${activePowerupType} powerup` 
+                    : "Select a piece from your inventory"}
+                </div>
+                
+                {!isPowerupActive && gameState.currentPlayer === 0 && (
+                  <PieceSelector
+                    pieces={gameState.players[gameState.currentPlayer].pieces}
+                    currentPlayer={gameState.currentPlayer}
+                    onSelectPiece={handleSelectPiece}
+                    onRotatePiece={handleRotatePiece}
+                    onFlipPiece={handleFlipPiece}
+                    selectedPiece={selectedPiece}
+                  />
+                )}
+                
+                <div className="mt-4">
+                  <GameControls
+                    onUndo={handleUndo}
+                    onReset={initGame}
+                    onPass={handlePassTurn}
+                    onHome={handleHome}
+                    canUndo={gameState.turnHistory.length > 0}
+                    isGameOver={isGameOver()}
+                  />
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
