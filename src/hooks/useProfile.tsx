@@ -23,7 +23,7 @@ export function useProfile() {
       setError(null);
 
       try {
-        // Use 'apikey' strategy which doesn't specify a schema explicitly
+        // Use a simpler query without specifying a schema
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
