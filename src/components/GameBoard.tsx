@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { BoardCell, GameState, BoardPosition } from '@/types/game';
-import { toast } from 'sonner';
 
 interface GameBoardProps {
   gameState: GameState;
   size: number;
   onCellClick: (position: BoardPosition) => void;
+  onCellHover: (position: BoardPosition) => void;
   selectedPiecePreview: { shape: number[][] } | null;
   previewPosition: BoardPosition | null;
   isValidPlacement: boolean;
@@ -17,6 +17,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   gameState,
   size,
   onCellClick,
+  onCellHover,
   selectedPiecePreview,
   previewPosition,
   isValidPlacement
@@ -117,6 +118,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 )}
                 style={{ width: cellSize, height: cellSize }}
                 onClick={() => onCellClick({ row: rowIndex, col: colIndex })}
+                onMouseEnter={() => onCellHover({ row: rowIndex, col: colIndex })}
               />
             ))}
           </React.Fragment>
