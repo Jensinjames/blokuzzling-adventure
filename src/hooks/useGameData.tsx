@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { supabase, safeDataCast, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { GameSession, GamePlayer, Profile } from '@/types/database';
 import { GameState } from '@/types/game';
+import { GameSession, GamePlayer, Profile } from '@/types/database';
 import { toast } from 'sonner';
 import { createInitialGameState } from '@/utils/gameUtils';
 

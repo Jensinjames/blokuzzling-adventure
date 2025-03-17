@@ -1,7 +1,7 @@
 
 import { useGameSessions } from './useGameSessions';
 import { useGameInvites } from './useGameInvites';
-import { useAuth } from '@/context/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 export function useMultiplayer() {
