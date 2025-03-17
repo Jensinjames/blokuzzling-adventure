@@ -2,7 +2,7 @@
 export type Profile = {
   id: string;
   username: string;
-  avatar_url: string | null;
+  avatar_url: any[] | null; // Updated to match the Json[] type from Supabase
   created_at: string;
   updated_at: string;
   wins: number;

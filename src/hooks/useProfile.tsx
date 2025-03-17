@@ -94,10 +94,16 @@ export function useProfile() {
       console.log('Updating profile for user:', user.id, 'with data:', updates);
       
       // Create a properly structured update object
+      // Ensure we're handling the avatar_url correctly based on the new type
       const updateObject = {
         ...updates,
         updated_at: new Date().toISOString()
       };
+      
+      // If avatar_url is a string being updated, convert it to the expected Json[] format
+      if (typeof updates.avatar_url === 'string') {
+        updateObject.avatar_url = [updates.avatar_url];
+      }
       
       const { error } = await apiSchema.profiles()
         .update(updateObject)
