@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Gamepad2, Sparkles, Award, X, Medal } from 'lucide-react';
 import { Profile } from '@/types/database';
+import Trophy from './Trophy';
 
 interface ProfileStatsProps {
   profile: Profile;

@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProfileView from '@/components/ProfileView';
+import { supabase } from '@/integrations/supabase/client';
+import { GameSession } from '@/types/database';
 
 const Profile = () => {
   const { profile, loading: profileLoading, updateProfile } = useProfile();
@@ -13,12 +15,76 @@ const Profile = () => {
   const [username, setUsername] = useState('');
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [games, setGames] = useState<GameSession[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(true);
 
   useEffect(() => {
     if (profile) {
       setUsername(profile.username);
+      fetchUserGames();
     }
   }, [profile]);
+
+  const fetchUserGames = async () => {
+    if (!profile) return;
+    
+    try {
+      setGamesLoading(true);
+      
+      // Get games created by this user
+      const { data: createdGames, error: createdGamesError } = await supabase
+        .from('game_sessions')
+        .select('*')
+        .eq('creator_id', profile.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+        
+      if (createdGamesError) throw createdGamesError;
+      
+      // Get games participated in by this user through game_players
+      const { data: participatedGames, error: participatedGamesError } = await supabase
+        .from('game_players')
+        .select('game_id')
+        .eq('player_id', profile.id);
+        
+      if (participatedGamesError) throw participatedGamesError;
+      
+      // Get full game details for participated games
+      const participatedGameIds = participatedGames.map(pg => pg.game_id);
+      let allGames = [...(createdGames || [])];
+      
+      if (participatedGameIds.length > 0) {
+        const { data: gameData, error: gameDataError } = await supabase
+          .from('game_sessions')
+          .select('*')
+          .in('id', participatedGameIds)
+          .order('created_at', { ascending: false });
+          
+        if (gameDataError) throw gameDataError;
+        
+        // Combine both sets of games and remove duplicates
+        if (gameData) {
+          const uniqueGameIds = new Set();
+          allGames.forEach(game => uniqueGameIds.add(game.id));
+          
+          gameData.forEach(game => {
+            if (!uniqueGameIds.has(game.id)) {
+              allGames.push(game);
+              uniqueGameIds.add(game.id);
+            }
+          });
+        }
+      }
+      
+      // Sort combined games by date
+      allGames.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setGames(allGames);
+    } catch (error) {
+      console.error('Error fetching user games:', error);
+    } finally {
+      setGamesLoading(false);
+    }
+  };
 
   const handleUpdateProfile = async () => {
     if (!username.trim()) return;
@@ -55,6 +121,8 @@ const Profile = () => {
       handleUpdateProfile={handleUpdateProfile}
       handleBack={handleBack}
       signOut={signOut}
+      games={games}
+      gamesLoading={gamesLoading}
     />
   ) : null;
 };

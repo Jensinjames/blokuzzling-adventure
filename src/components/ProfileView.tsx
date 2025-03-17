@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Profile } from '@/types/database';
+import { Profile, GameSession } from '@/types/database';
 import ProfileHeader from './profile/ProfileHeader';
 import ProfileTabs from './profile/ProfileTabs';
 
@@ -18,6 +18,8 @@ interface ProfileViewProps {
   handleUpdateProfile: () => Promise<void>;
   handleBack: () => void;
   signOut: () => Promise<void>;
+  games?: GameSession[];
+  gamesLoading?: boolean;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({
@@ -29,7 +31,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   saving,
   handleUpdateProfile,
   handleBack,
-  signOut
+  signOut,
+  games = [],
+  gamesLoading = false
 }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 px-4 py-6">
@@ -66,7 +70,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({
               handleUpdateProfile={handleUpdateProfile}
             />
 
-            <ProfileTabs profile={profile} />
+            <ProfileTabs 
+              profile={profile} 
+              games={games} 
+              gamesLoading={gamesLoading} 
+            />
 
             <Separator className="my-2" />
 
