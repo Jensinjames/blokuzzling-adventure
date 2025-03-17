@@ -242,7 +242,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_profile_with_avatar: {
+        Args: {
+          user_id: string
+          new_username: string
+          new_avatar_url: Json[]
+        }
+        Returns: {
+          avatar_url: Json[] | null
+          created_at: string
+          draws: number
+          id: string
+          losses: number
+          updated_at: string
+          username: string
+          wins: number
+        }
+      }
     }
     Enums: {
       [_ in never]: never

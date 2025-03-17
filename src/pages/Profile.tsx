@@ -11,12 +11,11 @@ import { useUserGames } from '@/hooks/useUserGames';
 import { toast } from 'sonner';
 
 const Profile = () => {
-  const { profile, loading: profileLoading, error: profileError, updateProfile } = useProfile();
+  const { profile, loading: profileLoading, error: profileError, updateProfile, saving } = useProfile();
   const { signOut, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
   const { games, loading: gamesLoading } = useUserGames(profile);
   const isLoading = profileLoading || authLoading;
 
@@ -40,7 +39,6 @@ const Profile = () => {
       return;
     }
     
-    setSaving(true);
     try {
       await updateProfile({ username });
       toast.success('Profile updated successfully');
@@ -48,8 +46,6 @@ const Profile = () => {
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
-    } finally {
-      setSaving(false);
     }
   };
 

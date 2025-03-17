@@ -92,10 +92,10 @@ export function useProfile() {
 
     try {
       console.log('Updating profile for user:', user.id, 'with data:', updates);
+      setSaving(true);
       
-      // Create a properly structured update object
-      // Ensure we're handling the avatar_url correctly based on the new type
-      const updateObject = {
+      // Handle avatar_url conversion to match the database format (Json[])
+      const updateObject: any = {
         ...updates,
         updated_at: new Date().toISOString()
       };
@@ -134,8 +134,13 @@ export function useProfile() {
     } catch (e: any) {
       toast.error(`Failed to update profile: ${e.message || 'Unknown error'}`);
       console.error('Error updating profile:', e);
+    } finally {
+      setSaving(false);
     }
   };
 
-  return { profile, loading, error, updateProfile };
+  // Add state for tracking the saving status
+  const [saving, setSaving] = useState(false);
+
+  return { profile, loading, error, updateProfile, saving };
 }
