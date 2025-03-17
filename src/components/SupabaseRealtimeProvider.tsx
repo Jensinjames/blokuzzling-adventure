@@ -30,15 +30,9 @@ export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ chil
       try {
         console.log('Configuring Supabase Realtime connection...');
         
-        const { error } = await supabase.realtime.setAuth(supabase.auth.session()?.access_token || '');
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Realtime auth error:', error);
-          setConnectionError(error.message);
-          toast.error(`Realtime connection error: ${error.message}`);
-          return;
-        }
-
         // Create a channel to test connection
         const channel = supabase.channel('connection-test');
         
