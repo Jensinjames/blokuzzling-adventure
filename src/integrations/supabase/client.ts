@@ -13,3 +13,11 @@ export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY
 );
+
+// Helper function to check if a Supabase error is a 'not found' error
+export const isNotFoundError = (error: any): boolean => {
+  return error?.code === 'PGRST116' || // PostgreSQL not found
+         error?.message?.includes('No rows found') ||
+         error?.details?.includes('Results contain 0 rows');
+};
+

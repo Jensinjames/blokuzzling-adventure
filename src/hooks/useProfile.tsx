@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, isNotFoundError } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Profile } from '@/types/database';
 import { toast } from 'sonner';
@@ -33,15 +33,18 @@ export function useProfile() {
           .maybeSingle();
 
         if (error) {
-          console.error('Supabase error details:', error);
-          throw error;
+          if (!isNotFoundError(error)) {
+            console.error('Supabase error details:', error);
+            throw error;
+          }
+          console.log("No profile found, attempting to create one");
         }
 
         if (data) {
           console.log("Profile loaded successfully:", data);
           setProfile(data as Profile);
         } else {
-          console.log("No profile found, attempting to create one");
+          console.log("No profile found, creating a new one");
           
           // Create a new profile
           const { data: createdProfile, error: createError } = await supabase
@@ -68,9 +71,9 @@ export function useProfile() {
           setProfile(createdProfile as Profile);
         }
       } catch (e: any) {
-        setError(e.message);
+        setError(e.message || 'Unknown error');
         console.error('Error fetching profile:', e);
-        toast.error(`Failed to load profile: ${e.message}`);
+        toast.error(`Failed to load profile: ${e.message || 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
@@ -89,15 +92,11 @@ export function useProfile() {
       console.log('Updating profile for user:', user.id, 'with data:', updates);
       
       // Create a properly structured update object
-      const updateObject: Record<string, any> = {};
+      const updateObject: Record<string, any> = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
       
-      // Only include fields that exist in the updates object
-      if ('username' in updates) updateObject.username = updates.username;
-      if ('avatar_url' in updates) updateObject.avatar_url = updates.avatar_url;
-      if ('wins' in updates) updateObject.wins = updates.wins;
-      if ('losses' in updates) updateObject.losses = updates.losses;
-      if ('draws' in updates) updateObject.draws = updates.draws;
-
       const { error } = await supabase
         .from('profiles')
         .update(updateObject)
@@ -108,6 +107,7 @@ export function useProfile() {
         throw error;
       }
 
+      // Update local state
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       toast.success('Profile updated successfully');
       
@@ -125,7 +125,7 @@ export function useProfile() {
       }
       
     } catch (e: any) {
-      toast.error(`Failed to update profile: ${e.message}`);
+      toast.error(`Failed to update profile: ${e.message || 'Unknown error'}`);
       console.error('Error updating profile:', e);
     }
   };

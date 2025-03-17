@@ -25,20 +25,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const fetchSession = async () => {
       setLoading(true);
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error getting session:', error.message);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error.message);
+          throw error;
+        }
+        
+        console.log('Session data:', data.session ? 'Session exists' : 'No session');
+        setSession(data.session);
+        setUser(data.session?.user || null);
+      } catch (error) {
+        console.error('Session fetch error:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setSession(data.session);
-      setUser(data.session?.user || null);
-      setLoading(false);
     };
 
     fetchSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session ? 'User authenticated' : 'No user');
       setSession(session);
       setUser(session?.user || null);
       setLoading(false);
@@ -51,6 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Attempting to sign in with email:', email);
+      setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -64,12 +74,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       navigate('/home');
     } catch (error: any) {
       toast.error(`Sign in error: ${error.message}`);
+      console.error('Sign in error details:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string) => {
     try {
+      console.log('Attempting to sign up with email:', email);
+      setLoading(true);
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -82,13 +97,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.success('Signed up successfully! Please check your email to confirm your account.');
     } catch (error: any) {
       toast.error(`Sign up error: ${error.message}`);
+      console.error('Sign up error details:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
       console.log('Signing out user...');
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -96,11 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       console.log('Signed out successfully');
+      setUser(null);
+      setSession(null);
       toast.success('Signed out successfully');
       navigate('/auth');
     } catch (error: any) {
       console.error('Sign out error:', error);
       toast.error(`Sign out error: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 

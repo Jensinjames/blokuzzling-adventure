@@ -12,12 +12,13 @@ import { toast } from 'sonner';
 
 const Profile = () => {
   const { profile, loading: profileLoading, error: profileError, updateProfile } = useProfile();
-  const { signOut, user } = useAuth();
+  const { signOut, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const { games, loading: gamesLoading } = useUserGames(profile);
+  const isLoading = profileLoading || authLoading;
 
   useEffect(() => {
     if (profile) {
@@ -26,12 +27,12 @@ const Profile = () => {
   }, [profile]);
 
   useEffect(() => {
-    // If no user is logged in, redirect to auth page
-    if (!user && !profileLoading) {
+    // If no user is logged in and we're not in a loading state, redirect to auth page
+    if (!isLoading && !user) {
       console.log('No user detected, redirecting to auth page');
       navigate('/auth');
     }
-  }, [user, profileLoading, navigate]);
+  }, [user, isLoading, navigate]);
 
   const handleUpdateProfile = async () => {
     if (!username.trim()) {
@@ -56,7 +57,7 @@ const Profile = () => {
     console.log('Initiating sign out from Profile page');
     try {
       await signOut();
-      navigate('/auth');
+      // Navigation is handled in the signOut function
     } catch (error) {
       console.error('Error signing out:', error);
       toast.error('Failed to sign out');
@@ -67,12 +68,16 @@ const Profile = () => {
     navigate('/home');
   };
 
-  if (profileLoading) {
+  if (isLoading) {
     return <ProfileLoading />;
   }
 
   if (profileError) {
     return <ProfileError error={profileError} />;
+  }
+
+  if (!user) {
+    return <ProfileNotFound message="You need to be logged in to view your profile" />;
   }
 
   return profile ? (
@@ -90,7 +95,7 @@ const Profile = () => {
       gamesLoading={gamesLoading}
     />
   ) : (
-    <ProfileNotFound />
+    <ProfileNotFound message="We couldn't find your profile data" />
   );
 };
 
