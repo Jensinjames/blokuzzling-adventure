@@ -16,6 +16,7 @@ import { useAIPlayer } from '@/hooks/useAIPlayer';
 import { AIDifficulty } from '@/utils/aiPlayerUtils';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { hasValidMoves } from '@/utils/gameLogic';
 
 interface GameProps {
   numPlayers?: number;
@@ -81,6 +82,50 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     aiDifficulty,
     gameStarted && numPlayers === 2 // Only enable AI in 2-player games
   );
+
+  // Check for game end conditions after each move
+  useEffect(() => {
+    if (gameState.gameStatus !== 'playing' || !gameStarted) return;
+    
+    // Check if both players have no valid moves left
+    const player0HasMoves = hasValidMoves(gameState, 0);
+    const player1HasMoves = hasValidMoves(gameState, 1);
+    
+    if (!player0HasMoves && !player1HasMoves) {
+      // Game is over, calculate final scores
+      const updatedPlayers = [...gameState.players].map(player => {
+        const unusedPiecesCount = player.pieces.filter(p => !p.used).length;
+        return {
+          ...player,
+          score: 55 - unusedPiecesCount // Total pieces (55) minus remaining pieces
+        };
+      });
+      
+      // Determine winner based on highest score
+      const winner = updatedPlayers[0].score > updatedPlayers[1].score ? 0 : 
+                    updatedPlayers[0].score < updatedPlayers[1].score ? 1 : null;
+      
+      // Update game state
+      setGameState(prev => ({
+        ...prev,
+        players: updatedPlayers,
+        gameStatus: 'finished',
+        winner
+      }));
+      
+      // Show appropriate notification
+      if (winner === 0) {
+        toast.success("Congratulations! You've won the game!");
+      } else if (winner === 1) {
+        toast.error("You've lost the game. Better luck next time!");
+      } else {
+        toast.info("The game ended in a tie!");
+      }
+    } else if (!player0HasMoves && gameState.currentPlayer === 0) {
+      // Human player has no moves, needs to pass
+      handlePassTurn();
+    }
+  }, [gameState.board, gameState.currentPlayer, gameStarted]);
 
   const handleHome = () => {
     navigate('/');

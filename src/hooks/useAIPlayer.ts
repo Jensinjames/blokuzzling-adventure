@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { GameState, Piece, BoardPosition } from '@/types/game';
 import { findAIMove, AIDifficulty } from '@/utils/aiPlayerUtils';
 import { placeSelectedPiece } from '@/utils/boardUtils';
+import { hasValidMoves } from '@/utils/gameLogic';
+import { toast } from 'sonner';
 
 export function useAIPlayer(
   gameState: GameState,
@@ -32,11 +34,20 @@ export function useAIPlayer(
       const thinkingTime = getThinkingTime(aiDifficulty);
       await new Promise(resolve => setTimeout(resolve, thinkingTime));
       
+      // Check if AI has valid moves
+      const hasValidMovesAvailable = hasValidMoves(gameState, aiPlayerIndex);
+      
+      if (!hasValidMovesAvailable) {
+        // No valid moves, AI needs to pass
+        handleAIPass();
+        return;
+      }
+      
       // Find the best move according to the AI's difficulty level
       const aiMove = findAIMove(gameState, aiPlayerIndex, aiDifficulty);
       
       if (!aiMove) {
-        // No valid moves, AI needs to pass
+        // No valid moves were found (fallback for safety)
         handleAIPass();
       } else {
         // Make the selected move
@@ -67,23 +78,53 @@ export function useAIPlayer(
       timestamp: Date.now()
     };
     
-    // Find the next player with valid moves
-    const updatedPlayers = [...gameState.players];
-    let nextPlayer = (aiPlayerIndex + 1) % updatedPlayers.length;
-    let attempts = 0;
+    // Check if human player has valid moves
+    const humanPlayerIndex = 0; // Assuming human is always player 0
+    const humanHasValidMoves = hasValidMoves(gameState, humanPlayerIndex);
     
-    while (attempts < updatedPlayers.length) {
-      nextPlayer = (nextPlayer + 1) % updatedPlayers.length;
-      attempts++;
+    let nextPlayer = humanPlayerIndex;
+    
+    // If neither player has valid moves, the game should end
+    if (!humanHasValidMoves) {
+      // Both players are out of moves, calculate final scores and determine winner
+      const updatedPlayers = [...gameState.players].map(player => {
+        // Calculate remaining piece values for each player
+        const unusedPiecesCount = player.pieces.filter(p => !p.used).length;
+        return {
+          ...player,
+          score: 55 - unusedPiecesCount // Total pieces (55) minus remaining pieces
+        };
+      });
+      
+      // Determine winner based on highest score (least remaining pieces)
+      const winner = updatedPlayers[0].score > updatedPlayers[1].score ? 0 : 
+                    updatedPlayers[0].score < updatedPlayers[1].score ? 1 : null;
+      
+      // Update game state to finished
+      setGameState(prev => ({
+        ...prev,
+        players: updatedPlayers,
+        gameStatus: 'finished',
+        winner,
+        turnHistory: [...prev.turnHistory, turnHistoryItem]
+      }));
+      
+      // Notify player of game result
+      if (winner === humanPlayerIndex) {
+        toast.success("Congratulations! You've won the game!");
+      } else if (winner === aiPlayerIndex) {
+        toast.error("You've lost the game. Better luck next time!");
+      } else {
+        toast.info("The game ended in a tie!");
+      }
+    } else {
+      // Human player has moves, continue the game
+      setGameState(prev => ({
+        ...prev,
+        currentPlayer: nextPlayer,
+        turnHistory: [...prev.turnHistory, turnHistoryItem]
+      }));
     }
-    
-    // Update the game state
-    setGameState(prev => ({
-      ...prev,
-      currentPlayer: nextPlayer,
-      players: updatedPlayers,
-      turnHistory: [...prev.turnHistory, turnHistoryItem]
-    }));
   };
 
   // Helper function to determine AI thinking time based on difficulty
