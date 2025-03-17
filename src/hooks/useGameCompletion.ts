@@ -2,7 +2,8 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { GameState } from '@/types/game';
-import { checkGameOver, determineWinner, calculateScore } from '@/utils/gameUtils';
+import { checkGameOver, determineWinner } from '@/utils/gameStateUtils';
+import { calculateScore } from '@/utils/pieceManipulation';
 
 export function useGameCompletion(
   gameState: GameState,
