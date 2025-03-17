@@ -11,7 +11,7 @@ import GameControls from '@/components/GameControls';
 import GameResult from '@/components/GameResult';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Piece, BoardPosition } from '@/types/game';
+import { Piece, BoardPosition, GameState } from '@/types/game';
 import { usePieceActions } from '@/hooks/usePieceActions';
 import { useBoardActions } from '@/hooks/useBoardActions';
 
@@ -41,11 +41,21 @@ const MultiplayerGame = () => {
     handleFlipPiece,
     handlePassTurn
   } = usePieceActions(
-    gameState || { board: [], players: [], currentPlayer: 0, turnHistory: [], gameStats: { totalMoves: 0, gameStartTime: 0, lastMoveTime: 0 }, gameStatus: 'playing', winner: null },
-    async (newState) => {
-      setGameState(newState);
-      if (isMyTurn) {
-        await updateGameState(newState);
+    gameState || { 
+      board: [], 
+      players: [], 
+      currentPlayer: 0, 
+      turnHistory: [], 
+      gameStats: { totalMoves: 0, gameStartTime: 0, lastMoveTime: 0 }, 
+      gameStatus: 'playing', 
+      winner: null 
+    },
+    async (newState: GameState) => {
+      if (gameState) {
+        setGameState(newState);
+        if (isMyTurn) {
+          await updateGameState(newState);
+        }
       }
       return true;
     },
@@ -60,11 +70,21 @@ const MultiplayerGame = () => {
     handleCellClick,
     handleUndo
   } = useBoardActions(
-    gameState || { board: [], players: [], currentPlayer: 0, turnHistory: [], gameStats: { totalMoves: 0, gameStartTime: 0, lastMoveTime: 0 }, gameStatus: 'playing', winner: null },
-    async (newState) => {
-      setGameState(newState);
-      if (isMyTurn) {
-        await updateGameState(newState);
+    gameState || { 
+      board: [], 
+      players: [], 
+      currentPlayer: 0, 
+      turnHistory: [], 
+      gameStats: { totalMoves: 0, gameStartTime: 0, lastMoveTime: 0 }, 
+      gameStatus: 'playing', 
+      winner: null 
+    },
+    async (newState: GameState) => {
+      if (gameState) {
+        setGameState(newState);
+        if (isMyTurn) {
+          await updateGameState(newState);
+        }
       }
       return true;
     },

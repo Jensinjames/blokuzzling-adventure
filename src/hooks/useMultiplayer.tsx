@@ -42,7 +42,7 @@ export function useMultiplayer() {
             .in('id', gameIds)
             .order('updated_at', { ascending: false });
             
-          setUserSessions(userSessionData || []);
+          setUserSessions(userSessionData as GameSession[] || []);
         }
 
         // Fetch pending invites for the user
@@ -56,8 +56,8 @@ export function useMultiplayer() {
           .eq('status', 'pending')
           .order('created_at', { ascending: false });
 
-        setActiveSessions(sessionData || []);
-        setInvites(inviteData || []);
+        setActiveSessions(sessionData as GameSession[] || []);
+        setInvites(inviteData as GameInvite[] || []);
       } catch (error) {
         console.error('Error fetching game data:', error);
       } finally {
@@ -97,7 +97,7 @@ export function useMultiplayer() {
         },
         (payload) => {
           // If one of user's sessions
-          if (userSessions.some(s => s.id === payload.new.id)) {
+          if (payload.new && 'id' in payload.new && userSessions.some(s => s.id === payload.new.id)) {
             fetchGameData();
           }
         }

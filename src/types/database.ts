@@ -19,7 +19,7 @@ export type GameSession = {
   max_players: number;
   current_players: number;
   game_state: any;
-  turn_history: any[];
+  turn_history: any; // Allow both array and Json types for compatibility
   created_at: string;
   updated_at: string;
   winner_id: string | null;
@@ -44,8 +44,8 @@ export type GameInvite = {
   status: InviteStatus | string; // Allow string from database but constrain in app logic
   created_at: string;
   updated_at: string;
-  sender?: Profile;
-  recipient?: Profile;
+  sender?: Partial<Profile>; // Make Profile fields optional for flexibility
+  recipient?: Partial<Profile>; // Make Profile fields optional for flexibility
 };
 
 export type Notification = {

@@ -44,7 +44,7 @@ export function useMultiplayerGame(gameId: string) {
 
         if (playersError) throw playersError;
 
-        setGameSession(sessionData);
+        setGameSession(sessionData as GameSession);
         setPlayers(playersData as any);
 
         // Find current player's number
@@ -54,7 +54,7 @@ export function useMultiplayerGame(gameId: string) {
         }
 
         // Initialize or load game state
-        if (Object.keys(sessionData.game_state).length === 0) {
+        if (sessionData.game_state && Object.keys(sessionData.game_state).length === 0) {
           // New game, initialize state
           const initialState = createInitialGameState(playersData.length);
           
@@ -78,16 +78,17 @@ export function useMultiplayerGame(gameId: string) {
 
           setGameState(newGameState);
           
-          // Save initial state to database
+          // Save initial state to database - need to handle JSON serialization
           await supabase
             .from('game_sessions')
             .update({
-              game_state: newGameState
+              game_state: newGameState as any
             })
             .eq('id', gameId);
         } else {
           // Load existing game state
-          setGameState(sessionData.game_state);
+          const loadedState = sessionData.game_state as unknown as GameState;
+          setGameState(loadedState);
         }
 
       } catch (error) {
@@ -113,7 +114,7 @@ export function useMultiplayerGame(gameId: string) {
         },
         (payload) => {
           setGameSession(payload.new as GameSession);
-          setGameState(payload.new.game_state);
+          setGameState(payload.new.game_state as unknown as GameState);
         }
       )
       .subscribe();
@@ -140,12 +141,12 @@ export function useMultiplayerGame(gameId: string) {
       await supabase
         .from('game_sessions')
         .update({
-          game_state: newState,
+          game_state: newState as any,
           turn_history: [...(gameSession?.turn_history || []), {
             player: playerNumber,
             timestamp: Date.now(),
             action: 'move'
-          }]
+          }] as any
         })
         .eq('id', gameId);
 

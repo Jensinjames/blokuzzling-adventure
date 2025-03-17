@@ -51,7 +51,7 @@ const Lobby = () => {
 
         if (playersError) throw playersError;
 
-        setGameSession(session);
+        setGameSession(session as GameSession);
         setPlayers(playersData as any);
         setIsCreator(session.creator_id === user.id);
 
