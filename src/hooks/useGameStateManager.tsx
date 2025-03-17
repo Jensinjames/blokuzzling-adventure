@@ -42,18 +42,17 @@ export function useGameStateManager(
         JSON.stringify([...(gameState?.turnHistory || []), newHistoryItem])
       );
 
-      // Properly structured update object
-      const updateObj = {
-        game_state: jsonSafeGameState,
-        turn_history: jsonSafeTurnHistory
-      };
-
+      // Update the game session with the new state
       const { error } = await supabase
         .from('game_sessions')
-        .update(updateObj)
+        .update({
+          game_state: jsonSafeGameState,
+          turn_history: jsonSafeTurnHistory
+        })
         .eq('id', gameId);
 
       if (error) {
+        console.error('Supabase update error:', error);
         throw error;
       }
 

@@ -51,11 +51,16 @@ export function useGameCompletion(
         for (const player of players) {
           if (player.player_number === winnerId) {
             // Winner - Get current stats first
-            const { data: winnerData } = await supabase
+            const { data: winnerData, error: winnerError } = await supabase
               .from('profiles')
               .select('wins')
               .eq('id', player.player_id)
               .single();
+              
+            if (winnerError) {
+              console.error('Error fetching winner stats:', winnerError);
+              continue;
+            }
               
             if (winnerData) {
               // Update with incremented wins
@@ -68,11 +73,16 @@ export function useGameCompletion(
             }
           } else {
             // Loser - Get current stats first
-            const { data: loserData } = await supabase
+            const { data: loserData, error: loserError } = await supabase
               .from('profiles')
               .select('losses')
               .eq('id', player.player_id)
               .single();
+              
+            if (loserError) {
+              console.error('Error fetching loser stats:', loserError);
+              continue;
+            }
               
             if (loserData) {
               // Update with incremented losses
@@ -88,11 +98,16 @@ export function useGameCompletion(
       } else {
         // Draw - update all players
         for (const player of players) {
-          const { data: playerData } = await supabase
+          const { data: playerData, error: playerError } = await supabase
             .from('profiles')
             .select('draws')
             .eq('id', player.player_id)
             .single();
+            
+          if (playerError) {
+            console.error('Error fetching player stats:', playerError);
+            continue;
+          }
             
           if (playerData) {
             await supabase

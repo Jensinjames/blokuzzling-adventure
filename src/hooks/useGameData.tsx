@@ -85,10 +85,13 @@ export function useGameData(gameId: string) {
           setGameState(newGameState);
           
           // Save initial state to database
+          // Convert complex objects to JSON-compatible format
+          const jsonSafeGameState = JSON.parse(JSON.stringify(newGameState));
+          
           await supabase
             .from('game_sessions')
             .update({ 
-              game_state: JSON.parse(JSON.stringify(newGameState)) 
+              game_state: jsonSafeGameState
             })
             .eq('id', gameId);
         } else {
