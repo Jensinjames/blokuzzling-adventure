@@ -2,8 +2,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Player } from '@/types/game';
-import { ArrowRightCircle, Wand2 } from 'lucide-react';
+import { ArrowRightCircle, Wand2, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface PlayerInfoProps {
   players: Player[];
@@ -18,6 +19,12 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   onUsePowerup,
   isViewerCurrentPlayer = true 
 }) => {
+  // Function to format player ID for display (first 8 chars)
+  const formatPlayerId = (id: string) => {
+    if (!id) return 'Guest';
+    return id.substring(0, 8);
+  };
+
   return (
     <div className="w-full grid grid-cols-2 gap-4 mb-4">
       {players.map((player, index) => (
@@ -43,12 +50,31 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
               <ArrowRightCircle className="w-4 h-4 text-primary animate-pulse-subtle" />
             )}
           </div>
+          
           <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
             Score: {player.score}
           </div>
+          
           <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
             Pieces: {player.pieces.filter(p => !p.used).length}/{player.pieces.length}
           </div>
+          
+          {/* Display player ID if available */}
+          {player.id && typeof player.id === 'string' && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="mt-1 text-xs flex items-center text-gray-500 dark:text-gray-500">
+                    <UserCircle className="w-3 h-3 mr-1" />
+                    ID: {formatPlayerId(player.id)}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Player UUID: {player.id}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           
           {/* Display powerups if player has any */}
           {player.powerups && player.powerups.length > 0 && player.powerups.some(p => p.count > 0) && (

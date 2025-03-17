@@ -29,7 +29,7 @@ export interface Move {
 }
 
 export interface Player {
-  id: number;
+  id: number | string;  // Updated to support both numeric IDs and UUID strings
   name: string;
   color: string;
   moveHistory: Move[];
