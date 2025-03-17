@@ -139,33 +139,31 @@ const GameBoard: React.FC<GameBoardProps> = ({
           gridTemplateRows: `repeat(${size}, 1fr)`,
         }}
       >
-        {gameState.board.map((row, rowIndex) => (
-          <React.Fragment key={`row-${rowIndex}`}>
-            {row.map((cell, colIndex) => (
-              <div
-                key={`cell-${rowIndex}-${colIndex}`}
-                className={cn(
-                  "board-cell cursor-pointer",
-                  cell.player !== null 
-                    ? getPlayerColor(cell.player) 
-                    : isPowerupActive 
-                      ? "hover:bg-red-200" 
-                      : "hover:bg-gray-100",
-                  cell.hasPowerup && "ring-2 ring-amber-400"
-                )}
-                style={{ width: cellSize, height: cellSize }}
-                onClick={() => onCellClick({ row: rowIndex, col: colIndex })}
-                onMouseEnter={() => onCellHover({ row: rowIndex, col: colIndex })}
-              >
-                {cell.hasPowerup && (
-                  <div className="flex items-center justify-center h-full">
-                    <Wand2 className="w-4 h-4 text-white animate-pulse" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </React.Fragment>
-        ))}
+        {gameState.board.map((row, rowIndex) => 
+          row.map((cell, colIndex) => (
+            <div
+              key={`cell-${rowIndex}-${colIndex}`}
+              className={cn(
+                "board-cell cursor-pointer",
+                cell.player !== null 
+                  ? getPlayerColor(cell.player) 
+                  : isPowerupActive 
+                    ? "hover:bg-red-200" 
+                    : "hover:bg-gray-100",
+                cell.hasPowerup && "ring-2 ring-amber-400"
+              )}
+              style={{ width: cellSize, height: cellSize }}
+              onClick={() => onCellClick({ row: rowIndex, col: colIndex })}
+              onMouseEnter={() => onCellHover({ row: rowIndex, col: colIndex })}
+            >
+              {cell.hasPowerup && (
+                <div className="flex items-center justify-center h-full">
+                  <Wand2 className="w-4 h-4 text-white animate-pulse" />
+                </div>
+              )}
+            </div>
+          ))
+        )}
         {renderPiecePreview()}
         {renderCornerMarkers()}
       </div>
