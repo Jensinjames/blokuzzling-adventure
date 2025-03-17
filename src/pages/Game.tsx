@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BOARD_SIZE } from '@/utils/gameUtils';
@@ -96,6 +97,11 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     );
   };
 
+  // Helper function to check if game is over
+  const isGameOver = (): boolean => {
+    return gameState.gameStatus === "finished" || gameState.gameStatus === "completed";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 px-4 py-6">
       <div className="max-w-lg mx-auto">
@@ -129,7 +135,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
           isPowerupActive={isPowerupActive}
         />
         
-        {gameState?.gameStatus === "finished" || gameState?.gameStatus === "completed" ? (
+        {isGameOver() ? (
           <GameResult
             players={gameState.players}
             winner={gameState.winner}
@@ -162,7 +168,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
                 onPass={handlePassTurn}
                 onHome={handleHome}
                 canUndo={gameState.turnHistory.length > 0}
-                isGameOver={gameState.gameStatus === "finished" || gameState.gameStatus === "completed"}
+                isGameOver={isGameOver()}
               />
             </div>
           </>
