@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlayerInfo from '@/components/PlayerInfo';
 import GameHeader from '@/components/game/GameHeader';
 import GameSetup from '@/components/game/GameSetup';
 import GamePlayArea from '@/components/game/GamePlayArea';
 import { useGameController } from '@/hooks/useGameController';
+import { useAuth } from '@/hooks/useAuth';
 
 interface GameProps {
   numPlayers?: number;
@@ -13,6 +14,8 @@ interface GameProps {
 
 const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const {
     gameState,
     selectedPiece,
@@ -35,8 +38,36 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     handlePlayerUsePowerup,
     cancelPowerupMode,
     isGameOver,
-    initGame
+    initGame,
+    setGameState
   } = useGameController(numPlayers);
+
+  // Set player IDs correctly when game starts
+  useEffect(() => {
+    if (gameStarted && user) {
+      // Set human player ID to user's ID for stats tracking
+      setGameState(prevState => {
+        const updatedPlayers = [...prevState.players];
+        if (updatedPlayers[0]) {
+          updatedPlayers[0] = {
+            ...updatedPlayers[0],
+            id: user.id // Use authenticated user ID
+          };
+        }
+        // Ensure AI player has a consistent ID
+        if (updatedPlayers[1]) {
+          updatedPlayers[1] = {
+            ...updatedPlayers[1],
+            id: 'ai-player'
+          };
+        }
+        return {
+          ...prevState,
+          players: updatedPlayers
+        };
+      });
+    }
+  }, [gameStarted, user]);
 
   const handleHome = () => {
     navigate('/');

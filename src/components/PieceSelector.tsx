@@ -24,15 +24,18 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
 }) => {
   // Filter out pieces that are marked as hidden (already played)
   const availablePieces = pieces.filter(p => !p.hidden && !p.used);
-  const [displayedPieces, setDisplayedPieces] = useState<Piece[]>(availablePieces.slice(0, 5));
+  const [displayedPieces, setDisplayedPieces] = useState<Piece[]>([]);
   const [page, setPage] = useState(0);
   
-  // Update displayed pieces whenever available pieces change
-  useEffect(() => {
-    setDisplayedPieces(availablePieces.slice(page * 5, (page + 1) * 5));
-  }, [availablePieces, page]);
-  
+  // Calculate total pages only once when available pieces change
   const totalPages = Math.ceil(availablePieces.length / 5);
+  
+  // Update displayed pieces whenever available pieces or page changes
+  useEffect(() => {
+    const startIdx = page * 5;
+    const endIdx = Math.min(startIdx + 5, availablePieces.length);
+    setDisplayedPieces(availablePieces.slice(startIdx, endIdx));
+  }, [availablePieces, page]);
   
   const getPlayerColor = (player: number): string => {
     const colors = ['bg-player1', 'bg-player2', 'bg-player3', 'bg-player4'];
@@ -42,11 +45,12 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < totalPages) {
       setPage(newPage);
-      setDisplayedPieces(availablePieces.slice(newPage * 5, (newPage + 1) * 5));
     }
   };
 
   const renderPieceShape = (piece: Piece, size: number = 24) => {
+    if (!piece.shape || !piece.shape.length) return null;
+    
     return (
       <div className="piece-grid transition-all duration-200" style={{
         display: 'grid',
@@ -114,7 +118,7 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
             variant="outline" 
             size="sm" 
             onClick={() => handlePageChange(page + 1)}
-            disabled={page === totalPages - 1}
+            disabled={page === totalPages - 1 || totalPages === 0}
             className="h-8 w-8 p-0"
           >
             &gt;

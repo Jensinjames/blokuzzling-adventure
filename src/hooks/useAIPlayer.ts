@@ -18,44 +18,20 @@ const getThinkingTime = (difficulty: AIDifficulty): number => {
   }
 };
 
-// Helper function to handle game completion when both players are out of moves
-const handleGameCompletion = (
-  gameState: GameState,
-  aiPlayerIndex: number,
-  humanPlayerIndex: number,
-  setGameState: React.Dispatch<React.SetStateAction<GameState>>,
-  turnHistoryItem: any
-) => {
-  // Calculate remaining piece values for each player
-  const updatedPlayers = [...gameState.players].map(player => {
-    const unusedPiecesCount = player.pieces.filter(p => !p.used).length;
+// Helper function to calculate player scores based on remaining pieces
+const calculateFinalScores = (players: GameState['players']): GameState['players'] => {
+  return players.map(player => {
+    const unusedPieces = player.pieces.filter(p => !p.used);
+    // Score is 89 (total of all piece cells) minus remaining pieces' cells
+    let remainingCellCount = 0;
+    for (const piece of unusedPieces) {
+      remainingCellCount += piece.shape.flat().filter(cell => cell === 1).length;
+    }
     return {
       ...player,
-      score: 55 - unusedPiecesCount // Total pieces (55) minus remaining pieces
+      score: 89 - remainingCellCount // 89 is the total number of cells in all pieces
     };
   });
-  
-  // Determine winner based on highest score (least remaining pieces)
-  const winner = updatedPlayers[0].score > updatedPlayers[1].score ? 0 : 
-                updatedPlayers[0].score < updatedPlayers[1].score ? 1 : null;
-  
-  // Update game state to finished
-  setGameState(prev => ({
-    ...prev,
-    players: updatedPlayers,
-    gameStatus: 'finished',
-    winner,
-    turnHistory: [...prev.turnHistory, turnHistoryItem]
-  }));
-  
-  // Notify player of game result
-  if (winner === humanPlayerIndex) {
-    toast.success("Congratulations! You've won the game!");
-  } else if (winner === aiPlayerIndex) {
-    toast.error("You've lost the game. Better luck next time!");
-  } else {
-    toast.info("The game ended in a tie!");
-  }
 };
 
 // Helper function to make an AI move
@@ -86,6 +62,47 @@ export function useAIPlayer(
   const [isAIThinking, setIsAIThinking] = useState<boolean>(false);
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty>(difficulty);
   const humanPlayerIndex = 0; // Assuming human is always player 0
+  const [lastPassPlayer, setLastPassPlayer] = useState<number | null>(null);
+
+  // Check for consecutive passes to end the game
+  useEffect(() => {
+    if (gameState.gameStatus !== 'playing') return;
+    
+    const lastMove = gameState.turnHistory[gameState.turnHistory.length - 1];
+    if (lastMove && lastMove.type === 'pass') {
+      if (lastPassPlayer !== null && lastPassPlayer !== lastMove.player) {
+        // Two different players passed consecutively, game should end
+        const updatedPlayers = calculateFinalScores(gameState.players);
+        
+        // Determine winner based on highest score
+        const winner = updatedPlayers[0].score > updatedPlayers[1].score ? 0 : 
+                      updatedPlayers[0].score < updatedPlayers[1].score ? 1 : null;
+        
+        // Update game state
+        setGameState(prev => ({
+          ...prev,
+          players: updatedPlayers,
+          gameStatus: 'finished',
+          winner
+        }));
+        
+        // Show appropriate notification
+        if (winner === humanPlayerIndex) {
+          toast.success("Congratulations! You've won the game!");
+        } else if (winner === aiPlayerIndex) {
+          toast.error("AI won the game. Better luck next time!");
+        } else {
+          toast.info("The game ended in a tie!");
+        }
+      } else {
+        // Update lastPassPlayer to current player
+        setLastPassPlayer(lastMove.player);
+      }
+    } else if (lastMove && lastMove.type !== 'pass') {
+      // Reset lastPassPlayer when a move is made
+      setLastPassPlayer(null);
+    }
+  }, [gameState.turnHistory]);
 
   useEffect(() => {
     if (!aiEnabled) return;
@@ -143,7 +160,29 @@ export function useAIPlayer(
     // If neither player has valid moves, the game should end
     if (!humanHasValidMoves) {
       // Both players are out of moves, calculate final scores and determine winner
-      handleGameCompletion(gameState, aiPlayerIndex, humanPlayerIndex, setGameState, turnHistoryItem);
+      const updatedPlayers = calculateFinalScores(gameState.players);
+      
+      // Determine winner based on highest score
+      const winner = updatedPlayers[0].score > updatedPlayers[1].score ? 0 : 
+                    updatedPlayers[0].score < updatedPlayers[1].score ? 1 : null;
+      
+      // Update game state
+      setGameState(prev => ({
+        ...prev,
+        players: updatedPlayers,
+        gameStatus: 'finished',
+        winner,
+        turnHistory: [...prev.turnHistory, turnHistoryItem]
+      }));
+      
+      // Show appropriate notification
+      if (winner === humanPlayerIndex) {
+        toast.success("Congratulations! You've won the game!");
+      } else if (winner === aiPlayerIndex) {
+        toast.error("AI won the game. Better luck next time!");
+      } else {
+        toast.info("The game ended in a tie!");
+      }
     } else {
       // Human player has moves, continue the game
       setGameState(prev => ({
