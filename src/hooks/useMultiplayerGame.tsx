@@ -221,16 +221,18 @@ export function useMultiplayerGame(gameId: string) {
       }
 
       // Update game session status
+      const updatedGameState = {
+        ...gameState,
+        gameStatus: 'finished',
+        winner: winnerId
+      };
+
       await supabase
         .from('game_sessions')
         .update({
           status: 'completed',
           winner_id: winnerProfileId,
-          game_state: {
-            ...gameState,
-            gameStatus: 'finished',
-            winner: winnerId
-          }
+          game_state: updatedGameState as any
         })
         .eq('id', gameId);
 

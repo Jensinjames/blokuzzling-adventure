@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -96,8 +95,9 @@ export function useMultiplayer() {
           table: 'game_sessions'
         },
         (payload) => {
-          // If one of user's sessions
-          if (payload.new && 'id' in payload.new && userSessions.some(s => s.id === payload.new.id)) {
+          // If one of user's sessions - check if payload.new exists and has an id before using it
+          if (payload.new && typeof payload.new === 'object' && 'id' in payload.new && 
+              userSessions.some(s => s.id === payload.new.id)) {
             fetchGameData();
           }
         }

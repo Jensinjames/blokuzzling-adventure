@@ -10,7 +10,7 @@ export type Profile = {
   draws: number;
 };
 
-export type GameStatus = 'waiting' | 'active' | 'completed';
+export type GameStatus = 'waiting' | 'active' | 'completed' | 'playing' | 'finished';
 
 export type GameSession = {
   id: string;
