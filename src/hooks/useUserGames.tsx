@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, safeDataCast } from '@/integrations/supabase/client';
+import { supabase, apiSchema, safeDataCast } from '@/integrations/supabase/client';
 import { GameSession, Profile } from '@/types/database';
 import { toast } from 'sonner';
 
@@ -23,8 +23,7 @@ export function useUserGames(profile: Profile | null) {
         console.log('Fetching games for user:', profile.id);
         
         // Get games created by this user
-        const { data: createdGames, error: createdGamesError } = await supabase
-          .from('game_sessions')
+        const { data: createdGames, error: createdGamesError } = await apiSchema.game_sessions()
           .select('*')
           .eq('creator_id', profile.id)
           .order('created_at', { ascending: false })
@@ -38,8 +37,7 @@ export function useUserGames(profile: Profile | null) {
         console.log('Created games:', createdGames?.length || 0);
         
         // Get games participated in by this user through game_players
-        const { data: participatedGames, error: participatedGamesError } = await supabase
-          .from('game_players')
+        const { data: participatedGames, error: participatedGamesError } = await apiSchema.game_players()
           .select('game_id')
           .eq('player_id', profile.id);
           
@@ -61,31 +59,33 @@ export function useUserGames(profile: Profile | null) {
           const participatedData = safeDataCast<{game_id: string}>(participatedGames);
           const gameIds = participatedData.map(pg => pg.game_id);
           
-          const { data: gameData, error: gameDataError } = await supabase
-            .from('game_sessions')
-            .select('*')
-            .in('id', gameIds)
-            .order('created_at', { ascending: false });
+          // Only fetch if we have game IDs
+          if (gameIds.length > 0) {
+            const { data: gameData, error: gameDataError } = await apiSchema.game_sessions()
+              .select('*')
+              .in('id', gameIds)
+              .order('created_at', { ascending: false });
+              
+            if (gameDataError) {
+              console.error('Error fetching game details:', gameDataError);
+              throw gameDataError;
+            }
             
-          if (gameDataError) {
-            console.error('Error fetching game details:', gameDataError);
-            throw gameDataError;
-          }
-          
-          console.log('Game details for participated games:', gameData?.length || 0);
-          
-          // Combine both sets of games and remove duplicates
-          if (gameData) {
-            const gameSessionsData = safeDataCast<GameSession>(gameData);
-            const uniqueGameIds = new Set();
-            allGames.forEach(game => uniqueGameIds.add(game.id));
+            console.log('Game details for participated games:', gameData?.length || 0);
             
-            gameSessionsData.forEach(game => {
-              if (!uniqueGameIds.has(game.id)) {
-                allGames.push(game);
-                uniqueGameIds.add(game.id);
-              }
-            });
+            // Combine both sets of games and remove duplicates
+            if (gameData) {
+              const gameSessionsData = safeDataCast<GameSession>(gameData);
+              const uniqueGameIds = new Set();
+              allGames.forEach(game => uniqueGameIds.add(game.id));
+              
+              gameSessionsData.forEach(game => {
+                if (!uniqueGameIds.has(game.id)) {
+                  allGames.push(game);
+                  uniqueGameIds.add(game.id);
+                }
+              });
+            }
           }
         }
         

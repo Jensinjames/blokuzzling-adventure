@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, isNotFoundError, safeSingleDataCast } from '@/integrations/supabase/client';
+import { supabase, apiSchema, isNotFoundError, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Profile } from '@/types/database';
 import { toast } from 'sonner';
@@ -25,9 +25,8 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Using the schema configured in Supabase client
-        const { data, error } = await supabase
-          .from('profiles')
+        // Using the api schema explicitly
+        const { data, error } = await apiSchema.profiles()
           .select('*')
           .eq('id', user.id)
           .maybeSingle();
@@ -49,8 +48,7 @@ export function useProfile() {
           console.log("No profile found, creating a new one");
           
           // Create a new profile
-          const { data: createdProfile, error: createError } = await supabase
-            .from('profiles')
+          const { data: createdProfile, error: createError } = await apiSchema.profiles()
             .insert({
               id: user.id,
               username: user.email?.split('@')[0] || 'User',
@@ -101,8 +99,7 @@ export function useProfile() {
         updated_at: new Date().toISOString()
       };
       
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await apiSchema.profiles()
         .update(updateObject)
         .eq('id', user.id);
 
@@ -116,8 +113,7 @@ export function useProfile() {
       toast.success('Profile updated successfully');
       
       // Fetch updated profile to ensure we have the latest data
-      const { data, error: fetchError } = await supabase
-        .from('profiles')
+      const { data, error: fetchError } = await apiSchema.profiles()
         .select('*')
         .eq('id', user.id)
         .maybeSingle();

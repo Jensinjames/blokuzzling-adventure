@@ -17,10 +17,19 @@ export const supabase = createClient<Database>(
       persistSession: true
     },
     db: {
-      schema: 'api' // Changed from 'public' to 'api' based on the error message
+      schema: 'public' // Using 'public' schema to match type definitions
     }
   }
 );
+
+// Alias for api schema tables
+export const apiSchema = {
+  profiles: () => supabase.from('profiles').schema('api'),
+  game_sessions: () => supabase.from('game_sessions').schema('api'),
+  game_players: () => supabase.from('game_players').schema('api'),
+  game_invites: () => supabase.from('game_invites').schema('api'),
+  notifications: () => supabase.from('notifications').schema('api'),
+};
 
 // Helper function to check if a Supabase error is a 'not found' error
 export const isNotFoundError = (error: any): boolean => {

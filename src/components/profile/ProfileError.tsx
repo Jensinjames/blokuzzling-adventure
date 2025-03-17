@@ -18,7 +18,7 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
   
   const getErrorMessage = (error: string) => {
     if (error.includes("The schema must be one of the following: api")) {
-      return "Database schema configuration error. Please ensure you're using the 'api' schema in your Supabase client configuration.";
+      return "Database schema configuration error. The database is using the 'api' schema but the application is trying to access the 'public' schema.";
     }
     if (error.includes("schema")) {
       return "Database schema configuration error. Please try again or contact support.";
