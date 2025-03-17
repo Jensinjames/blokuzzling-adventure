@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, apiSchema, safeDataCast } from '@/integrations/supabase/client';
+import { supabase, safeDataCast } from '@/integrations/supabase/client';
 import { GameSession, Profile } from '@/types/database';
 import { toast } from 'sonner';
 
@@ -23,7 +23,8 @@ export function useUserGames(profile: Profile | null) {
         console.log('Fetching games for user:', profile.id);
         
         // Get games created by this user
-        const { data: createdGames, error: createdGamesError } = await apiSchema.game_sessions()
+        const { data: createdGames, error: createdGamesError } = await supabase
+          .from('game_sessions')
           .select('*')
           .eq('creator_id', profile.id)
           .order('created_at', { ascending: false })
@@ -37,7 +38,8 @@ export function useUserGames(profile: Profile | null) {
         console.log('Created games:', createdGames?.length || 0);
         
         // Get games participated in by this user through game_players
-        const { data: participatedGames, error: participatedGamesError } = await apiSchema.game_players()
+        const { data: participatedGames, error: participatedGamesError } = await supabase
+          .from('game_players')
           .select('game_id')
           .eq('player_id', profile.id);
           
@@ -61,7 +63,8 @@ export function useUserGames(profile: Profile | null) {
           
           // Only fetch if we have game IDs
           if (gameIds.length > 0) {
-            const { data: gameData, error: gameDataError } = await apiSchema.game_sessions()
+            const { data: gameData, error: gameDataError } = await supabase
+              .from('game_sessions')
               .select('*')
               .in('id', gameIds)
               .order('created_at', { ascending: false });

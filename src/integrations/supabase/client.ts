@@ -23,10 +23,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 // Enable debug mode for Supabase client to help troubleshoot
 if (import.meta.env.DEV) {
   console.log('Enabling Supabase debug mode in development');
-  // Realtime debug mode - this implementation may vary depending on supabase version
-  if (supabase.realtime && typeof supabase.realtime.setLogger === 'function') {
-    supabase.realtime.setLogger(console);
-  }
+  // Just log that we're in debug mode, but don't try to set loggers as it's not supported in this version
 }
 
 // Add more robust error handling for data transformations
@@ -93,12 +90,6 @@ export function normalizeProfile(profile: any) {
 export function isNotFoundError(error: any): boolean {
   return error?.message?.includes('not found') || error?.code === 'PGRST116';
 }
-
-// Fake API schema for TypeScript compatibility
-export const apiSchema = {
-  profiles: 'profiles',
-  games: 'games',
-};
 
 export {
   PostgrestError,

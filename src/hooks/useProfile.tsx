@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { supabase, apiSchema, isNotFoundError, safeSingleDataCast } from '@/integrations/supabase/client';
+import { supabase, safeSingleDataCast, isNotFoundError } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Profile } from '@/types/database';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ export function useProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -25,8 +26,8 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Using the api schema explicitly
-        const { data, error } = await apiSchema.profiles()
+        const { data, error } = await supabase
+          .from('profiles')
           .select('*')
           .eq('id', user.id)
           .maybeSingle();
@@ -48,7 +49,8 @@ export function useProfile() {
           console.log("No profile found, creating a new one");
           
           // Create a new profile
-          const { data: createdProfile, error: createError } = await apiSchema.profiles()
+          const { data: createdProfile, error: createError } = await supabase
+            .from('profiles')
             .insert({
               id: user.id,
               username: user.email?.split('@')[0] || 'User',
@@ -105,7 +107,8 @@ export function useProfile() {
         updateObject.avatar_url = [updates.avatar_url];
       }
       
-      const { error } = await apiSchema.profiles()
+      const { error } = await supabase
+        .from('profiles')
         .update(updateObject)
         .eq('id', user.id);
 
@@ -119,7 +122,8 @@ export function useProfile() {
       toast.success('Profile updated successfully');
       
       // Fetch updated profile to ensure we have the latest data
-      const { data, error: fetchError } = await apiSchema.profiles()
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
@@ -138,9 +142,6 @@ export function useProfile() {
       setSaving(false);
     }
   };
-
-  // Add state for tracking the saving status
-  const [saving, setSaving] = useState(false);
 
   return { profile, loading, error, updateProfile, saving };
 }

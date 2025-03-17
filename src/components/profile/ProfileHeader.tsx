@@ -16,9 +16,9 @@ interface ProfileHeaderProps {
   isEditing: boolean;
   username: string;
   setUsername: (value: string) => void;
-  onSave: () => void;
-  onEdit: () => void;
-  onCancel: () => void;
+  onSave?: () => void;
+  onEdit?: () => void;
+  onCancel?: () => void;
   saving: boolean;
 }
 

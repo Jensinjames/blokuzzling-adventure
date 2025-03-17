@@ -65,9 +65,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({
               username={username}
               setUsername={setUsername}
               isEditing={editing}
-              setEditing={setEditing}
+              onEdit={() => setEditing(true)}
+              onCancel={() => setEditing(false)}
+              onSave={handleUpdateProfile}
               saving={saving}
-              handleUpdateProfile={handleUpdateProfile}
             />
 
             <ProfileTabs 
