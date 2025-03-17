@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, safeSingleDataCast, isNotFoundError } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthProvider';
 import { Profile } from '@/types/database';
 import { toast } from 'sonner';
 

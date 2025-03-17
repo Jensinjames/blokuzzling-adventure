@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase, safeSingleDataCast } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthProvider';
 import { GameSession } from '@/types/database';
 import { toast } from 'sonner';
 

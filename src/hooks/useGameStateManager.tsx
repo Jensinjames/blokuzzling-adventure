@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthProvider';
 import { GameState, TurnHistoryItem, Move } from '@/types/game';
 import { toast } from 'sonner';
 

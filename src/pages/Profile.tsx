@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import ProfileView from '@/components/ProfileView';
 import ProfileLoading from '@/components/profile/ProfileLoading';

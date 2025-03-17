@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import SupabaseRealtimeProvider from '@/components/SupabaseRealtimeProvider';
-import AuthProvider from '@/context/AuthProvider';
+import { AuthProvider } from '@/context/AuthProvider';
 import DatabaseConnectionStatus from '@/components/DatabaseConnectionStatus';
 
 // Import all pages

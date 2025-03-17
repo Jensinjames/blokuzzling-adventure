@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthProvider';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { LogIn, Play, Info } from 'lucide-react';

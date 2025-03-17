@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, safeDataCast } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthProvider';
 import { GameSession } from '@/types/database';
 
 export function useGameSessionsFetch() {
