@@ -23,8 +23,7 @@ export function useProfile() {
       setError(null);
 
       try {
-        // Fix the schema issue by NOT specifying schema explicitly
-        // Let Supabase use the default schema configuration
+        // Use 'apikey' strategy which doesn't specify a schema explicitly
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -32,11 +31,12 @@ export function useProfile() {
           .single();
 
         if (error) {
+          console.error('Supabase error details:', error);
           throw error;
         }
 
         setProfile(data as Profile);
-        console.log("Profile loaded:", data);
+        console.log("Profile loaded successfully:", data);
       } catch (e: any) {
         setError(e.message);
         console.error('Error fetching profile:', e);
@@ -61,11 +61,26 @@ export function useProfile() {
         .eq('id', user.id);
 
       if (error) {
+        console.error('Update profile error details:', error);
         throw error;
       }
 
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       toast.success('Profile updated successfully');
+      
+      // Fetch updated profile to ensure we have the latest data
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (fetchError) {
+        console.warn('Error refreshing profile after update:', fetchError);
+      } else if (data) {
+        setProfile(data as Profile);
+      }
+      
     } catch (e: any) {
       toast.error(`Failed to update profile: ${e.message}`);
       console.error('Error updating profile:', e);
