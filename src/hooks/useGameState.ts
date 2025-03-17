@@ -1,15 +1,21 @@
 
 import { useState, useEffect } from 'react';
-import { Piece, BoardPosition, GameState } from '@/types/game';
+import { GameState } from '@/types/game';
 import { useGameInitialization } from './useGameInitialization';
 import { useGameCompletion } from './useGameCompletion';
+import { usePieceState } from './game/usePieceState';
 
 export function useGameState(numPlayers: number = 2) {
   const { initGame } = useGameInitialization(numPlayers);
   const [gameState, setGameState] = useState<GameState>(initGame());
-  const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
-  const [previewPosition, setPreviewPosition] = useState<BoardPosition | null>(null);
-  const [isValidPlacement, setIsValidPlacement] = useState<boolean>(false);
+  const {
+    selectedPiece,
+    setSelectedPiece,
+    previewPosition,
+    setPreviewPosition,
+    isValidPlacement,
+    setIsValidPlacement
+  } = usePieceState();
 
   // Initialize game
   useEffect(() => {
