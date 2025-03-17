@@ -21,6 +21,7 @@ interface GameProps {
 const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
   const navigate = useNavigate();
   const [isPowerupActive, setIsPowerupActive] = useState(false);
+  const [activePowerupType, setActivePowerupType] = useState<string | null>(null);
   
   const {
     gameState,
@@ -69,32 +70,27 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     navigate('/');
   };
 
-  const renderPowerups = () => {
-    const currentPlayer = gameState.players[gameState.currentPlayer];
-    const destroyPowerup = currentPlayer.powerups?.find(p => p.type === 'destroy');
+  // Handler for using powerup from player info card
+  const handlePlayerUsePowerup = (playerId: number, powerupType: string) => {
+    if (playerId !== gameState.currentPlayer) {
+      toast.error("You can only use your own powerups during your turn");
+      return;
+    }
     
-    if (!destroyPowerup || destroyPowerup.count <= 0) return null;
-    
-    return (
-      <div className="flex justify-center mb-4">
-        <Button 
-          variant={isPowerupActive ? "destructive" : "outline"}
-          size="sm"
-          className="flex items-center gap-2"
-          onClick={() => {
-            if (isPowerupActive) {
-              setIsPowerupActive(false);
-              toast.info("Powerup mode cancelled");
-            } else {
-              handleUsePowerup('destroy');
-            }
-          }}
-        >
-          <Wand2 className="h-4 w-4" />
-          {isPowerupActive ? "Cancel" : `Use Destroy Powerup (${destroyPowerup.count})`}
-        </Button>
-      </div>
-    );
+    if (isPowerupActive) {
+      setIsPowerupActive(false);
+      setActivePowerupType(null);
+      toast.info("Powerup mode cancelled");
+    } else {
+      setActivePowerupType(powerupType);
+      handleUsePowerup(powerupType);
+    }
+  };
+
+  const cancelPowerupMode = () => {
+    setIsPowerupActive(false);
+    setActivePowerupType(null);
+    toast.info("Powerup mode cancelled");
   };
 
   // Helper function to check if game is over
@@ -120,9 +116,21 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
         <PlayerInfo
           players={gameState.players}
           currentPlayer={gameState.currentPlayer}
+          onUsePowerup={handlePlayerUsePowerup}
         />
         
-        {renderPowerups()}
+        {isPowerupActive && (
+          <div className="flex justify-center mb-4">
+            <Button 
+              variant="destructive"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={cancelPowerupMode}
+            >
+              Cancel {activePowerupType} Powerup
+            </Button>
+          </div>
+        )}
         
         <GameBoard
           gameState={gameState}
@@ -146,7 +154,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
           <>
             <div className="text-center text-sm text-gray-600 dark:text-gray-400 mb-3">
               {isPowerupActive 
-                ? "Select a block to destroy" 
+                ? `Select a block to use ${activePowerupType} powerup` 
                 : "Select a piece from your inventory"}
             </div>
             

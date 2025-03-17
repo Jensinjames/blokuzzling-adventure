@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
@@ -8,11 +9,12 @@ import PieceSelector from '@/components/PieceSelector';
 import PlayerInfo from '@/components/PlayerInfo';
 import GameControls from '@/components/GameControls';
 import GameResult from '@/components/GameResult';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Piece, BoardPosition, GameState } from '@/types/game';
 import { usePieceActions } from '@/hooks/usePieceActions';
 import { useBoardActions } from '@/hooks/useBoardActions';
+import { Button } from '@/components/ui/button';
 
 const MultiplayerGame = () => {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +23,8 @@ const MultiplayerGame = () => {
   const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
   const [previewPosition, setPreviewPosition] = useState<BoardPosition | null>(null);
   const [isValidPlacement, setIsValidPlacement] = useState<boolean>(false);
+  const [isPowerupActive, setIsPowerupActive] = useState<boolean>(false);
+  const [activePowerupType, setActivePowerupType] = useState<string | null>(null);
   
   const {
     gameSession,
@@ -67,7 +71,8 @@ const MultiplayerGame = () => {
 
   const {
     handleCellClick,
-    handleUndo
+    handleUndo,
+    handleUsePowerup
   } = useBoardActions(
     gameState || { 
       board: [], 
@@ -90,7 +95,9 @@ const MultiplayerGame = () => {
     selectedPiece,
     setSelectedPiece,
     setPreviewPosition,
-    setIsValidPlacement
+    setIsValidPlacement,
+    isPowerupActive,
+    setIsPowerupActive
   );
 
   useEffect(() => {
@@ -98,6 +105,8 @@ const MultiplayerGame = () => {
       setSelectedPiece(null);
       setPreviewPosition(null);
       setIsValidPlacement(false);
+      setIsPowerupActive(false);
+      setActivePowerupType(null);
     }
   }, [isMyTurn]);
 
@@ -118,6 +127,34 @@ const MultiplayerGame = () => {
     handleCellClick(position);
   };
 
+  // Handler for using powerup from player info card
+  const handlePlayerUsePowerup = (playerId: number, powerupType: string) => {
+    if (!isMyTurn) {
+      toast.info("It's not your turn");
+      return;
+    }
+    
+    if (playerId !== gameState?.currentPlayer) {
+      toast.error("You can only use your own powerups during your turn");
+      return;
+    }
+    
+    if (isPowerupActive) {
+      setIsPowerupActive(false);
+      setActivePowerupType(null);
+      toast.info("Powerup mode cancelled");
+    } else {
+      setActivePowerupType(powerupType);
+      handleUsePowerup(powerupType);
+    }
+  };
+
+  const cancelPowerupMode = () => {
+    setIsPowerupActive(false);
+    setActivePowerupType(null);
+    toast.info("Powerup mode cancelled");
+  };
+
   if (loading || !gameState) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
@@ -128,13 +165,6 @@ const MultiplayerGame = () => {
       </div>
     );
   }
-
-  const memoizedPlayerInfo = gameState && (
-    <PlayerInfo
-      players={gameState.players}
-      currentPlayer={gameState.currentPlayer}
-    />
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 px-4 py-6">
@@ -151,16 +181,35 @@ const MultiplayerGame = () => {
           <div className="w-6"></div>
         </header>
         
-        {memoizedPlayerInfo}
+        <PlayerInfo
+          players={gameState.players}
+          currentPlayer={gameState.currentPlayer}
+          onUsePowerup={handlePlayerUsePowerup}
+          isViewerCurrentPlayer={isMyTurn}
+        />
+        
+        {isPowerupActive && isMyTurn && (
+          <div className="flex justify-center mb-4">
+            <Button 
+              variant="destructive"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={cancelPowerupMode}
+            >
+              Cancel {activePowerupType} Powerup
+            </Button>
+          </div>
+        )}
         
         <GameBoard
           gameState={gameState}
           size={BOARD_SIZE}
           onCellClick={handleBoardCellClick}
-          selectedPiecePreview={selectedPiece}
+          selectedPiecePreview={isPowerupActive ? null : selectedPiece}
           previewPosition={previewPosition}
           isValidPlacement={isValidPlacement && isMyTurn}
           onCellHover={handleCellHover}
+          isPowerupActive={isPowerupActive}
         />
         
         {gameState.gameStatus === "finished" || gameState.gameStatus === "completed" ? (
@@ -174,11 +223,13 @@ const MultiplayerGame = () => {
           <>
             <div className="text-center text-sm text-gray-600 dark:text-gray-400 mb-3">
               {isMyTurn 
-                ? "Your turn - Select a piece from your inventory"
+                ? (isPowerupActive 
+                    ? `Select a block to use ${activePowerupType} powerup` 
+                    : "Your turn - Select a piece from your inventory")
                 : `Waiting for ${gameState.players[gameState.currentPlayer]?.name || 'opponent'} to make a move...`}
             </div>
             
-            {isMyTurn && (
+            {isMyTurn && !isPowerupActive && (
               <PieceSelector
                 pieces={gameState.players[playerNumber || 0]?.pieces || []}
                 currentPlayer={playerNumber || 0}
