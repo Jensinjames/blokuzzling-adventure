@@ -25,7 +25,7 @@ export function useProfile() {
       try {
         console.log('Fetching profile for user ID:', user.id);
         
-        // Try to query using the API schema explicitly
+        // Use maybeSingle to handle both cases where profile exists or not
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -42,9 +42,8 @@ export function useProfile() {
           setProfile(data as Profile);
         } else {
           console.log("No profile found, attempting to create one");
-          // If no profile exists, create one
           
-          // Create a properly typed profile object with required fields
+          // Create a new profile with required fields
           const newProfile = {
             id: user.id,
             username: user.email?.split('@')[0] || 'User',
@@ -56,6 +55,7 @@ export function useProfile() {
             avatar_url: null
           };
           
+          // Insert single object, not an array
           const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
             .insert(newProfile)
