@@ -19,8 +19,9 @@ const GameResult: React.FC<GameResultProps> = ({ players, winner, onRestart, onH
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   
   // Function to format player ID for display
-  const formatPlayerId = (id: string) => {
-    if (!id || typeof id !== 'string') return '';
+  const formatPlayerId = (id: string | number) => {
+    if (!id) return '';
+    if (typeof id === 'number') return `Player ${id + 1}`;
     return id.substring(0, 8);
   };
   
@@ -63,7 +64,7 @@ const GameResult: React.FC<GameResultProps> = ({ players, winner, onRestart, onH
                 <span className="font-bold mr-2">{index + 1}.</span>
                 <div className={cn(
                   "w-3 h-3 rounded-full mr-2",
-                  `bg-player${player.id + 1}`
+                  typeof player.id === 'number' ? `bg-player${player.id + 1}` : `bg-player${index + 1}`
                 )} />
                 <span className="font-medium">{player.name}</span>
                 

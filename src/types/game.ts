@@ -29,7 +29,7 @@ export interface Move {
 }
 
 export interface Player {
-  id: number | string;  // Updated to support both numeric IDs and UUID strings
+  id: number | string;  // Can be either a number (local game) or UUID string (multiplayer)
   name: string;
   color: string;
   moveHistory: Move[];

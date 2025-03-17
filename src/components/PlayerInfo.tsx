@@ -20,8 +20,9 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   isViewerCurrentPlayer = true 
 }) => {
   // Function to format player ID for display (first 8 chars)
-  const formatPlayerId = (id: string) => {
+  const formatPlayerId = (id: string | number) => {
     if (!id) return 'Guest';
+    if (typeof id === 'number') return `Player ${id + 1}`;
     return id.substring(0, 8);
   };
 
@@ -60,7 +61,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
           </div>
           
           {/* Display player ID if available */}
-          {player.id && typeof player.id === 'string' && (
+          {player.id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -70,7 +71,9 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">Player UUID: {player.id}</p>
+                  <p className="text-xs">
+                    {typeof player.id === 'string' ? `Player UUID: ${player.id}` : `Player Number: ${player.id}`}
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
