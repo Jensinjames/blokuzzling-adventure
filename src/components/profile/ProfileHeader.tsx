@@ -27,6 +27,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   saving,
   handleUpdateProfile
 }) => {
+  // Helper function to get the avatar URL from the array format
+  const getAvatarUrl = () => {
+    if (!profile.avatar_url || profile.avatar_url.length === 0) {
+      return null;
+    }
+    // Use the first item in the array
+    return profile.avatar_url[0]?.toString();
+  };
+
   return (
     <div className="relative">
       {/* Profile header with gradient background */}
@@ -36,8 +45,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         <div className="flex justify-between items-start">
           <div className="flex items-start space-x-4">
             <Avatar className="h-20 w-20 border-4 border-white dark:border-gray-800 shadow-md">
-              {profile.avatar_url ? (
-                <AvatarImage src={profile.avatar_url} alt={profile.username} />
+              {profile.avatar_url && profile.avatar_url.length > 0 ? (
+                <AvatarImage src={getAvatarUrl()} alt={profile.username} />
               ) : (
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {profile.username.substring(0, 2).toUpperCase()}
