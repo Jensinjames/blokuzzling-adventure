@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BOARD_SIZE } from '@/utils/gameUtils';
@@ -130,7 +129,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
           isPowerupActive={isPowerupActive}
         />
         
-        {gameState.gameStatus === 'finished' ? (
+        {gameState.gameStatus === "finished" || gameState.gameStatus === "completed" ? (
           <GameResult
             players={gameState.players}
             winner={gameState.winner}
@@ -163,7 +162,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
                 onPass={handlePassTurn}
                 onHome={handleHome}
                 canUndo={gameState.turnHistory.length > 0}
-                isGameOver={gameState.gameStatus === 'finished'}
+                isGameOver={gameState.gameStatus === "finished" || gameState.gameStatus === "completed"}
               />
             </div>
           </>

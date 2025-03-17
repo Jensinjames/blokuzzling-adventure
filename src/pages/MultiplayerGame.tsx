@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
@@ -164,7 +163,7 @@ const MultiplayerGame = () => {
           onCellHover={handleCellHover}
         />
         
-        {gameState.gameStatus === 'finished' ? (
+        {gameState.gameStatus === "finished" || gameState.gameStatus === "completed" ? (
           <GameResult
             players={gameState.players}
             winner={gameState.winner}
@@ -197,7 +196,7 @@ const MultiplayerGame = () => {
                 onPass={isMyTurn ? handlePassTurn : () => toast.info("It's not your turn")}
                 onHome={handleHome}
                 canUndo={isMyTurn && gameState.turnHistory.length > 0}
-                isGameOver={gameState.gameStatus === 'finished'}
+                isGameOver={["finished", "completed"].includes(gameState.gameStatus)}
               />
             </div>
           </>
