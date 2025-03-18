@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Index from './pages/Index';
 import Game from './pages/Game';
@@ -48,6 +48,7 @@ function App() {
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <Router>
         <AppWithAuth />
+        {/* Facebook Meta Pixel is conditionally loaded only in production */}
         <MetaPixelLoader />
       </Router>
     </ThemeProvider>
