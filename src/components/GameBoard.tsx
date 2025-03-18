@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { BoardCell, GameState, BoardPosition } from '@/types/game';
 import { Wand2 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -25,6 +25,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   isValidPlacement,
   isPowerupActive = false
 }) => {
+  const isMobile = useIsMobile();
   const [boardSize, setBoardSize] = useState(Math.min(window.innerWidth - 40, 500));
   const cellSize = boardSize / size;
   
@@ -36,12 +37,18 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   useEffect(() => {
     const handleResize = () => {
-      setBoardSize(Math.min(window.innerWidth - 40, 500));
+      if (isMobile) {
+        setBoardSize(Math.min(window.innerWidth - 24, 500));
+      } else {
+        setBoardSize(Math.min(window.innerWidth - 40, 500));
+      }
     };
 
+    handleResize();
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isMobile]);
 
   const renderPiecePreview = () => {
     if (!selectedPiecePreview || !previewPosition) return null;
@@ -76,31 +83,26 @@ const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   const renderCornerMarkers = () => {
-    // Only show player 1 and player 2 corners in 2-player game
-    // Add powerup markers to corners 2, 3 and 4 in single player mode
     const isPowerupCell = (row: number, col: number) => {
       if (gameState.players.length === 2) {
-        // In 2-player game, corners 2 and 3 are powerup cells
         return (
-          (row === size - 1 && col === 0) || // Corner 3 (bottom-left)
-          (row === 0 && col === size - 1)     // Corner 2 (top-right)
+          (row === size - 1 && col === 0) || 
+          (row === 0 && col === size - 1)
         );
       }
       return false;
     };
 
     const markers = [
-      { row: 0, col: 0 },                  // Player 1: top-left
-      { row: size - 1, col: size - 1 },    // Player 2: bottom-right
-      { row: 0, col: size - 1 },           // Corner 2 (top-right): powerup in single player
-      { row: size - 1, col: 0 }            // Corner 3 (bottom-left): powerup in single player
+      { row: 0, col: 0 }, 
+      { row: size - 1, col: size - 1 }, 
+      { row: 0, col: size - 1 }, 
+      { row: size - 1, col: 0 }
     ];
 
     return markers.map((marker, index) => {
-      // Check if this is a powerup corner in single player mode
       const isAPowerupCell = isPowerupCell(marker.row, marker.col);
       
-      // Only show player 1 and 2 corners in regular case, or powerup cells
       if (index > 1 && !isAPowerupCell) {
         return null;
       }
@@ -150,15 +152,24 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   : isPowerupActive 
                     ? "hover:bg-red-200" 
                     : "hover:bg-gray-100",
-                cell.hasPowerup && "ring-2 ring-amber-400"
+                cell.hasPowerup && "ring-2 ring-amber-400",
+                isMobile ? "touch-manipulation" : ""
               )}
-              style={{ width: cellSize, height: cellSize }}
+              style={{ 
+                width: cellSize, 
+                height: cellSize,
+                minWidth: isMobile ? '24px' : 'auto',
+                minHeight: isMobile ? '24px' : 'auto'
+              }}
               onClick={() => onCellClick({ row: rowIndex, col: colIndex })}
               onMouseEnter={() => onCellHover({ row: rowIndex, col: colIndex })}
             >
               {cell.hasPowerup && (
                 <div className="flex items-center justify-center h-full">
-                  <Wand2 className="w-4 h-4 text-white animate-pulse" />
+                  <Wand2 className={cn(
+                    "text-white animate-pulse",
+                    isMobile ? "w-3 h-3" : "w-4 h-4"
+                  )} />
                 </div>
               )}
             </div>
