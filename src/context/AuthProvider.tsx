@@ -1,28 +1,10 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase, Session, User } from '@/integrations/supabase/client';
+import React, { useState, useEffect, ReactNode } from 'react';
+import { Session, User, supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-
-type AuthContextType = {
-  user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any; data: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any; data: any }>;
-  signOut: () => Promise<void>;
-  refreshSession: () => Promise<void>;
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+import { AuthContext } from './AuthHooks';
+import { signInUser, signUpUser, signOutUser, refreshUserSession } from './AuthOperations';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -33,12 +15,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Function to refresh the session
   const refreshSession = async () => {
     try {
-      console.log('Manually refreshing session...');
-      const { data, error } = await supabase.auth.refreshSession();
+      const { data, error } = await refreshUserSession();
       
       if (error) {
-        console.error('Error refreshing session:', error);
-        
         // If token refresh fails, redirect to login
         if (error.message.includes('token') || error.message.includes('session')) {
           console.log('Session expired or invalid, redirecting to auth page');
@@ -47,7 +26,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           navigate('/auth');
         }
       } else if (data) {
-        console.log('Session refreshed successfully');
         setSession(data.session);
         setUser(data.session?.user ?? null);
       }
@@ -135,63 +113,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [navigate]);
 
+  // Wrapper functions for auth operations
   const signIn = async (email: string, password: string) => {
-    try {
-      console.log('Signing in user:', email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Sign in error:', error);
-        toast.error(error.message);
-        return { error, data: null };
-      }
-
-      console.log('Sign in successful');
-      toast.success('Signed in successfully');
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('Unexpected sign in error:', error);
-      toast.error(error.message || 'An error occurred during sign in');
-      return { error, data: null };
-    }
+    return await signInUser(email, password);
   };
 
   const signUp = async (email: string, password: string) => {
-    try {
-      console.log('Signing up user:', email);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Sign up error:', error);
-        toast.error(error.message);
-        return { error, data: null };
-      }
-
-      console.log('Sign up successful, email confirmation may be required');
-      toast.success('Signed up successfully! Check your email for confirmation.');
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('Unexpected sign up error:', error);
-      toast.error(error.message || 'An error occurred during sign up');
-      return { error, data: null };
-    }
+    return await signUpUser(email, password);
   };
 
   const signOut = async () => {
-    try {
-      console.log('Signing out user');
-      await supabase.auth.signOut();
-      toast.success('Signed out successfully');
+    const { error } = await signOutUser();
+    if (!error) {
       navigate('/');
-    } catch (error: any) {
-      console.error('Sign out error:', error);
-      toast.error(error.message || 'An error occurred during sign out');
     }
   };
 
@@ -208,4 +142,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// Re-export useAuth
+export { useAuth } from './AuthHooks';
 export default AuthProvider;
