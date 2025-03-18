@@ -20,7 +20,7 @@ const Auth = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      console.log('User already authenticated, redirecting to home');
+      console.log('[Auth Debug] User already authenticated, redirecting to home');
       navigate('/home');
     }
   }, [user, navigate]);
@@ -51,23 +51,44 @@ const Auth = () => {
     setError(null);
 
     try {
+      console.log(`[Auth Debug] Attempting to ${isLogin ? 'sign in' : 'sign up'} with email: ${email}`);
+      
       if (isLogin) {
         const result = await signIn(email, password);
         if (result.error) {
-          setError(result.error.message);
+          console.error('[Auth Debug] Sign in error:', result.error);
+          setError(result.error.message || 'Invalid login credentials');
+          toast.error(`Sign in failed: ${result.error.message || 'Invalid login credentials'}`);
+        } else {
+          console.log('[Auth Debug] Sign in successful');
         }
       } else {
         const result = await signUp(email, password);
         if (result.error) {
-          setError(result.error.message);
+          console.error('[Auth Debug] Sign up error:', result.error);
+          
+          if (result.error.message?.includes('already registered')) {
+            setError('This email is already registered. Please sign in instead.');
+            toast.error('This email is already registered');
+          } else if (result.error.message?.includes('users') && result.error.message?.includes('exist')) {
+            // Handle database setup issues
+            setError('Server configuration error. Please contact support.');
+            toast.error('Server configuration error');
+            console.error('[Auth Debug] Database configuration error:', result.error);
+          } else {
+            setError(result.error.message || 'An error occurred during sign up');
+            toast.error(`Sign up failed: ${result.error.message || 'An unknown error occurred'}`);
+          }
         } else {
+          console.log('[Auth Debug] Sign up successful');
           toast.success('Account created! Check your email for confirmation.');
           setIsLogin(true);
         }
       }
     } catch (error: any) {
-      console.error('Authentication error:', error);
+      console.error('[Auth Debug] Authentication error:', error);
       setError(error.message || 'An unexpected error occurred');
+      toast.error(`Authentication error: ${error.message || 'An unexpected error occurred'}`);
     } finally {
       setLoading(false);
     }
@@ -181,6 +202,14 @@ const Auth = () => {
           </Button>
         </div>
       </motion.div>
+      
+      {/* Debug information in development mode */}
+      {import.meta.env.DEV && (
+        <div className="mt-4 text-xs text-gray-500 dark:text-gray-400 max-w-md text-center">
+          <p>Debug: Supabase URL: {import.meta.env.VITE_SUPABASE_URL || 'Using fallback URL'}</p>
+          <p>Debug: Anon Key is {import.meta.env.VITE_SUPABASE_ANON_KEY ? 'set' : 'using fallback'}</p>
+        </div>
+      )}
     </div>
   );
 };
