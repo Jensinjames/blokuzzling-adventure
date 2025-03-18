@@ -28,6 +28,11 @@ export function useMultiplayerInvites() {
     try {
       // Check if invite has expired before responding
       const invite = invites?.find(inv => inv.id === inviteId);
+      if (!invite) {
+        toast.error('Invite not found');
+        return false;
+      }
+      
       if (invite && invite.status === 'expired') {
         toast.error('This invite has expired');
         await fetchGameInvites(); // Refresh invites

@@ -46,8 +46,11 @@ export function useGameStateInitializer(
             aiEnabled ? players.length + aiCount : players.length
           );
           
+          // Make a safe copy to avoid circular references
+          const safeState = structuredClone(initialState);
+          
           // Update player names and colors
-          const updatedPlayers = initialState.players.map((p, idx) => {
+          const updatedPlayers = safeState.players.map((p, idx) => {
             // For human players
             if (idx < players.length) {
               const playerData = players.find((pd) => pd.player_number === idx);
@@ -73,13 +76,13 @@ export function useGameStateInitializer(
           });
 
           const newGameState: GameState = {
-            ...initialState,
+            ...safeState,
             players: updatedPlayers
           };
 
           setGameState(newGameState);
           
-          // Save initial state to database
+          // Save initial state to database - ensure we don't have circular references
           // Convert complex objects to JSON-compatible format
           const jsonSafeGameState = JSON.parse(JSON.stringify(newGameState));
           
@@ -96,7 +99,8 @@ export function useGameStateInitializer(
         } else {
           // Load existing game state
           console.log('Loading existing game state:', gameSession.game_state);
-          const loadedState = gameSession.game_state as unknown as GameState;
+          // Parse safely to avoid any circular references
+          const loadedState = JSON.parse(JSON.stringify(gameSession.game_state)) as GameState;
           setGameState(loadedState);
         }
       } catch (error: any) {
@@ -115,7 +119,9 @@ export function useGameStateInitializer(
   useEffect(() => {
     if (gameSession?.game_state && Object.keys(gameSession.game_state).length > 0) {
       console.log('Received updated game state from server');
-      setGameState(gameSession.game_state as unknown as GameState);
+      // Parse safely to avoid any circular references
+      const updatedState = JSON.parse(JSON.stringify(gameSession.game_state)) as GameState;
+      setGameState(updatedState);
     }
   }, [gameSession?.game_state]);
 

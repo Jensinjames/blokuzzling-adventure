@@ -18,7 +18,7 @@ export const makeAIMove = (
   });
   
   // Create a copy of the game state to avoid mutation
-  const gameStateCopy = JSON.parse(JSON.stringify(gameState));
+  const gameStateCopy = structuredClone(gameState);
   
   // Place the selected piece
   const { updatedGameState } = placeSelectedPiece(
@@ -53,7 +53,10 @@ export function useAIMoves() {
       
       // Find the best move according to the AI's difficulty level
       console.log(`Finding AI move for player ${aiPlayerIndex} with difficulty ${difficulty}`);
-      const aiMove = findAIMove(gameState, aiPlayerIndex, difficulty);
+      
+      // Use structured clone to get a complete deep copy without circular references
+      const safeGameState = structuredClone(gameState);
+      const aiMove = findAIMove(safeGameState, aiPlayerIndex, difficulty);
       
       if (!aiMove) {
         console.log('No valid AI move found');
@@ -66,7 +69,7 @@ export function useAIMoves() {
         });
         
         // Create a deep copy of the game state to avoid mutation issues
-        const gameStateCopy = JSON.parse(JSON.stringify(gameState));
+        const gameStateCopy = structuredClone(gameState);
         
         // Make the selected move
         const updatedState = makeAIMove(
@@ -74,15 +77,14 @@ export function useAIMoves() {
           aiMove.piece, 
           aiMove.position,
           (newState) => {
-            // Ensure we're updating with the latest state
-            if (typeof newState === 'function') {
-              const calculatedState = newState(gameStateCopy);
-              setGameState(calculatedState);
-              return calculatedState;
-            } else {
-              setGameState(newState);
-              return newState;
-            }
+            // Avoid any potential circular references by using structuredClone
+            const safeState = structuredClone(
+              typeof newState === 'function' 
+                ? newState(gameStateCopy)
+                : newState
+            );
+            setGameState(safeState);
+            return safeState;
           }
         );
         

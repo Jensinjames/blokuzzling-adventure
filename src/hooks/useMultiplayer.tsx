@@ -27,8 +27,7 @@ export function useMultiplayer() {
 
   const { invitePlayer } = useMultiplayerInviteSender();
 
-  // Fixed handleRespondToInvite to correctly pass the joinGameSession function
-  // and handle the response appropriately
+  // Fixed handleRespondToInvite to properly handle the joinGameSession call
   const handleRespondToInvite = async (inviteId: string, accept: boolean) => {
     try {
       if (!accept) {
@@ -45,10 +44,8 @@ export function useMultiplayer() {
       }
       
       // Now respond to the invite and pass the joinGameSession function
+      // Previously we were passing only 2 args but the function expects 3
       const success = await baseRespondToInvite(inviteId, true, joinGameSession);
-      
-      // The success value is a boolean since we're not using the return value
-      // from the baseRespondToInvite function directly anymore
       return success;
     } catch (error) {
       console.error('Error responding to invite:', error);

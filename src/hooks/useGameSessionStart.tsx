@@ -63,6 +63,7 @@ export function useGameSessionStart() {
         aiDifficulty
       });
       
+      // Check minimum player requirement
       if (aiEnabled && aiCount > 0) {
         totalPlayers += aiCount;
       } else if (totalPlayers < 2) {
@@ -71,9 +72,10 @@ export function useGameSessionStart() {
       }
       
       // Create initial game state with appropriate number of players
+      // We need to be careful here to avoid deep recursion
       const initialGameState = createInitialGameState(totalPlayers);
       
-      // Mark AI players in the game state
+      // Mark AI players in the game state - use simple assignments to avoid circular references
       if (aiEnabled && aiCount > 0) {
         // Human players have index 0 to humanPlayers.length-1
         // AI players have index humanPlayers.length to totalPlayers-1
@@ -84,12 +86,15 @@ export function useGameSessionStart() {
         }
       }
 
+      // Avoid circular references in the data
+      const safeGameState = JSON.parse(JSON.stringify(initialGameState));
+
       // Update game status and set initial state
       const { error: updateError } = await supabase
         .from('game_sessions')
         .update({
           status: 'active',
-          game_state: initialGameState
+          game_state: safeGameState
         })
         .eq('id', gameId);
 
