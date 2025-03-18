@@ -4,6 +4,7 @@ import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/context/AuthProvider';
 
 interface ProfileErrorProps {
   error: string;
@@ -11,9 +12,19 @@ interface ProfileErrorProps {
 
 const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   
   const handleGoHome = () => {
     navigate('/home');
+  };
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // Navigation is handled in the signOut function
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
   
   const getErrorMessage = (error: string) => {
@@ -65,6 +76,16 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
             className="text-gray-700 dark:text-gray-300"
           >
             Go Home
+          </Button>
+        </div>
+        
+        <div className="mt-4">
+          <Button 
+            onClick={handleSignOut} 
+            variant="ghost" 
+            className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+          >
+            Sign Out
           </Button>
         </div>
         
