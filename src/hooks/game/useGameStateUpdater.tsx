@@ -104,9 +104,12 @@ export function useGameStateUpdater(
       
       // Find the player index in the game
       const playerIndex = gameState.players.findIndex(p => {
-        // Handle both string and number IDs
-        const playerId = typeof p.id === 'string' ? p.id : p.id.toString();
-        const currentUserId = typeof userId === 'string' ? userId : userId.toString();
+        // Handle player id properly, ensuring it can be converted to string safely
+        const playerId = p.id !== undefined ? 
+          (typeof p.id === 'string' ? p.id : String(p.id)) : '';
+        
+        // Ensure userId is also a string for comparison
+        const currentUserId = typeof userId === 'string' ? userId : String(userId);
         
         return playerId === currentUserId;
       });
