@@ -1,14 +1,15 @@
 
 import React from 'react';
-import { toast } from 'sonner';
 import { GameState, BoardPosition, Piece } from '@/types/game';
-import { BOARD_SIZE } from '@/utils/gameUtils';
-import GameBoard from '@/components/GameBoard';
-import PieceSelector from '@/components/PieceSelector';
-import GameControls from '@/components/GameControls';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 import TurnIndicator from '@/components/multiplayer/TurnIndicator';
 import PowerupActiveIndicator from '@/components/multiplayer/PowerupActiveIndicator';
-import { useIsMobile } from '@/hooks/use-mobile';
+import PlayerInfo from '@/components/PlayerInfo';
+import GameResult from '@/components/GameResult';
+import MultiplayerGameBoard from '@/components/multiplayer/GameBoard';
+import MultiplayerGameControls from '@/components/multiplayer/GameControls';
+import PieceSelectorWrapper from '@/components/multiplayer/PieceSelectorWrapper';
 
 interface MultiplayerGameContentProps {
   gameState: GameState;
@@ -53,15 +54,6 @@ const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
 }) => {
   const isMobile = useIsMobile();
   
-  // Helper function to handle board cell clicks
-  const handleBoardCellClick = (position: BoardPosition) => {
-    if (!isMyTurn) {
-      toast.info("It's not your turn");
-      return;
-    }
-    onCellClick(position);
-  };
-
   return (
     <>
       <PowerupActiveIndicator 
@@ -71,17 +63,6 @@ const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
         onCancel={cancelPowerupMode}
       />
       
-      <GameBoard
-        gameState={gameState}
-        size={BOARD_SIZE}
-        onCellClick={handleBoardCellClick}
-        selectedPiecePreview={isPowerupActive ? null : selectedPiece}
-        previewPosition={previewPosition}
-        isValidPlacement={isValidPlacement && isMyTurn}
-        onCellHover={onCellHover}
-        isPowerupActive={isPowerupActive}
-      />
-      
       <TurnIndicator 
         gameState={gameState}
         isMyTurn={isMyTurn}
@@ -89,27 +70,37 @@ const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
         activePowerupType={activePowerupType}
       />
       
-      {isMyTurn && !isPowerupActive && (
-        <PieceSelector
-          pieces={gameState.players[playerNumber || 0]?.pieces || []}
-          currentPlayer={playerNumber || 0}
-          onSelectPiece={onSelectPiece}
-          onRotatePiece={onRotatePiece}
-          onFlipPiece={onFlipPiece}
-          selectedPiece={selectedPiece}
-        />
-      )}
+      <MultiplayerGameBoard
+        gameState={gameState}
+        isMyTurn={isMyTurn}
+        isPowerupActive={isPowerupActive}
+        selectedPiece={selectedPiece}
+        previewPosition={previewPosition}
+        isValidPlacement={isValidPlacement}
+        onCellClick={onCellClick}
+        onCellHover={onCellHover}
+      />
       
-      <div className="mt-4">
-        <GameControls
-          onUndo={onUndo}
-          onReset={onReset}
-          onPass={isMyTurn ? onPass : () => toast.info("It's not your turn")}
-          onHome={onHome}
-          canUndo={isMyTurn && gameState.turnHistory.length > 0}
-          isGameOver={["finished", "completed"].includes(gameState.gameStatus)}
-        />
-      </div>
+      <PieceSelectorWrapper
+        isMyTurn={isMyTurn}
+        isPowerupActive={isPowerupActive}
+        playerNumber={playerNumber}
+        pieces={gameState.players[playerNumber || 0]?.pieces || []}
+        selectedPiece={selectedPiece}
+        onSelectPiece={onSelectPiece}
+        onRotatePiece={onRotatePiece}
+        onFlipPiece={onFlipPiece}
+      />
+      
+      <MultiplayerGameControls
+        isMyTurn={isMyTurn}
+        turnHistoryLength={gameState.turnHistory.length}
+        gameStatus={gameState.gameStatus}
+        onUndo={onUndo}
+        onReset={onReset}
+        onPass={onPass}
+        onHome={onHome}
+      />
     </>
   );
 };
