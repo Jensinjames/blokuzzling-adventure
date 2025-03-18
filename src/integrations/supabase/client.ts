@@ -5,10 +5,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mfgpjwjpshnanjrxhmnm.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mZ3Bqd2pwc2huYW5qcnhobW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxNzAwNDgsImV4cCI6MjA1Nzc0NjA0OH0.eClbpmE2hNvSr7R3heIb_atkmFneCas2Y61g3nUZAHA';
 
+// Improved token refresh function with better error handling and logging
 const refreshAccessToken = async (refreshToken: string) => {
   const url = `${supabaseUrl}/auth/v1/token?grant_type=refresh_token`;
   const headers = {
-    'Content-Type': 'application/json;charset=UTF-8',
+    'Content-Type': 'application/json',
     'apikey': supabaseKey,
     'Authorization': `Bearer ${supabaseKey}`,
     'x-client-info': 'supabase-js/2.x'
@@ -16,13 +17,18 @@ const refreshAccessToken = async (refreshToken: string) => {
   const body = JSON.stringify({ refresh_token: refreshToken });
 
   try {
+    console.log('Attempting to refresh token');
     const response = await fetch(url, { method: 'POST', headers, body });
+    
     if (!response.ok) {
       const responseBody = await response.text();
       console.error("Failed to refresh token:", response.status, responseBody);
       return null;
     }
-    return await response.json();
+    
+    const data = await response.json();
+    console.log('Token refreshed successfully');
+    return data;
   } catch (error) {
     console.error("Error during token refresh:", error);
     return null;
@@ -35,9 +41,10 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     persistSession: true,
     detectSessionInUrl: true,
     storage: {
-      // Override the default localStorage implementation
+      // Improved storage implementation with better error handling
       getItem: async (key) => {
         try {
+          console.log(`Getting auth item: ${key}`);
           const value = localStorage.getItem(key);
           return value ? JSON.parse(value) : null;
         } catch (error) {
@@ -47,6 +54,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
       },
       setItem: async (key, value) => {
         try {
+          console.log(`Setting auth item: ${key}`);
           localStorage.setItem(key, JSON.stringify(value));
         } catch (error) {
           console.error('Error setting item to localStorage:', error);
@@ -54,6 +62,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
       },
       removeItem: async (key) => {
         try {
+          console.log(`Removing auth item: ${key}`);
           localStorage.removeItem(key);
         } catch (error) {
           console.error('Error removing item from localStorage:', error);
