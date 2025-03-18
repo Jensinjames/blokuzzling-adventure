@@ -65,8 +65,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
         const result = await signIn(values.email, values.password);
         if (result.error) {
           console.error('[Auth Debug] Sign in error:', result.error);
-          setError(result.error.message || 'Invalid login credentials');
-          toast.error(`Sign in failed: ${result.error.message || 'Invalid login credentials'}`);
+          
+          if (result.error.message.includes('Email not confirmed')) {
+            setError('Please confirm your email address before signing in. Check your inbox for a confirmation link.');
+            toast.error('Email not confirmed. Please check your inbox.');
+          } else {
+            setError(result.error.message || 'Invalid login credentials');
+            toast.error(`Sign in failed: ${result.error.message || 'Invalid login credentials'}`);
+          }
         } else {
           console.log('[Auth Debug] Sign in successful');
           onSuccess();
@@ -89,7 +95,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
           }
         } else {
           console.log('[Auth Debug] Sign up successful');
-          toast.success('Account created! Check your email for confirmation.');
+          
+          // Check if email confirmation is needed
+          if (result.data?.user?.identities?.length === 0 || 
+              !result.data?.user?.email_confirmed_at) {
+            toast.info('Please check your email to confirm your account before signing in.');
+            setError('Please check your email and click the confirmation link before signing in.');
+          } else {
+            toast.success('Account created successfully!');
+          }
+          
           onSuccess();
           // Switch to login mode after successful signup
           if (!isLogin) {

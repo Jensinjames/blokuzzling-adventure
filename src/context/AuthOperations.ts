@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -32,6 +33,12 @@ export const signUpUser = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: window.location.origin + '/auth?confirmation=true',
+        data: {
+          email_confirm_redirect_url: window.location.origin + '/auth?confirmation=true'
+        }
+      }
     });
 
     if (error) {
@@ -41,7 +48,14 @@ export const signUpUser = async (email: string, password: string) => {
     }
 
     console.log('Sign up successful, email confirmation may be required');
-    toast.success('Signed up successfully! Check your email for confirmation.');
+    
+    // Check if email confirmation is needed
+    if (data?.user?.identities?.length === 0 || data?.user?.email_confirmed_at === null) {
+      toast.info('Please check your email to confirm your account before signing in.');
+    } else {
+      toast.success('Signed up successfully!');
+    }
+    
     return { data, error: null };
   } catch (error: any) {
     console.error('Unexpected sign up error:', error);
