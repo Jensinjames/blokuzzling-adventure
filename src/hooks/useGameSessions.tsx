@@ -1,11 +1,11 @@
 
-import { useGameSessionsFetch } from './useGameSessionsFetch';
+import { useGameSessionsFetch } from './game-sessions/useGameSessionsFetch';
 import { useGameSessionCreate } from './useGameSessionCreate';
 import { useGameSessionJoin } from './useGameSessionJoin';
 import { useGameSessionStart } from './useGameSessionStart';
 
 export function useGameSessions() {
-  const { activeSessions, userSessions, loading } = useGameSessionsFetch();
+  const { activeSessions, userSessions, loading, refreshSessions } = useGameSessionsFetch();
   const { createGameSession } = useGameSessionCreate();
   const { joinGameSession } = useGameSessionJoin();
   const { startGameSession } = useGameSessionStart();
@@ -16,6 +16,7 @@ export function useGameSessions() {
     loading,
     createGameSession,
     joinGameSession,
-    startGameSession
+    startGameSession,
+    refreshSessions
   };
 }
