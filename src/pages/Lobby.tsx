@@ -159,13 +159,16 @@ const Lobby = () => {
           aiDifficulty
         });
         
+        // Use simpler JSON format for AI settings to avoid circular references
+        const aiSettings = {
+          ai_enabled: aiEnabled,
+          ai_count: aiCount,
+          ai_difficulty: aiDifficulty
+        };
+        
         const { error } = await supabase
           .from('game_sessions')
-          .update({
-            ai_enabled: aiEnabled,
-            ai_count: aiCount,
-            ai_difficulty: aiDifficulty
-          })
+          .update(aiSettings)
           .eq('id', gameId);
           
         if (error) {

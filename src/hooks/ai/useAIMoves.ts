@@ -17,8 +17,8 @@ export const makeAIMove = (
     position: `(${position.row},${position.col})` 
   });
   
-  // Create a copy of the game state to avoid mutation
-  const gameStateCopy = structuredClone(gameState);
+  // Create a copy of the game state using JSON serialization to avoid circular references
+  const gameStateCopy = JSON.parse(JSON.stringify(gameState));
   
   // Place the selected piece
   const { updatedGameState } = placeSelectedPiece(
@@ -54,8 +54,8 @@ export function useAIMoves() {
       // Find the best move according to the AI's difficulty level
       console.log(`Finding AI move for player ${aiPlayerIndex} with difficulty ${difficulty}`);
       
-      // Use a clean copy without circular references
-      const safeGameState = structuredClone(gameState);
+      // Use JSON serialization to create a clean copy without circular references
+      const safeGameState = JSON.parse(JSON.stringify(gameState));
       const aiMove = findAIMove(safeGameState, aiPlayerIndex, difficulty);
       
       if (!aiMove) {
@@ -68,8 +68,8 @@ export function useAIMoves() {
           position: `(${aiMove.position.row},${aiMove.position.col})`
         });
         
-        // Create a clean copy of the game state to avoid mutation issues
-        const gameStateCopy = structuredClone(gameState);
+        // Create a clean copy of the game state using JSON serialization
+        const gameStateCopy = JSON.parse(JSON.stringify(gameState));
         
         // Make the selected move
         const updatedState = makeAIMove(
@@ -77,12 +77,11 @@ export function useAIMoves() {
           aiMove.piece, 
           aiMove.position,
           (newState) => {
-            // Use structuredClone to ensure clean state without circular references
-            const safeState = structuredClone(
-              typeof newState === 'function' 
-                ? newState(gameStateCopy)
-                : newState
-            );
+            // Use JSON serialization to ensure clean state without circular references
+            const safeState = typeof newState === 'function' 
+              ? JSON.parse(JSON.stringify(newState(gameStateCopy)))
+              : JSON.parse(JSON.stringify(newState));
+              
             setGameState(safeState);
             return safeState;
           }

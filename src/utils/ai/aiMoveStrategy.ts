@@ -16,7 +16,7 @@ export const findAIMove = (
 ): { piece: Piece; position: BoardPosition } | null => {
   console.log(`Finding AI move with difficulty: ${difficulty} for player ${aiPlayerIndex}`);
   
-  // Create safe copies to prevent circular references
+  // Use a clean copy to avoid circular references - use JSON serialization
   const safeGameState = JSON.parse(JSON.stringify(gameState));
   const aiPlayer = safeGameState.players[aiPlayerIndex];
   const unusedPieces = aiPlayer.pieces.filter((p: Piece) => !p.used);

@@ -74,20 +74,23 @@ export function useGameSessionStart() {
       // Create initial game state with appropriate number of players
       const initialGameState = createInitialGameState(totalPlayers);
       
-      // Mark AI players in the game state - use simple assignments to avoid circular references
+      // Mark AI players in the game state
       if (aiEnabled && aiCount > 0) {
         // Human players have index 0 to humanPlayers.length-1
         // AI players have index humanPlayers.length to totalPlayers-1
         for (let i = humanPlayers.length; i < totalPlayers; i++) {
-          initialGameState.players[i].isAI = true;
-          initialGameState.players[i].aiDifficulty = aiDifficulty;
-          initialGameState.players[i].name = `AI Player ${i - humanPlayers.length + 1}`;
+          initialGameState.players[i] = {
+            ...initialGameState.players[i],
+            isAI: true,
+            aiDifficulty: aiDifficulty,
+            name: `AI Player ${i - humanPlayers.length + 1}`
+          };
         }
       }
 
-      // Create a JSON-safe representation that removes any potential circular references
-      // by first converting to JSON and then parsing it back
-      const safeGameState = JSON.parse(JSON.stringify(initialGameState));
+      // Create a stringified version and parse it back to eliminate any potential circular references
+      const stringifiedState = JSON.stringify(initialGameState);
+      const safeGameState = JSON.parse(stringifiedState);
 
       // Update game status and set initial state
       const { error: updateError } = await supabase
