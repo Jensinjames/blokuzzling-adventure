@@ -4,6 +4,8 @@ import { supabase, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthProvider';
 import { GameSession } from '@/types/database';
 import { toast } from 'sonner';
+import { createInitialGameState } from '@/utils/gameLogic';
+import { AIDifficulty } from '@/utils/ai/aiTypes';
 
 export function useGameSessionStart() {
   const { user } = useAuth();
@@ -34,11 +36,53 @@ export function useGameSessionStart() {
         return false;
       }
 
-      // Update game status
+      // Fetch joined human players
+      const { data: playersData, error: playersError } = await supabase
+        .from('game_players')
+        .select(`
+          *,
+          profile:profiles(*)
+        `)
+        .eq('game_id', gameId)
+        .order('player_number', { ascending: true });
+
+      if (playersError) throw playersError;
+      
+      const humanPlayers = playersData || [];
+      
+      // Check if we need to add AI players
+      let totalPlayers = humanPlayers.length;
+      const aiEnabled = typedSessionData.ai_enabled || false;
+      const aiCount = typedSessionData.ai_count || 0;
+      const aiDifficulty = (typedSessionData.ai_difficulty as AIDifficulty) || 'medium';
+      
+      if (aiEnabled && aiCount > 0) {
+        totalPlayers += aiCount;
+      } else if (totalPlayers < 2) {
+        toast.error('At least 2 players are required to start the game');
+        return false;
+      }
+      
+      // Create initial game state with appropriate number of players
+      const initialGameState = createInitialGameState(totalPlayers);
+      
+      // Mark AI players in the game state
+      if (aiEnabled && aiCount > 0) {
+        // Human players have index 0 to humanPlayers.length-1
+        // AI players have index humanPlayers.length to totalPlayers-1
+        for (let i = humanPlayers.length; i < totalPlayers; i++) {
+          initialGameState.players[i].isAI = true;
+          initialGameState.players[i].aiDifficulty = aiDifficulty;
+          initialGameState.players[i].name = `AI Player ${i - humanPlayers.length + 1}`;
+        }
+      }
+
+      // Update game status and set initial state
       const { error: updateError } = await supabase
         .from('game_sessions')
         .update({
-          status: 'playing'
+          status: 'active',
+          game_state: initialGameState
         })
         .eq('id', gameId);
 

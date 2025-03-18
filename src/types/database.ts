@@ -1,70 +1,40 @@
-
-export type Profile = {
+export interface GameSession {
   id: string;
-  username: string;
-  avatar_url: any[] | null; // Updated to match the Json[] type from Supabase
   created_at: string;
-  updated_at: string;
-  wins: number;
-  losses: number;
-  draws: number;
-};
-
-export type GameStatus = 'waiting' | 'active' | 'completed' | 'playing' | 'finished';
-
-export type GameSession = {
-  id: string;
   creator_id: string;
-  status: GameStatus | string; // Allow string from database but constrain in app logic
+  status: 'waiting' | 'active' | 'completed';
+  game_state: any | null;
+  turn_history: any[] | null;
   max_players: number;
-  current_players: number;
-  game_state: any;
-  turn_history: any; // Allow both array and Json types for compatibility
-  created_at: string;
-  updated_at: string;
-  winner_id: string | null;
-};
+  display_name: string;
+  game_type: string;
+  ai_enabled?: boolean;
+  ai_count?: number;
+  ai_difficulty?: string;
+}
 
-export type GamePlayer = {
+export interface GamePlayer {
   id: string;
+  created_at: string;
   game_id: string;
   player_id: string;
   player_number: number;
-  joined_at: string;
-  profile?: Profile;
-};
+}
 
-export type InviteStatus = 'pending' | 'accepted' | 'declined' | 'expired';
-
-export type GameInvite = {
+export interface Profile {
   id: string;
+  updated_at: string;
+  username: string;
+  full_name: string;
+  avatar_url: string;
+  website: string;
+}
+
+export interface GameInvite {
+  id: string;
+  created_at: string;
   game_id: string;
   sender_id: string;
   recipient_id: string;
-  status: InviteStatus | string; // Allow string from database but constrain in app logic
-  created_at: string;
-  updated_at: string;
-  expires_at: string | null; // Add the expires_at field
-  sender?: Partial<Profile>; // Make Profile fields optional for flexibility
-  recipient?: Partial<Profile>; // Make Profile fields optional for flexibility
-};
-
-export type Notification = {
-  id: string;
-  user_id: string;
-  content: string;
-  type: string;
-  read: boolean;
-  created_at: string;
-};
-
-// Add new types for powerups
-export type PowerupType = 'destroy';
-
-export type Powerup = {
-  id: string;
-  type: PowerupType;
-  position: { row: number; col: number };
-  collected: boolean;
-  used: boolean;
-};
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+}

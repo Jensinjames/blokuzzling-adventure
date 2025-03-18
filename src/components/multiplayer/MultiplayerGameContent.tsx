@@ -2,6 +2,7 @@
 import React from 'react';
 import { GameState, BoardPosition, Piece } from '@/types/game';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Brain } from 'lucide-react';
 
 import TurnIndicator from '@/components/multiplayer/TurnIndicator';
 import PowerupActiveIndicator from '@/components/multiplayer/PowerupActiveIndicator';
@@ -56,6 +57,20 @@ const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
 }) => {
   const isMobile = useIsMobile();
   
+  // Render AI indicator if current player is AI
+  const renderAIIndicator = () => {
+    const currentPlayer = gameState.players[gameState.currentPlayer];
+    if (currentPlayer.isAI) {
+      return (
+        <div className="fixed top-20 right-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-3 py-1.5 rounded-md shadow-md flex items-center z-10">
+          <Brain className="h-4 w-4 mr-2" />
+          <span className="text-sm font-medium">AI is thinking...</span>
+        </div>
+      );
+    }
+    return null;
+  };
+  
   // Show game result if the game is over
   if (gameState.gameStatus === "finished" || gameState.gameStatus === "completed") {
     return (
@@ -70,6 +85,8 @@ const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
   
   return (
     <>
+      {renderAIIndicator()}
+      
       <PowerupActiveIndicator 
         isActive={isPowerupActive} 
         isMyTurn={isMyTurn}

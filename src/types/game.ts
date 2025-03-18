@@ -1,54 +1,52 @@
-
-export interface BoardCell {
-  player: number | null;
-  pieceId?: string;
-  hasPowerup?: boolean;
-  powerupType?: string;
-}
-
 export interface BoardPosition {
   row: number;
   col: number;
 }
 
+export interface BoardCell {
+  player: number | null;
+  hasPowerup?: boolean;
+  powerupType?: string;
+}
+
 export interface Piece {
   id: string;
-  shape: number[][];
   name: string;
+  shape: number[][];
   used: boolean;
-  hidden?: boolean;
 }
 
 export interface Move {
-  type: 'place' | 'pass' | 'use-powerup';
+  type: 'place' | 'pass';
   piece?: string;
   position?: BoardPosition;
-  powerupType?: string;
-  targetPosition?: BoardPosition;
+  timestamp: number;
+}
+
+export interface TurnHistoryItem {
+  type: 'place' | 'pass';
+  player: number;
+  piece?: string;
+  position?: BoardPosition;
   timestamp: number;
 }
 
 export interface Player {
-  id: number | string;  // Can be either a number (local game) or UUID string (multiplayer)
+  id: number;
   name: string;
   color: string;
-  moveHistory: Move[];
   pieces: Piece[];
+  moveHistory: Move[];
   score: number;
-  powerups: {
-    type: string;
-    count: number;
-  }[];
+  powerups: string[];
+  isAI?: boolean;
+  aiDifficulty?: string;
 }
 
-export interface TurnHistoryItem {
-  type: string;
-  player: number;
-  piece?: string;
-  position?: BoardPosition;
-  powerupType?: string;
-  targetPosition?: BoardPosition;
-  timestamp: number;
+export interface GameStats {
+  totalMoves: number;
+  gameStartTime: number;
+  lastMoveTime: number;
 }
 
 export interface GameState {
@@ -56,11 +54,7 @@ export interface GameState {
   players: Player[];
   currentPlayer: number;
   turnHistory: TurnHistoryItem[];
-  gameStats: {
-    totalMoves: number;
-    gameStartTime: number;
-    lastMoveTime: number;
-  };
+  gameStats: GameStats;
   gameStatus: 'waiting' | 'playing' | 'finished' | 'completed';
   winner: number | null;
   powerupCells?: BoardPosition[];

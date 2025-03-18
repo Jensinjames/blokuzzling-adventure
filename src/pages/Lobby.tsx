@@ -9,12 +9,15 @@ import { Loader2, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { GamePlayer, GameSession, Profile } from '@/types/database';
 import { motion } from 'framer-motion';
+import { AIDifficulty } from '@/utils/ai/aiTypes';
 
-// Import our new components
+// Import our components
 import LobbyHeader from '@/components/lobby/LobbyHeader';
 import LobbyInfo from '@/components/lobby/LobbyInfo';
 import PlayerList from '@/components/lobby/PlayerList';
 import InviteForm from '@/components/lobby/InviteForm';
+import AIPlayersToggle from '@/components/lobby/AIPlayersToggle';
+import { useMultiplayerAI } from '@/hooks/useMultiplayerAI';
 
 const Lobby = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -25,6 +28,21 @@ const Lobby = () => {
   const [players, setPlayers] = useState<(GamePlayer & { profile: Profile })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreator, setIsCreator] = useState(false);
+  const [starting, setStarting] = useState(false);
+
+  // AI players management
+  const {
+    aiEnabled,
+    aiCount,
+    aiDifficulty,
+    maxAIPlayers,
+    setAiEnabled,
+    setAiCount,
+    setAiDifficulty
+  } = useMultiplayerAI(
+    gameSession?.max_players || 4, 
+    players.length
+  );
 
   useEffect(() => {
     if (!user || !gameId) return;
@@ -133,7 +151,30 @@ const Lobby = () => {
 
   const handleStartGame = async () => {
     if (!gameId) return;
-    await startGameSession(gameId);
+    setStarting(true);
+    
+    try {
+      // First update AI player settings if enabled
+      if (aiEnabled && aiCount > 0) {
+        const { error } = await supabase
+          .from('game_sessions')
+          .update({
+            ai_enabled: aiEnabled,
+            ai_count: aiCount,
+            ai_difficulty: aiDifficulty
+          })
+          .eq('id', gameId);
+          
+        if (error) throw error;
+      }
+      
+      // Then start the game
+      await startGameSession(gameId);
+    } catch (error: any) {
+      toast.error(`Failed to start game: ${error.message}`);
+    } finally {
+      setStarting(false);
+    }
   };
 
   const handleBack = () => {
@@ -147,6 +188,11 @@ const Lobby = () => {
       </div>
     );
   }
+
+  // Calculate if we can start the game (either enough human players or AI enabled)
+  const canStartGame = isCreator && 
+    (players.length >= 2 || (players.length >= 1 && aiEnabled && aiCount > 0)) && 
+    gameSession?.status === 'waiting';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 px-4 py-6">
@@ -168,6 +214,25 @@ const Lobby = () => {
               />
             </motion.div>
 
+            {isCreator && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="glass-panel"
+              >
+                <AIPlayersToggle
+                  aiEnabled={aiEnabled}
+                  aiCount={aiCount}
+                  aiDifficulty={aiDifficulty}
+                  maxAIPlayers={maxAIPlayers}
+                  onToggleAI={setAiEnabled}
+                  onChangeAICount={setAiCount}
+                  onChangeDifficulty={setAiDifficulty}
+                />
+              </motion.div>
+            )}
+
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -181,11 +246,13 @@ const Lobby = () => {
               <Button
                 size="lg"
                 onClick={handleStartGame}
-                disabled={!isCreator || players.length < 2 || gameSession.status !== 'waiting'}
+                disabled={!canStartGame || starting}
                 className="w-full max-w-xs"
               >
-                <Play className="h-5 w-5 mr-2" />
-                {isCreator ? 'Start Game' : 'Waiting for host to start...'}
+                {starting ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Play className="h-5 w-5 mr-2" />}
+                {isCreator 
+                  ? (starting ? 'Starting Game...' : 'Start Game') 
+                  : 'Waiting for host to start...'}
               </Button>
             </div>
           </div>
