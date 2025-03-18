@@ -17,6 +17,9 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
   };
   
   const getErrorMessage = (error: string) => {
+    if (error.includes("permission denied for table users")) {
+      return "We're unable to access user information. This is likely a database permissions issue that our team is working on.";
+    }
     if (error.includes("schema")) {
       return "Database schema configuration error. Please try again or contact support.";
     }
