@@ -5,37 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mfgpjwjpshnanjrxhmnm.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mZ3Bqd2pwc2huYW5qcnhobW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxNzAwNDgsImV4cCI6MjA1Nzc0NjA0OH0.eClbpmE2hNvSr7R3heIb_atkmFneCas2Y61g3nUZAHA';
 
-// Enhanced token refresh function with better error reporting and debug information
-const refreshAccessToken = async (refreshToken: string) => {
-  const url = `${supabaseUrl}/auth/v1/token?grant_type=refresh_token`;
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': supabaseKey,
-    'Authorization': `Bearer ${supabaseKey}`,
-    'x-client-info': 'supabase-js/2.x'
-  };
-  const body = JSON.stringify({ refresh_token: refreshToken });
-
-  try {
-    console.log('[Auth Debug] Attempting to refresh token');
-    const response = await fetch(url, { method: 'POST', headers, body });
-    
-    if (!response.ok) {
-      const responseBody = await response.text();
-      console.error("[Auth Debug] Failed to refresh token:", response.status, responseBody);
-      return null;
-    }
-    
-    const data = await response.json();
-    console.log('[Auth Debug] Token refreshed successfully');
-    return data;
-  } catch (error) {
-    console.error("[Auth Debug] Error during token refresh:", error);
-    return null;
-  }
-};
-
-// Configure Supabase client with enhanced debugging
+// Configure Supabase client with enhanced debug info
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
