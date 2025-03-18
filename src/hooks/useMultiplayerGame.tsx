@@ -3,11 +3,14 @@ import { useGameData } from './useGameData';
 import { useGameStateManager } from './useGameStateManager';
 import { useGameCompletion } from './useGameCompletion';
 import { useAIMoves } from './ai/useAIMoves';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BoardPosition, Piece, GameState, TurnHistoryItem } from '@/types/game';
 import { AIDifficulty } from '@/utils/ai/aiTypes';
+import { toast } from 'sonner';
 
 export function useMultiplayerGame(gameId: string) {
+  const [aiMoveInProgress, setAiMoveInProgress] = useState(false);
+  
   const {
     gameSession,
     players,
@@ -30,50 +33,89 @@ export function useMultiplayerGame(gameId: string) {
   // Process AI turns
   useEffect(() => {
     // Only proceed if game is loaded and in playing state
-    if (!gameState || loading || gameState.gameStatus !== 'playing') {
+    if (!gameState || loading || gameState.gameStatus !== 'playing' || aiMoveInProgress) {
       return;
     }
 
     // Check if it's an AI player's turn
     const currentPlayer = gameState.players[gameState.currentPlayer];
-    if (currentPlayer.isAI) {
+    console.log('Current player:', gameState.currentPlayer, currentPlayer);
+    
+    if (currentPlayer?.isAI) {
+      console.log('AI turn detected:', {
+        playerIndex: gameState.currentPlayer,
+        playerName: currentPlayer.name,
+        aiDifficulty: currentPlayer.aiDifficulty || 'medium'
+      });
+      
+      setAiMoveInProgress(true);
+      
       // Small delay to make AI moves feel more natural
       const aiTimer = setTimeout(() => {
-        // Make the AI move
-        const aiDifficulty = currentPlayer.aiDifficulty || 'medium';
-        const aiSuccess = findAndMakeMove(
-          gameState, 
-          gameState.currentPlayer, 
-          aiDifficulty as AIDifficulty, 
-          setGameState
-        );
+        try {
+          // Make the AI move
+          const aiDifficulty = currentPlayer.aiDifficulty || 'medium';
+          console.log('Finding AI move with difficulty:', aiDifficulty);
+          
+          const aiSuccess = findAndMakeMove(
+            gameState, 
+            gameState.currentPlayer, 
+            aiDifficulty as AIDifficulty, 
+            (newState) => {
+              setGameState(newState);
+              updateGameState(newState);
+            }
+          );
 
-        // If AI made a move, update the game state
-        if (aiSuccess && gameState) {
-          updateGameState(gameState);
-        } else {
-          // AI couldn't make a move, so pass the turn
-          // Create a pass move that follows the TurnHistoryItem type
-          const passHistoryItem: TurnHistoryItem = {
-            type: 'pass',
-            player: gameState.currentPlayer,
-            timestamp: Date.now()
-          };
+          // If AI made a move, update the game state
+          if (!aiSuccess && gameState) {
+            console.log('AI could not make a move, passing turn');
+            // AI couldn't make a move, so pass the turn
+            // Create a pass move that follows the TurnHistoryItem type
+            const passHistoryItem: TurnHistoryItem = {
+              type: 'pass',
+              player: gameState.currentPlayer,
+              timestamp: Date.now()
+            };
+            
+            const updatedGameState: GameState = {
+              ...gameState,
+              currentPlayer: (gameState.currentPlayer + 1) % gameState.players.length,
+              turnHistory: [...gameState.turnHistory, passHistoryItem]
+            };
+            
+            setGameState(updatedGameState);
+            updateGameState(updatedGameState);
+          }
+        } catch (error) {
+          console.error('Error during AI move:', error);
+          toast.error('Error during AI move. Passing turn.');
           
-          const updatedGameState: GameState = {
-            ...gameState,
-            currentPlayer: (gameState.currentPlayer + 1) % gameState.players.length,
-            turnHistory: [...gameState.turnHistory, passHistoryItem]
-          };
-          
-          setGameState(updatedGameState);
-          updateGameState(updatedGameState);
+          // Pass turn as fallback
+          if (gameState) {
+            const passHistoryItem: TurnHistoryItem = {
+              type: 'pass',
+              player: gameState.currentPlayer,
+              timestamp: Date.now()
+            };
+            
+            const updatedGameState: GameState = {
+              ...gameState,
+              currentPlayer: (gameState.currentPlayer + 1) % gameState.players.length,
+              turnHistory: [...gameState.turnHistory, passHistoryItem]
+            };
+            
+            setGameState(updatedGameState);
+            updateGameState(updatedGameState);
+          }
+        } finally {
+          setAiMoveInProgress(false);
         }
       }, 1000); // 1 second delay for AI thinking
 
       return () => clearTimeout(aiTimer);
     }
-  }, [gameState?.currentPlayer, gameState?.gameStatus, loading]);
+  }, [gameState?.currentPlayer, gameState?.gameStatus, loading, aiMoveInProgress]);
 
   // Use useGameCompletion with the correct parameters
   useGameCompletion(
@@ -99,6 +141,7 @@ export function useMultiplayerGame(gameId: string) {
     isMyTurn,
     updateGameState,
     makeMove,
-    error
+    error,
+    aiMoveInProgress
   };
 }

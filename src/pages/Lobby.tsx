@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -151,6 +150,12 @@ const Lobby = () => {
     try {
       // First update AI player settings if enabled
       if (aiEnabled && aiCount > 0) {
+        console.log('Updating game session with AI settings:', {
+          aiEnabled,
+          aiCount,
+          aiDifficulty
+        });
+        
         const { error } = await supabase
           .from('game_sessions')
           .update({
@@ -160,12 +165,21 @@ const Lobby = () => {
           })
           .eq('id', gameId);
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating AI settings:', error);
+          throw error;
+        }
       }
       
       // Then start the game
-      await startGameSession(gameId);
+      const success = await startGameSession(gameId);
+      
+      if (success) {
+        console.log('Game started successfully, redirecting to game');
+        navigate(`/multiplayer/${gameId}`);
+      }
     } catch (error: any) {
+      console.error('Failed to start game:', error);
       toast.error(`Failed to start game: ${error.message}`);
     } finally {
       setStarting(false);

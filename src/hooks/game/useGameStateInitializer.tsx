@@ -17,7 +17,7 @@ export function useGameStateInitializer(
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!gameSession || players.length === 0 || !gameId) return;
+    if (!gameSession || !gameId) return;
 
     const initializeGameState = async () => {
       setLoading(true);
@@ -26,17 +26,48 @@ export function useGameStateInitializer(
         if (!gameSession.game_state || Object.keys(gameSession.game_state).length === 0) {
           console.log('Initializing new game state');
           // New game, initialize state
-          const initialState = createInitialGameState(players.length);
+
+          // Count the total players (human + AI)
+          const totalPlayers = players.length;
+          const aiCount = gameSession.ai_count || 0;
+          const aiEnabled = gameSession.ai_enabled || false;
+          const aiDifficulty = gameSession.ai_difficulty || 'medium';
+          
+          console.log('Game setup:', { 
+            totalPlayers, 
+            humanPlayers: players.length, 
+            aiEnabled, 
+            aiCount, 
+            aiDifficulty 
+          });
+          
+          // Create initial state with the correct number of players
+          const initialState = createInitialGameState(
+            aiEnabled ? players.length + aiCount : players.length
+          );
           
           // Update player names and colors
           const updatedPlayers = initialState.players.map((p, idx) => {
-            const playerData = players.find((pd) => pd.player_number === idx);
-            if (playerData) {
+            // For human players
+            if (idx < players.length) {
+              const playerData = players.find((pd) => pd.player_number === idx);
+              if (playerData) {
+                return {
+                  ...p,
+                  name: playerData.profile.username,
+                  id: playerData.player_id // Use the actual player UUID
+                } as Player;
+              }
+              return p;
+            } 
+            // For AI players
+            else if (aiEnabled && idx >= players.length && idx < players.length + aiCount) {
               return {
                 ...p,
-                name: playerData.profile.username,
-                id: playerData.player_id // Use the actual player UUID
-              } as Player; // Type assertion to Player
+                name: `AI Player ${idx - players.length + 1}`,
+                isAI: true,
+                aiDifficulty: aiDifficulty
+              } as Player;
             }
             return p;
           });
@@ -64,7 +95,7 @@ export function useGameStateInitializer(
           }
         } else {
           // Load existing game state
-          console.log('Loading existing game state');
+          console.log('Loading existing game state:', gameSession.game_state);
           const loadedState = gameSession.game_state as unknown as GameState;
           setGameState(loadedState);
         }
@@ -83,6 +114,7 @@ export function useGameStateInitializer(
   // Update gameState when gameSession changes (for real-time updates)
   useEffect(() => {
     if (gameSession?.game_state && Object.keys(gameSession.game_state).length > 0) {
+      console.log('Received updated game state from server');
       setGameState(gameSession.game_state as unknown as GameState);
     }
   }, [gameSession?.game_state]);

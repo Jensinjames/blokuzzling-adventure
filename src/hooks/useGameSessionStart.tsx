@@ -1,10 +1,10 @@
 
 import { useState } from 'react';
 import { supabase, safeSingleDataCast } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { GameSession } from '@/types/database';
 import { toast } from 'sonner';
-import { createInitialGameState } from '@/utils/gameLogic';
+import { createInitialGameState } from '@/utils/gameUtils';
 import { AIDifficulty } from '@/utils/ai/aiTypes';
 
 export function useGameSessionStart() {
@@ -56,6 +56,13 @@ export function useGameSessionStart() {
       const aiCount = typedSessionData.ai_count || 0;
       const aiDifficulty = (typedSessionData.ai_difficulty as AIDifficulty) || 'medium';
       
+      console.log('Starting game with:', {
+        humanPlayers: totalPlayers,
+        aiEnabled,
+        aiCount,
+        aiDifficulty
+      });
+      
       if (aiEnabled && aiCount > 0) {
         totalPlayers += aiCount;
       } else if (totalPlayers < 2) {
@@ -91,6 +98,7 @@ export function useGameSessionStart() {
       toast.success('Game started!');
       return true;
     } catch (error: any) {
+      console.error('Failed to start game:', error);
       toast.error(`Failed to start game: ${error.message}`);
       return false;
     } finally {
