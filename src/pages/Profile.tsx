@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +9,7 @@ import { useUserGames } from '@/hooks/useUserGames';
 import { toast } from 'sonner';
 import { useAuthCheck } from '@/hooks/useAuthCheck';
 import { useAuth } from '@/context/AuthProvider';
+import { GameSession } from '@/types/database';
 
 const Profile = () => {
   const { profile, loading: profileLoading, error: profileError, updateProfile, saving } = useProfile();
@@ -17,10 +17,10 @@ const Profile = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [editing, setEditing] = useState(false);
-  const [refreshGames, setRefreshGames] = useState(0);
-  const { games, loading: gamesLoading } = useUserGames(profile, refreshGames);
   
-  // Use our auth check hook
+  const { games: fetchedGames, loading: gamesLoading } = useUserGames(profile);
+  const [games, setGames] = useState<GameSession[]>([]);
+  
   const { user, isLoading: authLoading } = useAuthCheck();
   
   const isLoading = profileLoading || authLoading;
@@ -30,6 +30,12 @@ const Profile = () => {
       setUsername(profile.username);
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (fetchedGames) {
+      setGames(fetchedGames);
+    }
+  }, [fetchedGames]);
 
   const handleUpdateProfile = async () => {
     if (!username.trim()) {
@@ -62,9 +68,8 @@ const Profile = () => {
     navigate('/home');
   };
   
-  const handleGameDeleted = () => {
-    // Trigger a refresh of the games list
-    setRefreshGames(prev => prev + 1);
+  const handleGameDeleted = (gameId: string) => {
+    setGames(prevGames => prevGames.filter(game => game.id !== gameId));
   };
 
   if (isLoading) {

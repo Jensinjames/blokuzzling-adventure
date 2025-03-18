@@ -20,7 +20,7 @@ interface ProfileViewProps {
   signOut: () => Promise<void>;
   games?: GameSession[];
   gamesLoading?: boolean;
-  onGameDeleted?: () => void;
+  onGameDeleted?: (gameId: string) => void;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({

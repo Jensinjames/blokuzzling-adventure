@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { supabase, safeDataCast } from '@/integrations/supabase/client';
 import { GameSession, Profile } from '@/types/database';
 import { toast } from 'sonner';
 
-export function useUserGames(profile: Profile | null, refreshTrigger: number = 0) {
+export function useUserGames(profile: Profile | null) {
   const [games, setGames] = useState<GameSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +106,29 @@ export function useUserGames(profile: Profile | null, refreshTrigger: number = 0
     };
 
     fetchUserGames();
-  }, [profile, refreshTrigger]);
+    
+    // Subscribe to game sessions changes to keep the list updated
+    const gameSessionsChannel = supabase
+      .channel('game-sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'game_sessions',
+          filter: `creator_id=eq.${profile.id}`
+        },
+        (payload) => {
+          console.log('Game session change detected:', payload);
+          fetchUserGames();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(gameSessionsChannel);
+    };
+  }, [profile]);
 
   return { games, loading, error };
 }

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -16,22 +16,33 @@ import { Gamepad, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { deleteGameSession } from '@/context/AuthOperations';
 import { useAuth } from '@/context/AuthProvider';
+import { toast } from 'sonner';
 
 interface GameHistoryProps {
   games: GameSession[];
   loading: boolean;
-  onGameDeleted?: () => void;
+  onGameDeleted?: (gameId: string) => void;
 }
 
 const GameHistory: React.FC<GameHistoryProps> = ({ games, loading, onGameDeleted }) => {
   const { user } = useAuth();
+  const [deletingGameId, setDeletingGameId] = useState<string | null>(null);
   
   const handleDeleteGame = async (gameId: string) => {
     if (confirm('Are you sure you want to delete this game?')) {
+      setDeletingGameId(gameId);
+      
       const { error } = await deleteGameSession(gameId);
-      if (!error && onGameDeleted) {
-        onGameDeleted();
+      
+      if (error) {
+        toast.error("Failed to delete game");
+        console.error("Delete game error:", error);
+      } else if (onGameDeleted) {
+        onGameDeleted(gameId);
+        toast.success("Game deleted successfully");
       }
+      
+      setDeletingGameId(null);
     }
   };
   
@@ -97,9 +108,13 @@ const GameHistory: React.FC<GameHistoryProps> = ({ games, loading, onGameDeleted
                     size="icon" 
                     className="text-gray-500 hover:text-red-500"
                     onClick={() => handleDeleteGame(game.id)}
+                    disabled={deletingGameId === game.id}
                     title="Delete game"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {deletingGameId === game.id ? 
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" /> : 
+                      <Trash2 className="h-4 w-4" />
+                    }
                   </Button>
                 )}
               </TableCell>

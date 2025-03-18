@@ -10,7 +10,7 @@ interface ProfileTabsProps {
   profile: Profile;
   games?: GameSession[];
   gamesLoading?: boolean;
-  onGameDeleted?: () => void;
+  onGameDeleted?: (gameId: string) => void;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ 
