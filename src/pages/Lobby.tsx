@@ -4,19 +4,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { supabase, safeSingleDataCast, safeDataCast } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Loader2, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { GamePlayer, GameSession, Profile } from '@/types/database';
-import { motion } from 'framer-motion';
-import { AIDifficulty } from '@/utils/ai/aiTypes';
 
 // Import our components
 import LobbyHeader from '@/components/lobby/LobbyHeader';
-import LobbyInfo from '@/components/lobby/LobbyInfo';
-import PlayerList from '@/components/lobby/PlayerList';
-import InviteForm from '@/components/lobby/InviteForm';
-import AIPlayersToggle from '@/components/lobby/AIPlayersToggle';
+import LobbyContent from '@/components/lobby/LobbyContent';
+import LobbyLoading from '@/components/lobby/LobbyLoading';
+import LobbyActions from '@/components/lobby/LobbyActions';
 import { useMultiplayerAI } from '@/hooks/useMultiplayerAI';
 
 const Lobby = () => {
@@ -182,11 +177,7 @@ const Lobby = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-      </div>
-    );
+    return <LobbyLoading />;
   }
 
   // Calculate if we can start the game (either enough human players or AI enabled)
@@ -200,62 +191,30 @@ const Lobby = () => {
         <LobbyHeader onBack={handleBack} />
 
         {gameSession && (
-          <div className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass-panel"
-            >
-              <LobbyInfo gameSession={gameSession} />
-              <PlayerList 
-                players={players} 
-                maxPlayers={gameSession.max_players} 
-                creatorId={gameSession.creator_id} 
-              />
-            </motion.div>
-
-            {isCreator && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="glass-panel"
-              >
-                <AIPlayersToggle
-                  aiEnabled={aiEnabled}
-                  aiCount={aiCount}
-                  aiDifficulty={aiDifficulty}
-                  maxAIPlayers={maxAIPlayers}
-                  onToggleAI={setAiEnabled}
-                  onChangeAICount={setAiCount}
-                  onChangeDifficulty={setAiDifficulty}
-                />
-              </motion.div>
-            )}
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="glass-panel"
-            >
-              <InviteForm gameId={gameId || ''} userId={user?.id} />
-            </motion.div>
-
-            <div className="flex justify-center mt-6">
-              <Button
-                size="lg"
-                onClick={handleStartGame}
-                disabled={!canStartGame || starting}
-                className="w-full max-w-xs"
-              >
-                {starting ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Play className="h-5 w-5 mr-2" />}
-                {isCreator 
-                  ? (starting ? 'Starting Game...' : 'Start Game') 
-                  : 'Waiting for host to start...'}
-              </Button>
-            </div>
-          </div>
+          <>
+            <LobbyContent 
+              gameSession={gameSession}
+              players={players}
+              isCreator={isCreator}
+              userId={user?.id}
+              gameId={gameId}
+              aiEnabled={aiEnabled}
+              aiCount={aiCount}
+              aiDifficulty={aiDifficulty}
+              maxAIPlayers={maxAIPlayers}
+              setAiEnabled={setAiEnabled}
+              setAiCount={setAiCount}
+              setAiDifficulty={setAiDifficulty}
+            />
+            
+            <LobbyActions 
+              gameSession={gameSession}
+              isCreator={isCreator}
+              canStartGame={canStartGame}
+              starting={starting}
+              onStartGame={handleStartGame}
+            />
+          </>
         )}
       </div>
     </div>
