@@ -20,6 +20,9 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
     if (error.includes("permission denied for table users")) {
       return "We're unable to access user information. This is likely a database permissions issue that our team is working on.";
     }
+    if (error.includes("permission denied for")) {
+      return "Database access denied. Your account may not have sufficient permissions to access this feature.";
+    }
     if (error.includes("schema")) {
       return "Database schema configuration error. Please try again or contact support.";
     }
@@ -28,6 +31,12 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
     }
     if (error.includes("has no call signatures")) {
       return "Database client configuration error. The application needs to be updated to match the new schema.";
+    }
+    if (error.includes("Row level security violation")) {
+      return "You don't have permission to access this data. This is a security restriction set by the database.";
+    }
+    if (error.includes("JWT")) {
+      return "Your authentication token has expired or is invalid. Please try signing in again.";
     }
     return error;
   };
