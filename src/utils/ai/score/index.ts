@@ -6,3 +6,4 @@ export * from './blockingScore';
 export * from './cornerScore';
 export * from './adjacentSpacesScore';
 export * from './scoreUtils';
+export * from './validationUtils';
