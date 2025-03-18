@@ -97,5 +97,8 @@ export const findAIMove = (
   // Choose the move based on difficulty
   const selectedMove = chooseMove(possibleMoves, difficulty);
   console.log(`AI selected move with piece ${selectedMove.piece.id} at position (${selectedMove.position.row}, ${selectedMove.position.col}), score: ${selectedMove.score}`);
-  return selectedMove;
+  return {
+    piece: selectedMove.piece,
+    position: selectedMove.position
+  };
 };

@@ -5,7 +5,7 @@ import { AIDifficulty, AIMove } from './aiTypes';
 export const chooseMove = (
   possibleMoves: AIMove[],
   difficulty: AIDifficulty
-): { piece: any; position: { row: number; col: number } } => {
+): AIMove => {
   // Sort moves by score (highest first)
   const sortedMoves = [...possibleMoves].sort((a, b) => b.score - a.score);
   
@@ -15,10 +15,7 @@ export const chooseMove = (
       // But prioritizes big pieces over optimal placement
       const easyPool = Math.ceil(sortedMoves.length * 0.6);
       const easyIndex = Math.floor(Math.random() * easyPool);
-      return {
-        piece: sortedMoves[easyIndex].piece,
-        position: sortedMoves[easyIndex].position
-      };
+      return sortedMoves[easyIndex];
       
     case 'medium':
       // Medium AI usually picks from the top 30% of moves
@@ -27,18 +24,12 @@ export const chooseMove = (
         // Occasionally pick from the middle of the pack
         const middleIndex = Math.floor(sortedMoves.length * 0.3) + 
                            Math.floor(Math.random() * Math.floor(sortedMoves.length * 0.4));
-        return {
-          piece: sortedMoves[Math.min(middleIndex, sortedMoves.length - 1)].piece,
-          position: sortedMoves[Math.min(middleIndex, sortedMoves.length - 1)].position
-        };
+        return sortedMoves[Math.min(middleIndex, sortedMoves.length - 1)];
       } else {
         // Usually pick from the top moves
         const topMediumMoves = Math.ceil(sortedMoves.length * 0.3);
         const mediumIndex = Math.floor(Math.random() * Math.min(3, topMediumMoves));
-        return {
-          piece: sortedMoves[mediumIndex].piece,
-          position: sortedMoves[mediumIndex].position
-        };
+        return sortedMoves[mediumIndex];
       }
       
     case 'hard':
@@ -46,10 +37,7 @@ export const chooseMove = (
       // But occasionally (20% chance) picks the 2nd or 3rd best move
       // to create some variability and not be too predictable
       if (sortedMoves.length <= 1) {
-        return {
-          piece: sortedMoves[0].piece,
-          position: sortedMoves[0].position
-        };
+        return sortedMoves[0];
       }
       
       const randomFactor = Math.random();
@@ -60,9 +48,6 @@ export const chooseMove = (
         index = 1 + Math.floor(Math.random() * Math.min(2, sortedMoves.length - 1));
       }
       
-      return {
-        piece: sortedMoves[index].piece,
-        position: sortedMoves[index].position
-      };
+      return sortedMoves[index];
   }
 };
