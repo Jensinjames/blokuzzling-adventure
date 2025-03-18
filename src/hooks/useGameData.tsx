@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, safeDataCast, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { GameState } from '@/types/game';
+import { GameState, Player } from '@/types/game';
 import { GameSession, GamePlayer, Profile } from '@/types/database';
 import { toast } from 'sonner';
 import { createInitialGameState } from '@/utils/gameUtils';
@@ -91,12 +91,12 @@ export function useGameData(gameId: string) {
                 ...p,
                 name: playerData.profile.username,
                 id: playerData.player_id // Use the actual player UUID
-              };
+              } as Player; // Type assertion to Player
             }
             return p;
           });
 
-          const newGameState = {
+          const newGameState: GameState = {
             ...initialState,
             players: updatedPlayers
           };

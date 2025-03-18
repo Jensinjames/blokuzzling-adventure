@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Player } from '@/types/game';
+import { Player, PowerupItem } from '@/types/game';
 import { ArrowRightCircle, Wand2, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -82,7 +82,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
           {/* Display powerups if player has any */}
           {player.powerups && player.powerups.length > 0 && player.powerups.some(p => p.count > 0) && (
             <div className="mt-2 flex flex-wrap gap-1">
-              {player.powerups.map((powerup, pidx) => (
+              {player.powerups.map((powerup: PowerupItem, pidx) => (
                 powerup.count > 0 ? (
                   <div key={`powerup-${pidx}`} className="flex items-center">
                     {isViewerCurrentPlayer && currentPlayer === index && onUsePowerup ? (

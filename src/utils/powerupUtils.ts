@@ -1,5 +1,5 @@
 
-import { GameState, BoardPosition } from '@/types/game';
+import { GameState, BoardPosition, PowerupItem, TurnHistoryItem } from '@/types/game';
 import { powerupCorners } from './gameConstants';
 
 // Handle using the destroy powerup
@@ -36,7 +36,7 @@ export function useDestroyPowerup(gameState: GameState, position: BoardPosition)
   }
   
   // Add a record to the turn history
-  const turnHistoryItem = {
+  const turnHistoryItem: TurnHistoryItem = {
     type: 'use-powerup',
     player: currentPlayerIndex,
     powerupType: 'destroy',

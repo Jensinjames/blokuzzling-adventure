@@ -71,7 +71,7 @@ const GameResult: React.FC<GameResultProps> = ({ players, winner, onRestart, onH
                 <span className="font-medium">{player.name}</span>
                 
                 {/* Show player ID if it's a string */}
-                {typeof player.id === 'string' && player.id.length > 8 && !isMobile && (
+                {typeof player.id === 'string' && player.id && !isMobile && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>

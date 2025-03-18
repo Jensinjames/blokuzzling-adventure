@@ -1,5 +1,5 @@
 
-import { GameState } from '@/types/game';
+import { GameState, TurnHistoryItem } from '@/types/game';
 import { useAIGameLogic } from './useAIGameLogic';
 
 export function useAIPass() {
@@ -12,7 +12,7 @@ export function useAIPass() {
     setGameState: React.Dispatch<React.SetStateAction<GameState>>
   ) => {
     // Create a pass move in the turn history
-    const turnHistoryItem = {
+    const turnHistoryItem: TurnHistoryItem = {
       type: 'pass',
       player: aiPlayerIndex,
       timestamp: Date.now()

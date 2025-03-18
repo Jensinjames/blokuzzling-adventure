@@ -1,5 +1,5 @@
 
-import { GameState, Piece, BoardPosition } from '@/types/game';
+import { GameState, Piece, BoardPosition, TurnHistoryItem } from '@/types/game';
 import { hasValidMoves } from '@/utils/gameUtils';
 import { collectPowerup } from '@/utils/powerupUtils';
 
@@ -55,7 +55,7 @@ export function placeSelectedPiece(
   });
   
   // Add to turn history
-  const turnHistoryItem = {
+  const turnHistoryItem: TurnHistoryItem = {
     type: 'place',
     player: currentPlayerIndex,
     piece: selectedPiece.id,

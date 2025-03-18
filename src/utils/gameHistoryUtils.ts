@@ -1,5 +1,5 @@
 
-import { GameState } from '@/types/game';
+import { GameState, TurnHistoryItem, PowerupItem } from '@/types/game';
 import { BOARD_SIZE } from '@/utils/gameUtils';
 
 // Handle undoing the last move
@@ -31,7 +31,7 @@ export function handleUndoAction(gameState: GameState): { updatedGameState: Game
     
     // Mark the piece as unused
     updatedPlayers[lastMove.player].pieces = updatedPlayers[lastMove.player].pieces.map(
-      piece => piece.id === lastMove.piece ? { ...piece, used: false } : piece
+      piece => piece.id === lastMove.piece ? { ...piece, used: false, hidden: false } : piece
     );
     
     // Remove the move from player's history
@@ -81,7 +81,8 @@ export function handleUndoAction(gameState: GameState): { updatedGameState: Game
       if (!currentPlayer.powerups) {
         currentPlayer.powerups = [];
       }
-      currentPlayer.powerups.push({ type: powerupType, count: 1 });
+      const newPowerup: PowerupItem = { type: powerupType, count: 1 };
+      currentPlayer.powerups.push(newPowerup);
     }
     
     return {

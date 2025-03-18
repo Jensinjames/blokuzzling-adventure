@@ -4,7 +4,7 @@ import { useGameStateManager } from './useGameStateManager';
 import { useGameCompletion } from './useGameCompletion';
 import { useAIMoves } from './ai/useAIMoves';
 import { useEffect } from 'react';
-import { BoardPosition, Piece, GameState } from '@/types/game';
+import { BoardPosition, Piece, GameState, TurnHistoryItem } from '@/types/game';
 import { AIDifficulty } from '@/utils/ai/aiTypes';
 
 export function useMultiplayerGame(gameId: string) {
@@ -52,18 +52,19 @@ export function useMultiplayerGame(gameId: string) {
           updateGameState(gameState);
         } else {
           // AI couldn't make a move, so pass the turn
-          const updatedGameState = {
+          // Create a pass move that follows the TurnHistoryItem type
+          const passHistoryItem: TurnHistoryItem = {
+            type: 'pass',
+            player: gameState.currentPlayer,
+            timestamp: Date.now()
+          };
+          
+          const updatedGameState: GameState = {
             ...gameState,
             currentPlayer: (gameState.currentPlayer + 1) % gameState.players.length,
-            turnHistory: [
-              ...gameState.turnHistory,
-              {
-                type: 'pass',
-                player: gameState.currentPlayer,
-                timestamp: Date.now()
-              }
-            ]
+            turnHistory: [...gameState.turnHistory, passHistoryItem]
           };
+          
           setGameState(updatedGameState);
           updateGameState(updatedGameState);
         }

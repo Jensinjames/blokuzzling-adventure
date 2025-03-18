@@ -1,6 +1,6 @@
 
 import { toast } from 'sonner';
-import { Piece, BoardPosition, GameState } from '@/types/game';
+import { Piece, BoardPosition, GameState, PowerupItem } from '@/types/game';
 import { validatePiecePlacement, hasValidMoves } from '@/utils/gameUtils';
 import { handlePowerups } from '@/utils/powerupUtils';
 import { placeSelectedPiece } from '@/utils/boardUtils';
