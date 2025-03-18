@@ -3,6 +3,7 @@ import { BoardPosition } from '@/types/game';
 
 export const BOARD_SIZE = 14;
 
+// Define common piece types (these are now historical, we use pieceUtils.ts for the actual definitions)
 export const PIECE_SHAPES = [
   // 1x1
   [[1]],
@@ -94,3 +95,11 @@ export const powerupCorners: BoardPosition[] = [
   { row: 0, col: BOARD_SIZE - 1 },       // Top-right corner
   { row: BOARD_SIZE - 1, col: 0 },       // Bottom-left corner
 ];
+
+// Constants for validation caching
+export const VALIDATION_CACHE_SIZE = 1000; // Maximum size of the validation cache
+export const MAX_BOARD_EVALUATION_TIME = 300; // Maximum time in ms for board evaluation
+
+// Constants for database synchronization
+export const MIN_UPDATE_INTERVAL = 200; // Minimum time between updates in ms
+export const VERSION_CHECK_INTERVAL = 5000; // Time between version checks in ms

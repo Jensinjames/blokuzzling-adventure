@@ -17,6 +17,10 @@ export interface Piece {
   shape: number[][];
   used: boolean;
   hidden?: boolean;
+  category?: string;  // New: categorizes pieces (L, T, Z, etc.)
+  size?: number;      // New: total number of cells in the piece
+  rotation?: number;  // New: current rotation state (0, 90, 180, 270)
+  flipped?: boolean;  // New: whether the piece is flipped horizontally
 }
 
 export interface Move {
@@ -34,6 +38,7 @@ export interface TurnHistoryItem {
   timestamp: number;
   powerupType?: string;
   targetPosition?: BoardPosition;
+  action?: string;     // New: additional context about the move
 }
 
 export interface PowerupItem {
@@ -68,4 +73,6 @@ export interface GameState {
   gameStatus: 'waiting' | 'playing' | 'finished' | 'completed';
   winner: number | null;
   powerupCells?: BoardPosition[];
+  version?: number;    // New: track version for sync optimization
+  lastUpdate?: number; // New: timestamp for last update
 }

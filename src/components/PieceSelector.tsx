@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { RotateCw, FlipHorizontal, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getPieceDisplayDimensions } from '@/utils/pieceManipulation';
 
 interface PieceSelectorProps {
   pieces: Piece[];
@@ -29,6 +31,24 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
   const [displayedPieces, setDisplayedPieces] = useState<Piece[]>([]);
   const [page, setPage] = useState(0);
   const isMobile = useIsMobile();
+  
+  // Group pieces by category for better organization
+  const [piecesByCategory, setPiecesByCategory] = useState<Record<string, Piece[]>>({});
+  
+  // Organize pieces by category
+  useEffect(() => {
+    const categorized: Record<string, Piece[]> = {};
+    
+    availablePieces.forEach(piece => {
+      const category = piece.category || 'unknown';
+      if (!categorized[category]) {
+        categorized[category] = [];
+      }
+      categorized[category].push(piece);
+    });
+    
+    setPiecesByCategory(categorized);
+  }, [availablePieces]);
   
   // Number of pieces to display per page based on screen size
   const piecesPerPage = isMobile ? 3 : 5;
@@ -88,18 +108,27 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
       <ScrollArea className="w-full" type="always">
         <div className="flex flex-wrap justify-center mb-4 min-h-[120px]">
           {displayedPieces.map((piece) => (
-            <button
-              key={piece.id}
-              onClick={() => onSelectPiece(piece)}
-              disabled={piece.used || piece.hidden}
-              className={cn(
-                "p-2 m-1 rounded-lg transition-all duration-200 bg-white/90 border",
-                (piece.used || piece.hidden) ? "opacity-50 cursor-not-allowed" : "hover:shadow-md active:scale-95",
-                selectedPiece?.id === piece.id ? "ring-2 ring-primary shadow-lg scale-105" : "border-gray-200"
-              )}
-            >
-              {renderPieceShape(piece, isMobile ? 20 : 24)}
-            </button>
+            <TooltipProvider key={piece.id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => onSelectPiece(piece)}
+                    disabled={piece.used || piece.hidden}
+                    className={cn(
+                      "p-2 m-1 rounded-lg transition-all duration-200 bg-white/90 border",
+                      (piece.used || piece.hidden) ? "opacity-50 cursor-not-allowed" : "hover:shadow-md active:scale-95",
+                      selectedPiece?.id === piece.id ? "ring-2 ring-primary shadow-lg scale-105" : "border-gray-200"
+                    )}
+                  >
+                    {renderPieceShape(piece, isMobile ? 20 : 24)}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{piece.name}</p>
+                  {piece.category && <p className="text-xs text-gray-500">{piece.category}</p>}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ))}
           
           {availablePieces.length === 0 && (
@@ -162,7 +191,7 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
       {selectedPiece && (
         <div className="mt-4 flex justify-center">
           <div className="glass-panel p-2 bg-white/60">
-            <p className="text-xs text-center font-medium mb-1">Selected:</p>
+            <p className="text-xs text-center font-medium mb-1">Selected: {selectedPiece.name}</p>
             <div className="flex justify-center">
               {renderPieceShape(selectedPiece, isMobile ? 16 : 18)}
             </div>

@@ -1,8 +1,12 @@
 
 import { GameState, Piece, BoardPosition, BoardCell } from '@/types/game';
 import { validatePiecePlacement } from './boardValidation';
-import { rotatePiece, flipPiece } from './pieceManipulation';
-import { BOARD_SIZE, PIECE_SHAPES, powerupCorners } from './gameConstants';
+import { rotatePiece, flipPiece, updatePieceState } from './pieceManipulation';
+import { BOARD_SIZE, powerupCorners } from './gameConstants';
+import { generatePlayerPieces, getPieceStateId } from './pieceUtils';
+
+// Cache for validation results to improve performance
+const validationCache = new Map<string, boolean>();
 
 export const hasValidMoves = (gameState: GameState, playerIndex: number): boolean => {
   const player = gameState.players[playerIndex];
@@ -19,47 +23,71 @@ export const hasValidMoves = (gameState: GameState, playerIndex: number): boolea
     let possibleShapes = [];
     
     // Original shape
-    possibleShapes.push(currentPiece.shape);
+    const originalShape = currentPiece.shape;
+    possibleShapes.push({ shape: originalShape, stateId: getPieceStateId(currentPiece) });
     
     // 90 degree rotation
-    currentPiece.shape = rotatePiece(currentPiece);
-    possibleShapes.push(currentPiece.shape);
+    let rotated90 = rotatePiece(currentPiece);
+    currentPiece = updatePieceState(currentPiece, rotated90, 'rotate');
+    possibleShapes.push({ shape: rotated90, stateId: getPieceStateId(currentPiece) });
     
     // 180 degree rotation
-    currentPiece.shape = rotatePiece(currentPiece);
-    possibleShapes.push(currentPiece.shape);
+    let rotated180 = rotatePiece(currentPiece);
+    currentPiece = updatePieceState(currentPiece, rotated180, 'rotate');
+    possibleShapes.push({ shape: rotated180, stateId: getPieceStateId(currentPiece) });
     
     // 270 degree rotation
-    currentPiece.shape = rotatePiece(currentPiece);
-    possibleShapes.push(currentPiece.shape);
+    let rotated270 = rotatePiece(currentPiece);
+    currentPiece = updatePieceState(currentPiece, rotated270, 'rotate');
+    possibleShapes.push({ shape: rotated270, stateId: getPieceStateId(currentPiece) });
     
     // Flipped
-    currentPiece.shape = flipPiece(currentPiece);
-    possibleShapes.push(currentPiece.shape);
+    let flipped = flipPiece(currentPiece);
+    currentPiece = updatePieceState(currentPiece, flipped, 'flip');
+    possibleShapes.push({ shape: flipped, stateId: getPieceStateId(currentPiece) });
     
     // Flipped + 90 degree
-    currentPiece.shape = rotatePiece(currentPiece);
-    possibleShapes.push(currentPiece.shape);
+    let flippedRotated90 = rotatePiece(currentPiece);
+    currentPiece = updatePieceState(currentPiece, flippedRotated90, 'rotate');
+    possibleShapes.push({ shape: flippedRotated90, stateId: getPieceStateId(currentPiece) });
     
     // Flipped + 180 degree
-    currentPiece.shape = rotatePiece(currentPiece);
-    possibleShapes.push(currentPiece.shape);
+    let flippedRotated180 = rotatePiece(currentPiece);
+    currentPiece = updatePieceState(currentPiece, flippedRotated180, 'rotate');
+    possibleShapes.push({ shape: flippedRotated180, stateId: getPieceStateId(currentPiece) });
     
     // Flipped + 270 degree
-    currentPiece.shape = rotatePiece(currentPiece);
-    possibleShapes.push(currentPiece.shape);
+    let flippedRotated270 = rotatePiece(currentPiece);
+    currentPiece = updatePieceState(currentPiece, flippedRotated270, 'rotate');
+    possibleShapes.push({ shape: flippedRotated270, stateId: getPieceStateId(currentPiece) });
     
-    // Try all shapes at all positions
-    for (const shape of possibleShapes) {
-      currentPiece.shape = shape;
+    // Try all shapes at all positions with caching
+    for (const { shape, stateId } of possibleShapes) {
       for (let row = 0; row < BOARD_SIZE; row++) {
         for (let col = 0; col < BOARD_SIZE; col++) {
-          if (validatePiecePlacement(
-            currentPiece,
-            { row, col },
+          // Create a unique cache key for this validation state
+          const position = { row, col };
+          const cacheKey = `${stateId}-${row}-${col}-${playerIndex}`;
+          
+          // Check cache first
+          if (validationCache.has(cacheKey)) {
+            if (validationCache.get(cacheKey)) {
+              return true;
+            }
+            continue;
+          }
+          
+          // Validate and cache the result
+          const isValid = validatePiecePlacement(
+            { ...currentPiece, shape },
+            position,
             gameState.board,
             playerIndex
-          )) {
+          );
+          
+          validationCache.set(cacheKey, isValid);
+          
+          if (isValid) {
             return true;
           }
         }
@@ -71,6 +99,9 @@ export const hasValidMoves = (gameState: GameState, playerIndex: number): boolea
 };
 
 export const createInitialGameState = (numPlayers = 2): GameState => {
+  // Clear validation cache on new game
+  validationCache.clear();
+  
   // Create empty board
   const board = Array(BOARD_SIZE).fill(0).map(() => 
     Array(BOARD_SIZE).fill(0).map(() => ({ player: null } as BoardCell))
@@ -78,12 +109,8 @@ export const createInitialGameState = (numPlayers = 2): GameState => {
   
   // Create players with their pieces
   const players = Array(numPlayers).fill(0).map((_, i) => {
-    const playerPieces = PIECE_SHAPES.map((shape, shapeIndex) => ({
-      id: `p${i}-${shapeIndex}`,
-      shape,
-      name: `Piece ${shapeIndex + 1}`,
-      used: false
-    }));
+    // Use our new piece generation utility
+    const playerPieces = generatePlayerPieces(i);
     
     return {
       id: i,
@@ -123,6 +150,8 @@ export const createInitialGameState = (numPlayers = 2): GameState => {
     },
     gameStatus: 'playing',
     winner: null,
-    powerupCells: numPlayers === 2 ? [...powerupCorners] : []
+    powerupCells: numPlayers === 2 ? [...powerupCorners] : [],
+    version: 0,
+    lastUpdate: Date.now()
   };
 };
