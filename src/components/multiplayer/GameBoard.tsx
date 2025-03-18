@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { toast } from 'sonner';
-import { GameState, BoardPosition } from '@/types/game';
+import { GameState, BoardPosition, Piece } from '@/types/game';
 import { BOARD_SIZE } from '@/utils/gameUtils';
 import GameBoard from '@/components/GameBoard';
 
@@ -9,7 +9,7 @@ interface MultiplayerGameBoardProps {
   gameState: GameState;
   isMyTurn: boolean;
   isPowerupActive: boolean;
-  selectedPiece: any;
+  selectedPiece: Piece | null;
   previewPosition: BoardPosition | null;
   isValidPlacement: boolean;
   onCellClick: (position: BoardPosition) => void;

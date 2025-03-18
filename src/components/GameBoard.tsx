@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
-import { BoardPosition, GameState } from '@/types/game';
+import { BoardPosition, GameState, Piece } from '@/types/game';
 import { useIsMobile } from '@/hooks/use-mobile';
 import BoardCell from '@/components/board/BoardCell';
 import PiecePreview from '@/components/board/PiecePreview';
@@ -12,7 +11,7 @@ interface GameBoardProps {
   size: number;
   onCellClick: (position: BoardPosition) => void;
   onCellHover: (position: BoardPosition) => void;
-  selectedPiecePreview: { shape: number[][] } | null;
+  selectedPiecePreview: Piece | null;
   previewPosition: BoardPosition | null;
   isValidPlacement: boolean;
   isPowerupActive?: boolean;
