@@ -5,7 +5,7 @@ import { AIDifficulty } from './aiTypes';
 export const getRotationOptions = (difficulty: AIDifficulty): number[] => {
   switch (difficulty) {
     case 'easy':
-      // Easy AI only tries the original orientation and 90-degree rotation
+      // Easy AI tries only two rotations to simulate less thorough analysis
       return [0, 1];
     case 'medium':
       // Medium AI tries all four rotations
@@ -20,13 +20,13 @@ export const getRotationOptions = (difficulty: AIDifficulty): number[] => {
 export const getFlipOptions = (difficulty: AIDifficulty): boolean[] => {
   switch (difficulty) {
     case 'easy':
-      // Easy AI doesn't try flipping
-      return [false];
+      // Easy AI rarely tries flipping (30% chance)
+      return Math.random() < 0.3 ? [false, true] : [false];
     case 'medium':
       // Medium AI tries with and without flipping
       return [false, true];
     case 'hard':
-      // Hard AI tries with and without flipping
+      // Hard AI always tries with and without flipping
       return [false, true];
   }
 };
