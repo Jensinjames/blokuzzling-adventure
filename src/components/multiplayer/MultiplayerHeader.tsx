@@ -1,13 +1,21 @@
 
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { GameState } from '@/types/game';
 
 interface MultiplayerHeaderProps {
+  gameState: GameState;
+  isMyTurn: boolean;
+  playerNumber: number | null;
   onHome: () => void;
 }
 
-const MultiplayerHeader: React.FC<MultiplayerHeaderProps> = ({ onHome }) => {
+const MultiplayerHeader: React.FC<MultiplayerHeaderProps> = ({ 
+  gameState, 
+  isMyTurn, 
+  playerNumber, 
+  onHome 
+}) => {
   return (
     <header className="flex justify-between items-center mb-4">
       <button 
