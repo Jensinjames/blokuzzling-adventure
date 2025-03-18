@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Send, UserPlus } from 'lucide-react';
 import { useSendGameInvite } from '@/hooks/invite/useSendGameInvite';
+import { Label } from '@/components/ui/label';
 
 interface InviteFormProps {
   gameId: string;
@@ -30,23 +31,30 @@ const InviteForm: React.FC<InviteFormProps> = ({ gameId, userId }) => {
         Invite Players
       </h3>
 
-      <div className="flex space-x-2">
-        <Input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Enter username"
-          disabled={inviting}
-        />
-        <Button
-          onClick={handleInvitePlayer}
-          disabled={!username.trim() || inviting}
-        >
-          {inviting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </Button>
+      <div className="flex flex-col space-y-2">
+        <div className="flex space-x-2">
+          <div className="flex-grow">
+            <Label htmlFor="username-input" className="sr-only">Username</Label>
+            <Input
+              id="username-input"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter username"
+              disabled={inviting}
+            />
+          </div>
+          <Button
+            onClick={handleInvitePlayer}
+            disabled={!username.trim() || inviting}
+            aria-label="Send invite"
+          >
+            {inviting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </div>
     </>
   );

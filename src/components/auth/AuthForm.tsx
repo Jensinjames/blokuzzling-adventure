@@ -163,10 +163,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel htmlFor="reset-email">Email</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
+                      id="reset-email"
                       type="email"
                       placeholder="your.email@example.com"
                       disabled={loading}
@@ -228,10 +229,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel htmlFor="auth-email">Email</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
+                    id="auth-email"
                     type="email"
                     placeholder="your.email@example.com"
                     disabled={loading}
@@ -248,10 +250,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel htmlFor="auth-password">Password</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
+                    id="auth-password"
                     type="password"
                     placeholder="••••••••"
                     disabled={loading}
