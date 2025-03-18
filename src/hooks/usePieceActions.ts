@@ -1,5 +1,5 @@
 
-import { BoardPosition, Piece, GameState } from '@/types/game';
+import { BoardPosition, Piece, GameState, TurnHistoryItem } from '@/types/game';
 import { toast } from 'sonner';
 import {
   validatePiecePlacement,
@@ -106,7 +106,8 @@ export function usePieceActions(
       timestamp: Date.now()
     });
     
-    const turnHistoryItem = {
+    // Create a turn history item with the correct type
+    const turnHistoryItem: TurnHistoryItem = {
       type: 'pass',
       player: gameState.currentPlayer,
       timestamp: Date.now()

@@ -11,7 +11,7 @@ export function useAIPass() {
     humanPlayerIndex: number,
     setGameState: React.Dispatch<React.SetStateAction<GameState>>
   ) => {
-    // Create a pass move in the turn history
+    // Create a pass move in the turn history with the explicit type
     const turnHistoryItem: TurnHistoryItem = {
       type: 'pass',
       player: aiPlayerIndex,

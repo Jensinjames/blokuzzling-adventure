@@ -8,7 +8,7 @@ export interface BoardCell {
   player: number | null;
   hasPowerup?: boolean;
   powerupType?: string;
-  pieceId?: string; // Added pieceId property to match usage in code
+  pieceId?: string;
 }
 
 export interface Piece {
@@ -16,7 +16,7 @@ export interface Piece {
   name: string;
   shape: number[][];
   used: boolean;
-  hidden?: boolean; // Added hidden property to match usage in code
+  hidden?: boolean;
 }
 
 export interface Move {
@@ -27,13 +27,13 @@ export interface Move {
 }
 
 export interface TurnHistoryItem {
-  type: 'place' | 'pass' | 'use-powerup'; // Added 'use-powerup' type to match usage
+  type: 'place' | 'pass' | 'use-powerup';
   player: number;
   piece?: string;
   position?: BoardPosition;
   timestamp: number;
-  powerupType?: string; // Added for powerup tracking
-  targetPosition?: BoardPosition; // Added for powerup targeting
+  powerupType?: string;
+  targetPosition?: BoardPosition;
 }
 
 export interface PowerupItem {
@@ -42,13 +42,13 @@ export interface PowerupItem {
 }
 
 export interface Player {
-  id: number | string; // Allow both number and string IDs
+  id: number | string;
   name: string;
   color: string;
   pieces: Piece[];
   moveHistory: Move[];
   score: number;
-  powerups: PowerupItem[]; // Changed to PowerupItem array instead of string[]
+  powerups: PowerupItem[];
   isAI?: boolean;
   aiDifficulty?: string;
 }

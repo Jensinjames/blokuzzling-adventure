@@ -8,7 +8,7 @@ import { getAvatarUrl } from '@/integrations/supabase/client';
 interface ProfileHeaderProps {
   profile: {
     username: string;
-    avatar_url: string | any[];
+    avatar_url?: string | any[]; // Made avatar_url optional to match Profile type
     wins?: number;
     losses?: number;
     draws?: number;
