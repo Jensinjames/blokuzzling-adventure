@@ -14,7 +14,8 @@ export function useMultiplayerGame(gameId: string) {
     gameState,
     setGameState,
     loading,
-    playerNumber
+    playerNumber,
+    error
   } = useGameData(gameId);
 
   const {
@@ -97,6 +98,7 @@ export function useMultiplayerGame(gameId: string) {
     playerNumber,
     isMyTurn,
     updateGameState,
-    makeMove
+    makeMove,
+    error
   };
 }
