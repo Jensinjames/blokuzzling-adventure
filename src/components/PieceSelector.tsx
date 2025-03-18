@@ -1,9 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Piece } from '@/types/game';
 import { Button } from '@/components/ui/button';
-import { RotateCw, FlipHorizontal } from 'lucide-react';
+import { RotateCw, FlipHorizontal, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PieceSelectorProps {
   pieces: Piece[];
@@ -26,16 +28,20 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
   const availablePieces = pieces.filter(p => !p.hidden && !p.used);
   const [displayedPieces, setDisplayedPieces] = useState<Piece[]>([]);
   const [page, setPage] = useState(0);
+  const isMobile = useIsMobile();
+  
+  // Number of pieces to display per page based on screen size
+  const piecesPerPage = isMobile ? 3 : 5;
   
   // Calculate total pages only once when available pieces change
-  const totalPages = Math.ceil(availablePieces.length / 5);
+  const totalPages = Math.ceil(availablePieces.length / piecesPerPage);
   
   // Update displayed pieces whenever available pieces or page changes
   useEffect(() => {
-    const startIdx = page * 5;
-    const endIdx = Math.min(startIdx + 5, availablePieces.length);
+    const startIdx = page * piecesPerPage;
+    const endIdx = Math.min(startIdx + piecesPerPage, availablePieces.length);
     setDisplayedPieces(availablePieces.slice(startIdx, endIdx));
-  }, [availablePieces, page]);
+  }, [availablePieces, page, piecesPerPage]);
   
   const getPlayerColor = (player: number): string => {
     const colors = ['bg-player1', 'bg-player2', 'bg-player3', 'bg-player4'];
@@ -48,14 +54,16 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
     }
   };
 
-  const renderPieceShape = (piece: Piece, size: number = 24) => {
+  const renderPieceShape = useCallback((piece: Piece, size: number = 24) => {
     if (!piece.shape || !piece.shape.length) return null;
+    
+    const cellSize = isMobile ? Math.max(16, size - 8) : size;
     
     return (
       <div className="piece-grid transition-all duration-200" style={{
         display: 'grid',
-        gridTemplateRows: `repeat(${piece.shape.length}, ${size}px)`,
-        gridTemplateColumns: `repeat(${piece.shape[0].length}, ${size}px)`,
+        gridTemplateRows: `repeat(${piece.shape.length}, ${cellSize}px)`,
+        gridTemplateColumns: `repeat(${piece.shape[0].length}, ${cellSize}px)`,
       }}>
         {piece.shape.map((row, rowIndex) => 
           row.map((cell, colIndex) => (
@@ -65,40 +73,42 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
                 "border border-gray-200",
                 cell ? getPlayerColor(currentPlayer) : "bg-transparent"
               )}
-              style={{ width: size, height: size }}
+              style={{ width: cellSize, height: cellSize }}
             />
           ))
         )}
       </div>
     );
-  };
+  }, [currentPlayer, isMobile, getPlayerColor]);
 
   return (
     <div className="glass-panel w-full">
       <h3 className="text-sm font-medium mb-2">Your Pieces</h3>
       
-      <div className="flex flex-wrap gap-2 justify-center mb-4">
-        {displayedPieces.map((piece) => (
-          <button
-            key={piece.id}
-            onClick={() => onSelectPiece(piece)}
-            disabled={piece.used || piece.hidden}
-            className={cn(
-              "p-2 rounded-lg transition-all duration-200 bg-white/90 border",
-              (piece.used || piece.hidden) ? "opacity-50 cursor-not-allowed" : "hover:shadow-md active:scale-95",
-              selectedPiece?.id === piece.id ? "ring-2 ring-primary shadow-lg scale-105" : "border-gray-200"
-            )}
-          >
-            {renderPieceShape(piece)}
-          </button>
-        ))}
-        
-        {availablePieces.length === 0 && (
-          <div className="text-center text-gray-500 py-2 w-full">
-            No pieces available
-          </div>
-        )}
-      </div>
+      <ScrollArea className="w-full" type="always">
+        <div className="flex flex-wrap justify-center mb-4 min-h-[120px]">
+          {displayedPieces.map((piece) => (
+            <button
+              key={piece.id}
+              onClick={() => onSelectPiece(piece)}
+              disabled={piece.used || piece.hidden}
+              className={cn(
+                "p-2 m-1 rounded-lg transition-all duration-200 bg-white/90 border",
+                (piece.used || piece.hidden) ? "opacity-50 cursor-not-allowed" : "hover:shadow-md active:scale-95",
+                selectedPiece?.id === piece.id ? "ring-2 ring-primary shadow-lg scale-105" : "border-gray-200"
+              )}
+            >
+              {renderPieceShape(piece, isMobile ? 20 : 24)}
+            </button>
+          ))}
+          
+          {availablePieces.length === 0 && (
+            <div className="text-center text-gray-500 py-2 w-full">
+              No pieces available
+            </div>
+          )}
+        </div>
+      </ScrollArea>
       
       {totalPages > 1 && (
         <div className="flex justify-center space-x-2 mb-3">
@@ -109,7 +119,7 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
             disabled={page === 0}
             className="h-8 w-8 p-0"
           >
-            &lt;
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm flex items-center">
             {page + 1} / {totalPages}
@@ -121,7 +131,7 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
             disabled={page === totalPages - 1 || totalPages === 0}
             className="h-8 w-8 p-0"
           >
-            &gt;
+            <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       )}
@@ -134,7 +144,8 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
             size="sm"
             className="control-button"
           >
-            <RotateCw className="h-4 w-4 mr-1" /> Rotate
+            <RotateCw className="h-4 w-4" />
+            {!isMobile && <span className="ml-1">Rotate</span>}
           </Button>
           <Button 
             onClick={onFlipPiece} 
@@ -142,7 +153,8 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
             size="sm"
             className="control-button"
           >
-            <FlipHorizontal className="h-4 w-4 mr-1" /> Flip
+            <FlipHorizontal className="h-4 w-4" />
+            {!isMobile && <span className="ml-1">Flip</span>}
           </Button>
         </div>
       )}
@@ -152,7 +164,7 @@ const PieceSelector: React.FC<PieceSelectorProps> = ({
           <div className="glass-panel p-2 bg-white/60">
             <p className="text-xs text-center font-medium mb-1">Selected:</p>
             <div className="flex justify-center">
-              {renderPieceShape(selectedPiece, 18)}
+              {renderPieceShape(selectedPiece, isMobile ? 16 : 18)}
             </div>
           </div>
         </div>

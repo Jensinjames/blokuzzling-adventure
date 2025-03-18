@@ -7,6 +7,8 @@ import PieceSelector from '@/components/PieceSelector';
 import GameControls from '@/components/GameControls';
 import GameResult from '@/components/GameResult';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { X } from 'lucide-react';
 
 interface GamePlayAreaProps {
   gameState: GameState;
@@ -49,6 +51,8 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({
   onHome,
   cancelPowerupMode
 }) => {
+  const isMobile = useIsMobile();
+  
   return (
     <>
       {isAIThinking && gameState.currentPlayer === 1 && (
@@ -61,11 +65,12 @@ const GamePlayArea: React.FC<GamePlayAreaProps> = ({
         <div className="flex justify-center mb-4">
           <Button 
             variant="destructive"
-            size="sm"
+            size={isMobile ? "sm" : "default"}
             className="flex items-center gap-2"
             onClick={cancelPowerupMode}
           >
-            Cancel {activePowerupType} Powerup
+            <X className="h-4 w-4" />
+            {isMobile ? "Cancel" : `Cancel ${activePowerupType} Powerup`}
           </Button>
         </div>
       )}

@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { BoardCell, GameState, BoardPosition } from '@/types/game';
-import { Wand2 } from 'lucide-react';
+import { Wand2, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -27,7 +29,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [boardSize, setBoardSize] = useState(Math.min(window.innerWidth - 40, 500));
-  const cellSize = boardSize / size;
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panning, setPanning] = useState(false);
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [startPan, setStartPan] = useState({ x: 0, y: 0 });
+  
+  const cellSize = (boardSize / size) * zoomLevel;
   
   const getPlayerColor = (player: number | null): string => {
     if (player === null) return 'bg-transparent';
@@ -49,6 +56,45 @@ const GameBoard: React.FC<GameBoardProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isMobile]);
+  
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 2));
+    setPanPosition({ x: 0, y: 0 }); // Reset pan when zooming
+  };
+  
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.75));
+    setPanPosition({ x: 0, y: 0 }); // Reset pan when zooming
+  };
+  
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (zoomLevel > 1) {
+      setPanning(true);
+      setStartPan({ 
+        x: e.touches[0].clientX - panPosition.x, 
+        y: e.touches[0].clientY - panPosition.y 
+      });
+    }
+  };
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (panning && zoomLevel > 1) {
+      const maxPan = (boardSize * zoomLevel - boardSize) / 2;
+      const newX = e.touches[0].clientX - startPan.x;
+      const newY = e.touches[0].clientY - startPan.y;
+      
+      setPanPosition({
+        x: Math.max(Math.min(newX, maxPan), -maxPan),
+        y: Math.max(Math.min(newY, maxPan), -maxPan)
+      });
+      
+      e.preventDefault(); // Prevent scrolling while panning
+    }
+  };
+  
+  const handleTouchEnd = () => {
+    setPanning(false);
+  };
 
   const renderPiecePreview = () => {
     if (!selectedPiecePreview || !previewPosition) return null;
@@ -62,6 +108,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         style={{
           top: previewPosition.row * cellSize,
           left: previewPosition.col * cellSize,
+          transform: `translate(${panPosition.x}px, ${panPosition.y}px)`,
         }}
       >
         {selectedPiecePreview.shape.map((row, rowIndex) => (
@@ -120,6 +167,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           style={{
             top: marker.row * cellSize + (cellSize / 2) - 6,
             left: marker.col * cellSize + (cellSize / 2) - 6,
+            transform: `translate(${panPosition.x}px, ${panPosition.y}px)`,
           }}
         >
           {isAPowerupCell && (
@@ -131,52 +179,88 @@ const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   return (
-    <div className="game-board-container relative w-full flex justify-center my-4">
+    <div className="game-board-container relative w-full flex flex-col items-center my-4">
+      {isMobile && (
+        <div className="flex space-x-2 mb-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleZoomOut}
+            className="h-8 w-8 p-0"
+            disabled={zoomLevel <= 0.75}
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleZoomIn}
+            className="h-8 w-8 p-0"
+            disabled={zoomLevel >= 2}
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
       <div 
-        className="game-board relative"
+        className="game-board-scroll-container overflow-hidden touch-pan-y"
         style={{ 
           width: boardSize, 
           height: boardSize,
-          gridTemplateColumns: `repeat(${size}, 1fr)`,
-          gridTemplateRows: `repeat(${size}, 1fr)`,
         }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
-        {gameState.board.map((row, rowIndex) => 
-          row.map((cell, colIndex) => (
-            <div
-              key={`cell-${rowIndex}-${colIndex}`}
-              className={cn(
-                "board-cell cursor-pointer",
-                cell.player !== null 
-                  ? getPlayerColor(cell.player) 
-                  : isPowerupActive 
-                    ? "hover:bg-red-200" 
-                    : "hover:bg-gray-100",
-                cell.hasPowerup && "ring-2 ring-amber-400",
-                isMobile ? "touch-manipulation" : ""
-              )}
-              style={{ 
-                width: cellSize, 
-                height: cellSize,
-                minWidth: isMobile ? '24px' : 'auto',
-                minHeight: isMobile ? '24px' : 'auto'
-              }}
-              onClick={() => onCellClick({ row: rowIndex, col: colIndex })}
-              onMouseEnter={() => onCellHover({ row: rowIndex, col: colIndex })}
-            >
-              {cell.hasPowerup && (
-                <div className="flex items-center justify-center h-full">
-                  <Wand2 className={cn(
-                    "text-white animate-pulse",
-                    isMobile ? "w-3 h-3" : "w-4 h-4"
-                  )} />
-                </div>
-              )}
-            </div>
-          ))
-        )}
-        {renderPiecePreview()}
-        {renderCornerMarkers()}
+        <div 
+          className="game-board relative"
+          style={{ 
+            width: boardSize * zoomLevel, 
+            height: boardSize * zoomLevel,
+            gridTemplateColumns: `repeat(${size}, 1fr)`,
+            gridTemplateRows: `repeat(${size}, 1fr)`,
+            transform: `translate(${panPosition.x}px, ${panPosition.y}px)`,
+            transition: panning ? 'none' : 'transform 0.3s ease-out',
+          }}
+        >
+          {gameState.board.map((row, rowIndex) => 
+            row.map((cell, colIndex) => (
+              <div
+                key={`cell-${rowIndex}-${colIndex}`}
+                className={cn(
+                  "board-cell cursor-pointer",
+                  cell.player !== null 
+                    ? getPlayerColor(cell.player) 
+                    : isPowerupActive 
+                      ? "hover:bg-red-200" 
+                      : "hover:bg-gray-100",
+                  cell.hasPowerup && "ring-2 ring-amber-400",
+                  isMobile ? "touch-manipulation" : ""
+                )}
+                style={{ 
+                  width: cellSize, 
+                  height: cellSize,
+                  minWidth: isMobile ? '20px' : 'auto',
+                  minHeight: isMobile ? '20px' : 'auto'
+                }}
+                onClick={() => onCellClick({ row: rowIndex, col: colIndex })}
+                onMouseEnter={() => onCellHover({ row: rowIndex, col: colIndex })}
+              >
+                {cell.hasPowerup && (
+                  <div className="flex items-center justify-center h-full">
+                    <Wand2 className={cn(
+                      "text-white animate-pulse",
+                      isMobile ? "w-2 h-2" : "w-4 h-4"
+                    )} />
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+          {renderPiecePreview()}
+          {renderCornerMarkers()}
+        </div>
       </div>
     </div>
   );
