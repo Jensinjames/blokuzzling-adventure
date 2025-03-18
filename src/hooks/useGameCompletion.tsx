@@ -3,27 +3,9 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { GameState } from '@/types/game';
 import { checkGameOver, determineWinner } from '@/utils/gameStateUtils';
+import { calculateScore } from '@/utils/pieceManipulation';
 import { supabase, safeSingleDataCast } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-
-// Calculate scores based on remaining pieces
-const calculateFinalScore = (players: GameState['players']): GameState['players'] => {
-  return players.map(player => {
-    const unusedPieces = player.pieces.filter(p => !p.used);
-    // Calculate remaining cell count
-    let remainingCellCount = 0;
-    for (const piece of unusedPieces) {
-      if (piece.shape) {
-        remainingCellCount += piece.shape.flat().filter(cell => cell === 1).length;
-      }
-    }
-    
-    return {
-      ...player,
-      score: 89 - remainingCellCount // 89 is the total number of cells across all pieces
-    };
-  });
-};
 
 export function useGameCompletion(
   gameState: GameState,
@@ -36,7 +18,10 @@ export function useGameCompletion(
       console.log("Game over detected, calculating final scores");
       
       // Calculate scores for all players based on their pieces
-      const updatedPlayers = calculateFinalScore(gameState.players);
+      const updatedPlayers = gameState.players.map(player => ({
+        ...player,
+        score: calculateScore(player.pieces)
+      }));
       
       const winner = determineWinner(updatedPlayers);
       
@@ -53,6 +38,7 @@ export function useGameCompletion(
       
       // Update profile statistics if we have a user
       if (user) {
+        console.log("User detected, updating profile stats");
         updateProfileStats(winner, gameState);
       }
     }
@@ -81,7 +67,7 @@ export function useGameCompletion(
       
       // Determine what to update
       const playerIndex = gameState.players.findIndex(p => {
-        return p.id && (p.id.toString() === user.id.toString());
+        return p.id && (typeof p.id === 'string' && p.id.toString() === user.id.toString());
       });
       
       console.log("Player index in game:", playerIndex, "Winner:", winner);
@@ -108,12 +94,86 @@ export function useGameCompletion(
         
         if (updateError) {
           console.error('Error updating profile stats:', updateError);
+          toast.error('Failed to update profile statistics');
         } else {
           console.log("Successfully updated profile stats");
+          toast.success('Game results saved to your profile');
         }
+      } else {
+        console.warn("Player not found in game state:", gameState.players.map(p => p.id));
+      }
+      
+      // Also save the completed game to game_sessions if it's not already there
+      if (gameState.gameStatus === 'finished') {
+        saveCompletedGame(gameState, winner);
       }
     } catch (e) {
       console.error('Error in updateProfileStats:', e);
+    }
+  };
+  
+  // Save a record of the completed game
+  const saveCompletedGame = async (gameState: GameState, winner: number | null) => {
+    if (!user) return;
+    
+    try {
+      // Create a clean game state for storage
+      const gameStateForStorage = {
+        ...gameState,
+        players: gameState.players.map(player => ({
+          id: player.id,
+          name: player.name,
+          color: player.color,
+          score: player.score,
+          isAI: player.isAI,
+        })),
+        winner: winner
+      };
+      
+      // Check if this game is from an existing session
+      const gameSessionId = new URLSearchParams(window.location.search).get('id');
+      
+      if (gameSessionId) {
+        // Update existing game session
+        const { error } = await supabase
+          .from('game_sessions')
+          .update({
+            status: 'completed',
+            game_state: gameStateForStorage,
+            winner_id: winner !== null && gameState.players[winner].id ? 
+              gameState.players[winner].id.toString() : null
+          })
+          .eq('id', gameSessionId);
+          
+        if (error) {
+          console.error('Error updating game session:', error);
+        } else {
+          console.log('Game session updated successfully');
+        }
+      } else {
+        // Create a new game history record
+        const { error } = await supabase
+          .from('game_sessions')
+          .insert({
+            creator_id: user.id,
+            status: 'completed',
+            game_state: gameStateForStorage,
+            winner_id: winner !== null && gameState.players[winner].id ? 
+              gameState.players[winner].id.toString() : null,
+            max_players: gameState.players.length,
+            current_players: gameState.players.filter(p => !p.isAI).length,
+            ai_enabled: gameState.players.some(p => p.isAI),
+            ai_count: gameState.players.filter(p => p.isAI).length
+          });
+          
+        if (error) {
+          console.error('Error saving game history:', error);
+        } else {
+          console.log('Game history saved successfully');
+        }
+      }
+    } catch (e) {
+      console.error('Error saving completed game:', e);
     }
   };
 }

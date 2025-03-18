@@ -60,7 +60,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
         if (updatedPlayers[1]) {
           updatedPlayers[1] = {
             ...updatedPlayers[1],
-            id: 'ai-player'
+            id: 'ai-player-' + (updatedPlayers[1].aiDifficulty || 'medium')
           };
         }
         return {
@@ -76,6 +76,7 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
     const saveGameHistory = async () => {
       if (isGameOver() && user && gameStarted) {
         try {
+          console.log("Saving completed game to history...");
           // Calculate some game metrics
           const gameLength = gameState.turnHistory.length;
           const winner = gameState.winner !== null ? gameState.players[gameState.winner].id : null;
@@ -92,23 +93,36 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
           
           // Save game record
           const { error } = await supabase
-            .from('game_history')
+            .from('game_sessions')
             .insert({
-              user_id: user.id,
+              creator_id: user.id,
               game_type: 'single_player',
-              opponent_id: 'ai-player',
-              difficulty: aiDifficulty,
-              result: result,
-              player_score: humanPlayer.score,
-              opponent_score: aiPlayer.score,
-              moves_count: gameLength,
-              game_state: gameState
+              status: 'completed',
+              winner_id: winner && typeof winner === 'string' ? winner : null,
+              ai_difficulty: aiDifficulty,
+              ai_enabled: true,
+              ai_count: 1,
+              max_players: 2,
+              current_players: 1,
+              game_state: {
+                ...gameState,
+                players: gameState.players.map(p => ({
+                  id: p.id,
+                  name: p.name,
+                  color: p.color,
+                  score: p.score,
+                  isAI: p.isAI,
+                  aiDifficulty: p.aiDifficulty
+                }))
+              }
             });
             
           if (error) {
             console.error("Error saving game history:", error);
+            toast.error("Failed to save game to your history");
           } else {
             console.log("Game history saved successfully");
+            toast.success("Game saved to your history");
           }
         } catch (err) {
           console.error("Failed to save game history:", err);

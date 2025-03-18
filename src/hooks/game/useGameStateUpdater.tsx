@@ -18,6 +18,8 @@ export function useGameStateUpdater(
     }
 
     try {
+      console.log('Updating game state for session:', gameId);
+      
       // Compare versions to avoid unnecessary updates
       const currentVersion = gameState?.version || 0;
       const newVersion = currentVersion + 1;
@@ -62,7 +64,10 @@ export function useGameStateUpdater(
         .from('game_sessions')
         .update({
           game_state: safeGameState,
-          turn_history: safeGameState.turnHistory
+          turn_history: safeGameState.turnHistory,
+          status: newState.gameStatus === 'finished' ? 'completed' : 'active',
+          winner_id: newState.gameStatus === 'finished' && newState.winner !== null ? 
+            newState.players[newState.winner].id : null
         })
         .eq('id', gameId);
 
@@ -70,7 +75,8 @@ export function useGameStateUpdater(
         console.error('Supabase update error:', error);
         throw error;
       }
-
+      
+      console.log('Game state updated successfully');
       return true;
     } catch (error) {
       console.error('Error updating game state:', error);
