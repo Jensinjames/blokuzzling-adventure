@@ -15,8 +15,11 @@ export const findAIMove = (
   difficulty: AIDifficulty
 ): { piece: Piece; position: BoardPosition } | null => {
   console.log(`Finding AI move with difficulty: ${difficulty} for player ${aiPlayerIndex}`);
-  const aiPlayer = gameState.players[aiPlayerIndex];
-  const unusedPieces = aiPlayer.pieces.filter(p => !p.used);
+  
+  // Create safe copies to prevent circular references
+  const safeGameState = JSON.parse(JSON.stringify(gameState));
+  const aiPlayer = safeGameState.players[aiPlayerIndex];
+  const unusedPieces = aiPlayer.pieces.filter((p: Piece) => !p.used);
   
   if (unusedPieces.length === 0) {
     console.log("AI has no unused pieces left");
@@ -33,18 +36,15 @@ export const findAIMove = (
     const flipOptions = getFlipOptions(difficulty);
     
     for (const rotations of rotationOptions) {
-      // Apply rotations
-      let modifiedPiece = { ...piece, shape: [...piece.shape.map(row => [...row])] };
+      // Apply rotations - create a new copy for each rotation to prevent mutation
+      let modifiedPiece = JSON.parse(JSON.stringify(piece));
       for (let r = 0; r < rotations; r++) {
         modifiedPiece.shape = rotatePiece(modifiedPiece);
       }
       
       for (const shouldFlip of flipOptions) {
-        // Create a copy to avoid mutating the original
-        let finalPiece = { 
-          ...modifiedPiece, 
-          shape: [...modifiedPiece.shape.map(row => [...row])] 
-        };
+        // Create a fresh copy to avoid modifying the rotated piece
+        let finalPiece = JSON.parse(JSON.stringify(modifiedPiece));
         
         // Apply flip if needed
         if (shouldFlip) {
@@ -59,14 +59,14 @@ export const findAIMove = (
             if (validatePiecePlacement(
               finalPiece,
               position,
-              gameState.board,
+              safeGameState.board,
               aiPlayerIndex
             )) {
               // Calculate a score for this move based on difficulty
               const score = calculateMoveScore(
                 finalPiece,
                 position,
-                gameState,
+                safeGameState,
                 aiPlayerIndex,
                 difficulty
               );
@@ -97,6 +97,7 @@ export const findAIMove = (
   // Choose the move based on difficulty
   const selectedMove = chooseMove(possibleMoves, difficulty);
   console.log(`AI selected move with piece ${selectedMove.piece.id} at position (${selectedMove.position.row}, ${selectedMove.position.col}), score: ${selectedMove.score}`);
+  
   return {
     piece: selectedMove.piece,
     position: selectedMove.position

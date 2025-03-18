@@ -46,11 +46,11 @@ export function useGameStateInitializer(
             aiEnabled ? players.length + aiCount : players.length
           );
           
-          // Make a safe copy to avoid circular references
-          const safeState = structuredClone(initialState);
+          // Create a safe copy to avoid circular references
+          const safeState = JSON.parse(JSON.stringify(initialState));
           
           // Update player names and colors
-          const updatedPlayers = safeState.players.map((p, idx) => {
+          const updatedPlayers = safeState.players.map((p: Player, idx: number) => {
             // For human players
             if (idx < players.length) {
               const playerData = players.find((pd) => pd.player_number === idx);
@@ -83,7 +83,6 @@ export function useGameStateInitializer(
           setGameState(newGameState);
           
           // Save initial state to database - ensure we don't have circular references
-          // Convert complex objects to JSON-compatible format
           const jsonSafeGameState = JSON.parse(JSON.stringify(newGameState));
           
           const { error: updateError } = await supabase
@@ -98,7 +97,7 @@ export function useGameStateInitializer(
           }
         } else {
           // Load existing game state
-          console.log('Loading existing game state:', gameSession.game_state);
+          console.log('Loading existing game state');
           // Parse safely to avoid any circular references
           const loadedState = JSON.parse(JSON.stringify(gameSession.game_state)) as GameState;
           setGameState(loadedState);

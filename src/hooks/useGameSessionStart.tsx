@@ -72,7 +72,6 @@ export function useGameSessionStart() {
       }
       
       // Create initial game state with appropriate number of players
-      // We need to be careful here to avoid deep recursion
       const initialGameState = createInitialGameState(totalPlayers);
       
       // Mark AI players in the game state - use simple assignments to avoid circular references
@@ -86,7 +85,8 @@ export function useGameSessionStart() {
         }
       }
 
-      // Avoid circular references in the data
+      // Create a JSON-safe representation that removes any potential circular references
+      // by first converting to JSON and then parsing it back
       const safeGameState = JSON.parse(JSON.stringify(initialGameState));
 
       // Update game status and set initial state

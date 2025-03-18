@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,12 +13,14 @@ import LobbyContent from '@/components/lobby/LobbyContent';
 import LobbyLoading from '@/components/lobby/LobbyLoading';
 import LobbyActions from '@/components/lobby/LobbyActions';
 import { useMultiplayerAI } from '@/hooks/useMultiplayerAI';
+import { useGameSessionStart } from '@/hooks/useGameSessionStart';
 
 const Lobby = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { startGameSession } = useMultiplayer();
+  const { startGameSession: baseStartGameSession } = useMultiplayer();
+  const { startGameSession } = useGameSessionStart(); // Use the optimized version
   const [gameSession, setGameSession] = useState<GameSession | null>(null);
   const [players, setPlayers] = useState<(GamePlayer & { profile: Profile })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -171,7 +174,7 @@ const Lobby = () => {
         }
       }
       
-      // Then start the game
+      // Then start the game with our optimized startGameSession function
       const success = await startGameSession(gameId);
       
       if (success) {

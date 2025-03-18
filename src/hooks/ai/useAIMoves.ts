@@ -54,7 +54,7 @@ export function useAIMoves() {
       // Find the best move according to the AI's difficulty level
       console.log(`Finding AI move for player ${aiPlayerIndex} with difficulty ${difficulty}`);
       
-      // Use structured clone to get a complete deep copy without circular references
+      // Use a clean copy without circular references
       const safeGameState = structuredClone(gameState);
       const aiMove = findAIMove(safeGameState, aiPlayerIndex, difficulty);
       
@@ -68,7 +68,7 @@ export function useAIMoves() {
           position: `(${aiMove.position.row},${aiMove.position.col})`
         });
         
-        // Create a deep copy of the game state to avoid mutation issues
+        // Create a clean copy of the game state to avoid mutation issues
         const gameStateCopy = structuredClone(gameState);
         
         // Make the selected move
@@ -77,7 +77,7 @@ export function useAIMoves() {
           aiMove.piece, 
           aiMove.position,
           (newState) => {
-            // Avoid any potential circular references by using structuredClone
+            // Use structuredClone to ensure clean state without circular references
             const safeState = structuredClone(
               typeof newState === 'function' 
                 ? newState(gameStateCopy)
