@@ -159,7 +159,7 @@ const Lobby = () => {
           aiDifficulty
         });
         
-        // Use simpler JSON format for AI settings to avoid circular references
+        // Simplified AI settings object
         const aiSettings = {
           ai_enabled: aiEnabled,
           ai_count: aiCount,

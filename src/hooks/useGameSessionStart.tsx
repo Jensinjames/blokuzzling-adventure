@@ -88,9 +88,22 @@ export function useGameSessionStart() {
         }
       }
 
-      // Create a stringified version and parse it back to eliminate any potential circular references
-      const stringifiedState = JSON.stringify(initialGameState);
-      const safeGameState = JSON.parse(stringifiedState);
+      // Create a simpler serializable version of the game state
+      // This avoids circular references and deep nesting
+      const safeGameState = {
+        ...initialGameState,
+        players: initialGameState.players.map(player => ({
+          ...player,
+          // Only include essential properties
+          pieces: player.pieces.map(piece => ({
+            id: piece.id,
+            shape: piece.shape,
+            size: piece.size,
+            used: piece.used || false
+          }))
+        })),
+        turnHistory: initialGameState.turnHistory || []
+      };
 
       // Update game status and set initial state
       const { error: updateError } = await supabase

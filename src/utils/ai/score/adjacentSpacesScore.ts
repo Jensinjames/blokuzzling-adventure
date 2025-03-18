@@ -12,7 +12,8 @@ export const evaluateAdjacentSpaces = (
 ): number => {
   let adjacentScore = 0;
   
-  // Create a simulated board with this piece placed
+  // Create a simpler simulated board with this piece placed
+  // Use a flat structure to avoid deep nesting
   const simulatedBoard = JSON.parse(JSON.stringify(gameState.board));
   
   // Place the piece on the simulation

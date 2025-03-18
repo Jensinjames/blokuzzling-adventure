@@ -20,18 +20,21 @@ export function useGameSessionCreate() {
     try {
       console.log('Creating game session with max players:', maxPlayers);
       
+      // Create game session with minimal initial data
+      const gameSessionData = {
+        creator_id: user.id,
+        max_players: maxPlayers,
+        current_players: 1,
+        status: 'waiting',
+        ai_enabled: false,
+        ai_count: 0,
+        ai_difficulty: 'medium'
+      };
+      
       // Create game session
       const { data: sessionData, error: sessionError } = await supabase
         .from('game_sessions')
-        .insert({
-          creator_id: user.id,
-          max_players: maxPlayers,
-          current_players: 1,
-          status: 'waiting',
-          ai_enabled: false,
-          ai_count: 0,
-          ai_difficulty: 'medium'
-        })
+        .insert(gameSessionData)
         .select()
         .single();
 
