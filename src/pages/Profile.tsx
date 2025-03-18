@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/context/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import ProfileView from '@/components/ProfileView';
 import ProfileLoading from '@/components/profile/ProfileLoading';
@@ -9,14 +8,20 @@ import ProfileError from '@/components/profile/ProfileError';
 import ProfileNotFound from '@/components/profile/ProfileNotFound';
 import { useUserGames } from '@/hooks/useUserGames';
 import { toast } from 'sonner';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
+import { useAuth } from '@/context/AuthProvider';
 
 const Profile = () => {
   const { profile, loading: profileLoading, error: profileError, updateProfile, saving } = useProfile();
-  const { signOut, user, loading: authLoading } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [editing, setEditing] = useState(false);
   const { games, loading: gamesLoading } = useUserGames(profile);
+  
+  // Use our auth check hook
+  const { user, isLoading: authLoading } = useAuthCheck();
+  
   const isLoading = profileLoading || authLoading;
 
   useEffect(() => {
@@ -24,14 +29,6 @@ const Profile = () => {
       setUsername(profile.username);
     }
   }, [profile]);
-
-  useEffect(() => {
-    // If no user is logged in and we're not in a loading state, redirect to auth page
-    if (!isLoading && !user) {
-      console.log('No user detected, redirecting to auth page');
-      navigate('/auth');
-    }
-  }, [user, isLoading, navigate]);
 
   const handleUpdateProfile = async () => {
     if (!username.trim()) {

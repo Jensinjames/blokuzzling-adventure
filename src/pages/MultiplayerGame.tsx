@@ -1,8 +1,6 @@
-
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
-import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePieceActions } from '@/hooks/usePieceActions';
@@ -10,33 +8,24 @@ import { useBoardActions } from '@/hooks/useBoardActions';
 import MultiplayerGameContainer from '@/components/multiplayer/MultiplayerGameContainer';
 import { useMultiplayerPieceState } from '@/hooks/useMultiplayerPieceState';
 import { useMultiplayerPowerups } from '@/hooks/useMultiplayerPowerups';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 
 const MultiplayerGame = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const { user, session, refreshSession } = useAuth();
   
-  // Check for valid gameId and authentication
+  // Use our new authentication check hook
+  const { isAuthenticated } = useAuthCheck({
+    message: 'You must be logged in to play multiplayer games'
+  });
+  
+  // Check for valid gameId
   useEffect(() => {
     if (!gameId) {
       toast.error('No game ID provided');
       navigate('/home');
-      return;
     }
-
-    if (!user || !session) {
-      toast.error('You must be logged in to play multiplayer games');
-      navigate('/auth');
-    }
-  }, [gameId, user, session, navigate]);
-
-  // Ensure session is refreshed when needed
-  useEffect(() => {
-    if (session && new Date(session.expires_at * 1000) < new Date(Date.now() + 5 * 60 * 1000)) {
-      console.log('Session expiring soon, refreshing...');
-      refreshSession();
-    }
-  }, [session, refreshSession]);
+  }, [gameId, navigate]);
   
   const {
     gameSession,

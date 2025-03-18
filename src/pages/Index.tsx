@@ -1,23 +1,21 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthProvider';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { LogIn, Play, Info } from 'lucide-react';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuthCheck({ skip: true });
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!isLoading && user) {
       navigate('/home');
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
-  // If still loading or user is logged in (and being redirected), show nothing
-  if (loading || user) {
+  if (isLoading || user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="animate-pulse h-10 w-10 rounded-full bg-primary/50"></div>
