@@ -102,6 +102,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log('User updated');
         } else if (event === 'PASSWORD_RECOVERY') {
           console.log('Password recovery initiated');
+          // If user is on the password reset page, don't redirect
+          if (!window.location.pathname.includes('/auth')) {
+            navigate('/auth');
+          }
         }
       }
     );
@@ -130,6 +134,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Add resetPassword function
+  const resetPassword = async (email: string) => {
+    try {
+      console.log('[Auth Debug] Requesting password reset for:', email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+      
+      if (error) {
+        console.error('[Auth Debug] Error requesting password reset:', error);
+        return { error };
+      }
+      
+      return { error: null };
+    } catch (error: any) {
+      console.error('[Auth Debug] Unexpected error requesting password reset:', error);
+      return { error };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -138,6 +162,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signUp,
     signOut,
     refreshSession,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

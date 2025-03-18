@@ -9,4 +9,5 @@ export type AuthContextType = {
   signUp: (email: string, password: string) => Promise<{ error: any; data: any }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
 };

@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '@/context/AuthProvider';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthContainer from '@/components/auth/AuthContainer';
+import { toast } from 'sonner';
 
 const Auth = () => {
   const { user } = useAuth();
@@ -12,6 +13,14 @@ const Auth = () => {
   // Get the return URL from query parameters
   const searchParams = new URLSearchParams(location.search);
   const returnTo = searchParams.get('returnTo') || '/home';
+  const isReset = searchParams.get('reset') === 'true';
+  
+  // Handle password reset flow
+  useEffect(() => {
+    if (isReset) {
+      toast.info('Check your email for a password reset link');
+    }
+  }, [isReset]);
 
   // Redirect if already logged in
   useEffect(() => {
