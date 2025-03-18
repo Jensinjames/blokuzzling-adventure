@@ -10,6 +10,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState({
+    tier: null,
+    status: null,
+    isActive: false,
+    isPremium: false
+  });
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -96,6 +102,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
           toast.info('Signed out');
+          setSubscription({
+            tier: null,
+            status: null,
+            isActive: false,
+            isPremium: false
+          });
           // Force full page reload to clear any cached state
           window.location.href = '/#/';
         } else if (event === 'TOKEN_REFRESHED') {
@@ -140,6 +152,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Reset local state
       setUser(null);
       setSession(null);
+      setSubscription({
+        tier: null,
+        status: null,
+        isActive: false,
+        isPremium: false
+      });
       
       // Force a full page reload to ensure clean state
       window.location.href = '/#/';
@@ -180,6 +198,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signOut,
     refreshSession,
     resetPassword,
+    subscription: {
+      tier: subscription.tier,
+      status: subscription.status,
+      isActive: subscription.isActive,
+      isPremium: subscription.isPremium
+    }
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

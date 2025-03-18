@@ -1,3 +1,4 @@
+
 export interface GameSession {
   id: string;
   created_at: string;
@@ -39,6 +40,9 @@ export interface Profile {
   losses: number;
   draws: number;
   created_at?: string;
+  subscription_tier?: string;
+  subscription_status?: string;
+  subscription_expiry?: string;
 }
 
 export interface GameInvite {
@@ -54,4 +58,13 @@ export interface GameInvite {
     username: string;
     avatar_url?: string;
   };
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  tier: 'free' | 'basic' | 'premium';
+  status: 'active' | 'cancelled' | 'expired';
+  created_at: string;
+  expires_at?: string;
 }
