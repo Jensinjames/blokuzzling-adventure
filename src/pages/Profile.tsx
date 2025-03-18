@@ -17,7 +17,8 @@ const Profile = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [editing, setEditing] = useState(false);
-  const { games, loading: gamesLoading } = useUserGames(profile);
+  const [refreshGames, setRefreshGames] = useState(0);
+  const { games, loading: gamesLoading } = useUserGames(profile, refreshGames);
   
   // Use our auth check hook
   const { user, isLoading: authLoading } = useAuthCheck();
@@ -60,6 +61,11 @@ const Profile = () => {
   const handleBack = () => {
     navigate('/home');
   };
+  
+  const handleGameDeleted = () => {
+    // Trigger a refresh of the games list
+    setRefreshGames(prev => prev + 1);
+  };
 
   if (isLoading) {
     return <ProfileLoading />;
@@ -86,6 +92,7 @@ const Profile = () => {
       signOut={handleSignOut}
       games={games}
       gamesLoading={gamesLoading}
+      onGameDeleted={handleGameDeleted}
     />
   ) : (
     <ProfileNotFound message="We couldn't find your profile data" />

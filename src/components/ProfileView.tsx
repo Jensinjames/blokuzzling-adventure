@@ -20,6 +20,7 @@ interface ProfileViewProps {
   signOut: () => Promise<void>;
   games?: GameSession[];
   gamesLoading?: boolean;
+  onGameDeleted?: () => void;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({
@@ -33,7 +34,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   handleBack,
   signOut,
   games = [],
-  gamesLoading = false
+  gamesLoading = false,
+  onGameDeleted
 }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-indigo-950 px-4 py-6">
@@ -75,6 +77,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
               profile={profile} 
               games={games} 
               gamesLoading={gamesLoading} 
+              onGameDeleted={onGameDeleted}
             />
 
             <Separator className="my-2" />

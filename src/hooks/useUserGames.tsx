@@ -4,7 +4,7 @@ import { supabase, safeDataCast } from '@/integrations/supabase/client';
 import { GameSession, Profile } from '@/types/database';
 import { toast } from 'sonner';
 
-export function useUserGames(profile: Profile | null) {
+export function useUserGames(profile: Profile | null, refreshTrigger: number = 0) {
   const [games, setGames] = useState<GameSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +107,7 @@ export function useUserGames(profile: Profile | null) {
     };
 
     fetchUserGames();
-  }, [profile]);
+  }, [profile, refreshTrigger]);
 
   return { games, loading, error };
 }

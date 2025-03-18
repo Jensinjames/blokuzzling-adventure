@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -83,5 +82,56 @@ export const refreshUserSession = async () => {
   } catch (error) {
     console.error('Unexpected error refreshing session:', error);
     return { error, data: null };
+  }
+};
+
+// New function to delete a game session
+export const deleteGameSession = async (gameId: string) => {
+  try {
+    console.log('Deleting game session:', gameId);
+    
+    // First, delete related game_players records
+    const { error: playersError } = await supabase
+      .from('game_players')
+      .delete()
+      .eq('game_id', gameId);
+      
+    if (playersError) {
+      console.error('Error deleting game players:', playersError);
+      toast.error('Failed to delete game players');
+      return { error: playersError };
+    }
+    
+    // Next, delete related game_invites records
+    const { error: invitesError } = await supabase
+      .from('game_invites')
+      .delete()
+      .eq('game_id', gameId);
+      
+    if (invitesError) {
+      console.error('Error deleting game invites:', invitesError);
+      toast.error('Failed to delete game invites');
+      return { error: invitesError };
+    }
+    
+    // Finally, delete the game session itself
+    const { error: gameError } = await supabase
+      .from('game_sessions')
+      .delete()
+      .eq('id', gameId);
+      
+    if (gameError) {
+      console.error('Error deleting game session:', gameError);
+      toast.error('Failed to delete game');
+      return { error: gameError };
+    }
+    
+    console.log('Game session deleted successfully');
+    toast.success('Game deleted successfully');
+    return { error: null };
+  } catch (error: any) {
+    console.error('Unexpected error deleting game session:', error);
+    toast.error(error.message || 'An error occurred during game deletion');
+    return { error };
   }
 };
