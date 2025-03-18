@@ -16,11 +16,34 @@ import MultiplayerGameContent from '@/components/multiplayer/MultiplayerGameCont
 const MultiplayerGame = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const { user, session, refreshSession } = useAuth();
   const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
   const [previewPosition, setPreviewPosition] = useState<BoardPosition | null>(null);
   const [isValidPlacement, setIsValidPlacement] = useState<boolean>(false);
   const [isPowerupActive, setIsPowerupActive] = useState<boolean>(false);
   const [activePowerupType, setActivePowerupType] = useState<string | null>(null);
+  
+  // Check for valid gameId and authentication
+  useEffect(() => {
+    if (!gameId) {
+      toast.error('No game ID provided');
+      navigate('/home');
+      return;
+    }
+
+    if (!user || !session) {
+      toast.error('You must be logged in to play multiplayer games');
+      navigate('/auth');
+    }
+  }, [gameId, user, session, navigate]);
+
+  // Ensure session is refreshed when needed
+  useEffect(() => {
+    if (session && new Date(session.expires_at * 1000) < new Date(Date.now() + 5 * 60 * 1000)) {
+      console.log('Session expiring soon, refreshing...');
+      refreshSession();
+    }
+  }, [session, refreshSession]);
   
   const {
     gameSession,

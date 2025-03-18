@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import './App.css';
 import Index from './pages/Index';
 import Game from './pages/Game';
@@ -19,30 +19,37 @@ import SupabaseRealtimeProvider from './components/SupabaseRealtimeProvider';
 import DatabaseConnectionStatus from './components/DatabaseConnectionStatus';
 import MetaPixelLoader from './components/MetaPixelLoader';
 
+// Wrapper component with authentication and navigation
+const AppWithAuth = () => {
+  return (
+    <AuthProvider>
+      <SupabaseRealtimeProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/game" element={<Game />} />
+          <Route path="/multiplayer/:gameId" element={<MultiplayerGame />} />
+          <Route path="/lobby/:gameId" element={<Lobby />} />
+          <Route path="/rules" element={<Rules />} />
+          <Route path="/profile/:username?" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <DatabaseConnectionStatus />
+        <Toaster />
+      </SupabaseRealtimeProvider>
+    </AuthProvider>
+  );
+};
+
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <AuthProvider>
-        <SupabaseRealtimeProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/game" element={<Game />} />
-              <Route path="/multiplayer/:gameId" element={<MultiplayerGame />} />
-              <Route path="/lobby/:gameId" element={<Lobby />} />
-              <Route path="/rules" element={<Rules />} />
-              <Route path="/profile/:username?" element={<Profile />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <DatabaseConnectionStatus />
-            <Toaster />
-          </Router>
-          <MetaPixelLoader />
-        </SupabaseRealtimeProvider>
-      </AuthProvider>
+      <Router>
+        <AppWithAuth />
+        <MetaPixelLoader />
+      </Router>
     </ThemeProvider>
   );
 }

@@ -9,6 +9,78 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      auth0: {
+        Row: {
+          app_metadata: Json | null
+          blocked: boolean | null
+          created_at: Json | null
+          email: string | null
+          email_verified: boolean | null
+          family_name: string | null
+          given_name: string | null
+          identities: Json | null
+          last_ip: string | null
+          last_login: Json | null
+          logins_count: number | null
+          multifactor: Json | null
+          name: string | null
+          nickname: string | null
+          phone_number: string | null
+          phone_verified: boolean | null
+          picture: string | null
+          updated_at: Json | null
+          user_id: string | null
+          user_metadata: Json | null
+          username: string | null
+        }
+        Insert: {
+          app_metadata?: Json | null
+          blocked?: boolean | null
+          created_at?: Json | null
+          email?: string | null
+          email_verified?: boolean | null
+          family_name?: string | null
+          given_name?: string | null
+          identities?: Json | null
+          last_ip?: string | null
+          last_login?: Json | null
+          logins_count?: number | null
+          multifactor?: Json | null
+          name?: string | null
+          nickname?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean | null
+          picture?: string | null
+          updated_at?: Json | null
+          user_id?: string | null
+          user_metadata?: Json | null
+          username?: string | null
+        }
+        Update: {
+          app_metadata?: Json | null
+          blocked?: boolean | null
+          created_at?: Json | null
+          email?: string | null
+          email_verified?: boolean | null
+          family_name?: string | null
+          given_name?: string | null
+          identities?: Json | null
+          last_ip?: string | null
+          last_login?: Json | null
+          logins_count?: number | null
+          multifactor?: Json | null
+          name?: string | null
+          nickname?: string | null
+          phone_number?: string | null
+          phone_verified?: boolean | null
+          picture?: string | null
+          updated_at?: Json | null
+          user_id?: string | null
+          user_metadata?: Json | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       game_invites: {
         Row: {
           created_at: string
@@ -248,6 +320,12 @@ export type Database = {
       cleanup_old_waiting_games: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      custom_access_token_hook: {
+        Args: {
+          event: Json
+        }
+        Returns: Json
       }
       update_profile_with_avatar:
         | {
