@@ -105,6 +105,9 @@ export type Database = {
       }
       game_sessions: {
         Row: {
+          ai_count: number | null
+          ai_difficulty: string | null
+          ai_enabled: boolean | null
           created_at: string
           creator_id: string
           current_players: number
@@ -117,6 +120,9 @@ export type Database = {
           winner_id: string | null
         }
         Insert: {
+          ai_count?: number | null
+          ai_difficulty?: string | null
+          ai_enabled?: boolean | null
           created_at?: string
           creator_id: string
           current_players?: number
@@ -129,6 +135,9 @@ export type Database = {
           winner_id?: string | null
         }
         Update: {
+          ai_count?: number | null
+          ai_difficulty?: string | null
+          ai_enabled?: boolean | null
           created_at?: string
           creator_id?: string
           current_players?: number

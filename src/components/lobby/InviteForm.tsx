@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Send, UserPlus } from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase, safeSingleDataCast } from '@/integrations/supabase/client';
+import { useSendGameInvite } from '@/hooks/invite/useSendGameInvite';
 
 interface InviteFormProps {
   gameId: string;
@@ -13,46 +12,14 @@ interface InviteFormProps {
 
 const InviteForm: React.FC<InviteFormProps> = ({ gameId, userId }) => {
   const [username, setUsername] = useState('');
-  const [inviting, setInviting] = useState(false);
+  const { invitePlayer, inviting } = useSendGameInvite();
 
   const handleInvitePlayer = async () => {
     if (!username.trim() || !gameId || !userId) return;
     
-    setInviting(true);
-    try {
-      // Find the user by username
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .ilike('username', username)
-        .single();
-
-      if (userError || !userData) {
-        toast.error('User not found');
-        return;
-      }
-
-      const recipient = safeSingleDataCast<{ id: string }>(userData);
-      
-      // Create invite
-      const { error: inviteError } = await supabase
-        .from('game_invites')
-        .insert({
-          game_id: gameId,
-          sender_id: userId,
-          recipient_id: recipient.id,
-          status: 'pending'
-        });
-
-      if (inviteError) throw inviteError;
-
-      toast.success(`Invite sent to ${username}`);
+    const success = await invitePlayer(gameId, username);
+    if (success) {
       setUsername('');
-    } catch (error) {
-      console.error('Error inviting player:', error);
-      toast.error('Failed to invite player');
-    } finally {
-      setInviting(false);
     }
   };
 
