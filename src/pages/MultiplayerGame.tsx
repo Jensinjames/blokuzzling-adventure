@@ -1,27 +1,20 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerGame } from '@/hooks/useMultiplayerGame';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Piece, BoardPosition, GameState } from '@/types/game';
 import { usePieceActions } from '@/hooks/usePieceActions';
 import { useBoardActions } from '@/hooks/useBoardActions';
-import PlayerInfo from '@/components/PlayerInfo';
-import GameResult from '@/components/GameResult';
-import MultiplayerHeader from '@/components/multiplayer/MultiplayerHeader';
-import MultiplayerGameContent from '@/components/multiplayer/MultiplayerGameContent';
+import MultiplayerGameContainer from '@/components/multiplayer/MultiplayerGameContainer';
+import { useMultiplayerPieceState } from '@/hooks/useMultiplayerPieceState';
+import { useMultiplayerPowerups } from '@/hooks/useMultiplayerPowerups';
 
 const MultiplayerGame = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
   const { user, session, refreshSession } = useAuth();
-  const [selectedPiece, setSelectedPiece] = useState<Piece | null>(null);
-  const [previewPosition, setPreviewPosition] = useState<BoardPosition | null>(null);
-  const [isValidPlacement, setIsValidPlacement] = useState<boolean>(false);
-  const [isPowerupActive, setIsPowerupActive] = useState<boolean>(false);
-  const [activePowerupType, setActivePowerupType] = useState<string | null>(null);
   
   // Check for valid gameId and authentication
   useEffect(() => {
@@ -56,7 +49,27 @@ const MultiplayerGame = () => {
     updateGameState
   } = useMultiplayerGame(gameId || '');
 
-  const handleSetGameState = (newState: GameState) => {
+  // Initialize piece state
+  const {
+    selectedPiece,
+    setSelectedPiece,
+    previewPosition,
+    setPreviewPosition,
+    isValidPlacement,
+    setIsValidPlacement
+  } = useMultiplayerPieceState(isMyTurn);
+
+  // Initialize powerup state
+  const {
+    isPowerupActive,
+    setIsPowerupActive,
+    activePowerupType,
+    setActivePowerupType,
+    handlePlayerUsePowerup,
+    cancelPowerupMode
+  } = useMultiplayerPowerups(isMyTurn);
+
+  const handleSetGameState = (newState: any) => {
     setGameState(newState);
     if (isMyTurn) {
       updateGameState(newState);
@@ -111,16 +124,6 @@ const MultiplayerGame = () => {
     setIsPowerupActive
   );
 
-  useEffect(() => {
-    if (!isMyTurn) {
-      setSelectedPiece(null);
-      setPreviewPosition(null);
-      setIsValidPlacement(false);
-      setIsPowerupActive(false);
-      setActivePowerupType(null);
-    }
-  }, [isMyTurn]);
-
   const handleHome = () => {
     navigate('/home');
   };
@@ -129,31 +132,14 @@ const MultiplayerGame = () => {
     toast.info('Game reset is not available in multiplayer mode');
   };
 
-  const handlePlayerUsePowerup = (playerId: number, powerupType: string) => {
-    if (!isMyTurn) {
-      toast.info("It's not your turn");
-      return;
+  const handlePlayerUsePowerupWithGameState = (playerId: number, powerupType: string) => {
+    if (gameState) {
+      handlePlayerUsePowerup(playerId, gameState.currentPlayer, powerupType);
+      
+      if (!isPowerupActive) {
+        handleUsePowerup(powerupType);
+      }
     }
-    
-    if (playerId !== gameState?.currentPlayer) {
-      toast.error("You can only use your own powerups during your turn");
-      return;
-    }
-    
-    if (isPowerupActive) {
-      setIsPowerupActive(false);
-      setActivePowerupType(null);
-      toast.info("Powerup mode cancelled");
-    } else {
-      setActivePowerupType(powerupType);
-      handleUsePowerup(powerupType);
-    }
-  };
-
-  const cancelPowerupMode = () => {
-    setIsPowerupActive(false);
-    setActivePowerupType(null);
-    toast.info("Powerup mode cancelled");
   };
 
   if (loading || !gameState) {
@@ -168,48 +154,27 @@ const MultiplayerGame = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 px-4 py-6">
-      <div className="max-w-lg mx-auto">
-        <MultiplayerHeader onHome={handleHome} />
-        
-        <PlayerInfo
-          players={gameState.players}
-          currentPlayer={gameState.currentPlayer}
-          onUsePowerup={handlePlayerUsePowerup}
-          isViewerCurrentPlayer={isMyTurn}
-        />
-        
-        {gameState.gameStatus === "finished" || gameState.gameStatus === "completed" ? (
-          <GameResult
-            players={gameState.players}
-            winner={gameState.winner}
-            onRestart={handleReset}
-            onHome={handleHome}
-          />
-        ) : (
-          <MultiplayerGameContent
-            gameState={gameState}
-            playerNumber={playerNumber}
-            isMyTurn={isMyTurn}
-            selectedPiece={selectedPiece}
-            previewPosition={previewPosition}
-            isValidPlacement={isValidPlacement}
-            isPowerupActive={isPowerupActive}
-            activePowerupType={activePowerupType}
-            onCellClick={handleCellClick}
-            onCellHover={handleCellHover}
-            onSelectPiece={handleSelectPiece}
-            onRotatePiece={handleRotatePiece}
-            onFlipPiece={handleFlipPiece}
-            onUndo={handleUndo}
-            onReset={handleReset}
-            onPass={handlePassTurn}
-            onHome={handleHome}
-            cancelPowerupMode={cancelPowerupMode}
-          />
-        )}
-      </div>
-    </div>
+    <MultiplayerGameContainer
+      gameState={gameState}
+      playerNumber={playerNumber}
+      isMyTurn={isMyTurn}
+      selectedPiece={selectedPiece}
+      previewPosition={previewPosition}
+      isValidPlacement={isValidPlacement}
+      isPowerupActive={isPowerupActive}
+      activePowerupType={activePowerupType}
+      onCellClick={handleCellClick}
+      onCellHover={handleCellHover}
+      onSelectPiece={handleSelectPiece}
+      onRotatePiece={handleRotatePiece}
+      onFlipPiece={handleFlipPiece}
+      onUndo={handleUndo}
+      onReset={handleReset}
+      onPass={handlePassTurn}
+      onHome={handleHome}
+      onUsePowerup={handlePlayerUsePowerupWithGameState}
+      cancelPowerupMode={cancelPowerupMode}
+    />
   );
 };
 
