@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { useGameSessions } from './useGameSessions';
 import { useGameInvites } from './useGameInvites';
 import { useMultiplayerInvites } from './multiplayer/useMultiplayerInvites';
@@ -26,6 +27,20 @@ export function useMultiplayer() {
 
   const { invitePlayer } = useMultiplayerInviteSender();
 
+  const handleRespondToInvite = async (inviteId: string, accept: boolean) => {
+    try {
+      const success = await respondToInvite(inviteId, accept);
+      if (success && accept && success.gameId) {
+        await joinGameSession(success.gameId);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error responding to invite:', error);
+      return false;
+    }
+  };
+
   return {
     activeSessions,
     userSessions,
@@ -34,8 +49,7 @@ export function useMultiplayer() {
     createGameSession,
     joinGameSession,
     invitePlayer,
-    respondToInvite: (inviteId: string, accept: boolean) => 
-      respondToInvite(inviteId, accept, joinGameSession),
+    respondToInvite: handleRespondToInvite,
     startGameSession,
     fetchGameInvites
   };

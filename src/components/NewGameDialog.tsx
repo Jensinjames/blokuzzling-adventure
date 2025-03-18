@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useMultiplayer } from '@/hooks/useMultiplayer';
+import { useGameSessionCreate } from '@/hooks/useGameSessionCreate';
+import { useNavigate } from 'react-router-dom';
 
 interface NewGameDialogProps {
   isOpen: boolean;
@@ -12,14 +13,22 @@ interface NewGameDialogProps {
 
 const NewGameDialog: React.FC<NewGameDialogProps> = ({ isOpen, onClose }) => {
   const [playerCount, setPlayerCount] = useState(2);
-  const { createGameSession } = useMultiplayer();
-  const [creating, setCreating] = useState(false);
+  const { createGameSession, creating } = useGameSessionCreate();
+  const navigate = useNavigate();
 
   const handleStartGame = async () => {
-    setCreating(true);
-    await createGameSession(playerCount);
-    setCreating(false);
-    onClose();
+    try {
+      const gameId = await createGameSession(playerCount);
+      
+      if (gameId) {
+        console.log('Game created successfully, navigating to lobby:', gameId);
+        navigate(`/lobby/${gameId}`);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('Error creating game:', error);
+    }
   };
 
   if (!isOpen) return null;

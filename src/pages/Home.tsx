@@ -7,7 +7,8 @@ import { Info, Users, Play, ChevronRight, Settings, UserCircle, Trophy, Plus } f
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { useMultiplayer } from '@/hooks/useMultiplayer';
+import { useGameSessions } from '@/hooks/useGameSessions';
+import { useGameInvites } from '@/hooks/useGameInvites';
 import GameList from '@/components/GameList';
 import NewGameDialog from '@/components/NewGameDialog';
 
@@ -15,7 +16,8 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
-  const { activeSessions, userSessions, invites, loading: gameLoading, createGameSession } = useMultiplayer();
+  const { activeSessions, userSessions, loading: sessionsLoading } = useGameSessions();
+  const { invites, loading: invitesLoading } = useGameInvites();
   const [showNewGameDialog, setShowNewGameDialog] = useState(false);
   
   const handleStartSinglePlayerGame = () => {
@@ -112,7 +114,7 @@ const Home = () => {
               activeSessions={activeSessions}
               userSessions={userSessions}
               invites={invites}
-              loading={gameLoading}
+              loading={sessionsLoading || invitesLoading}
             />
           ) : (
             <motion.div

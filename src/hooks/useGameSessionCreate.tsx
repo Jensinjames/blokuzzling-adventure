@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase, safeSingleDataCast } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { GameSession } from '@/types/database';
 import { toast } from 'sonner';
 
@@ -18,6 +18,8 @@ export function useGameSessionCreate() {
 
     setCreating(true);
     try {
+      console.log('Creating game session with max players:', maxPlayers);
+      
       // Create game session
       const { data: sessionData, error: sessionError } = await supabase
         .from('game_sessions')
@@ -25,7 +27,10 @@ export function useGameSessionCreate() {
           creator_id: user.id,
           max_players: maxPlayers,
           current_players: 1,
-          status: 'waiting'
+          status: 'waiting',
+          ai_enabled: false,
+          ai_count: 0,
+          ai_difficulty: 'medium'
         })
         .select()
         .single();
@@ -34,6 +39,7 @@ export function useGameSessionCreate() {
       if (!sessionData) throw new Error("Failed to create game session");
 
       const typedSessionData = safeSingleDataCast<GameSession>(sessionData);
+      console.log('Game session created:', typedSessionData.id);
 
       // Add creator as first player
       const { error: playerError } = await supabase
@@ -49,6 +55,7 @@ export function useGameSessionCreate() {
       toast.success('Game created successfully!');
       return typedSessionData.id;
     } catch (error: any) {
+      console.error('Failed to create game:', error);
       toast.error(`Failed to create game: ${error.message}`);
       return null;
     } finally {
