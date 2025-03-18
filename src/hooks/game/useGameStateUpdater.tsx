@@ -23,7 +23,9 @@ export function useGameStateUpdater(
         board: newState.board.map(row => 
           row.map(cell => ({ 
             player: cell.player,
-            powerup: cell.powerup
+            hasPowerup: cell.hasPowerup,
+            powerupType: cell.powerupType,
+            pieceId: cell.pieceId
           }))
         ),
         currentPlayer: newState.currentPlayer,
@@ -37,13 +39,13 @@ export function useGameStateUpdater(
           pieces: player.pieces.map(piece => ({
             id: piece.id,
             shape: piece.shape,
-            size: piece.size,
-            used: piece.used
+            used: piece.used,
+            name: piece.name
           })),
           powerups: player.powerups
         })),
-        gameOver: newState.gameOver,
-        winningPlayers: newState.winningPlayers,
+        gameStatus: newState.gameStatus,
+        winner: newState.winner,
         turnHistory: [...(gameState?.turnHistory || []), {
           player: playerNumber,
           timestamp: Date.now(),

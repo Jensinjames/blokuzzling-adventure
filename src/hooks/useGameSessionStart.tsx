@@ -98,8 +98,8 @@ export function useGameSessionStart() {
           pieces: player.pieces.map(piece => ({
             id: piece.id,
             shape: piece.shape,
-            size: piece.size,
-            used: piece.used || false
+            used: piece.used || false,
+            name: piece.name
           }))
         })),
         turnHistory: initialGameState.turnHistory || []
