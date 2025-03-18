@@ -1,12 +1,8 @@
 
 import React from 'react';
 import { GameState, BoardPosition, Piece } from '@/types/game';
-import GameResult from '@/components/GameResult';
-import PlayerInfo from '@/components/PlayerInfo';
-import MultiplayerHeader from '@/components/multiplayer/MultiplayerHeader';
-import MultiplayerGameContent from '@/components/multiplayer/MultiplayerGameContent';
-import PowerupActiveIndicator from '@/components/multiplayer/PowerupActiveIndicator';
-import TurnIndicator from '@/components/multiplayer/TurnIndicator';
+import MultiplayerHeader from './MultiplayerHeader';
+import MultiplayerGameContent from './MultiplayerGameContent';
 
 interface MultiplayerGameContainerProps {
   gameState: GameState;
@@ -52,65 +48,41 @@ const MultiplayerGameContainer: React.FC<MultiplayerGameContainerProps> = ({
   cancelPowerupMode
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 px-4 py-6">
-      <div className="max-w-lg mx-auto">
-        <MultiplayerHeader onHome={onHome} />
-        
-        <PlayerInfo
-          players={gameState.players}
-          currentPlayer={gameState.currentPlayer}
-          onUsePowerup={onUsePowerup}
-          isViewerCurrentPlayer={isMyTurn}
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 p-2 md:p-6">
+      <div className="max-w-5xl mx-auto">
+        <MultiplayerHeader 
+          gameState={gameState}
+          isMyTurn={isMyTurn}
+          playerNumber={playerNumber}
+          onHome={onHome}
         />
         
-        {gameState.gameStatus === "finished" || gameState.gameStatus === "completed" ? (
-          <GameResult
-            players={gameState.players}
-            winner={gameState.winner}
-            onRestart={onReset}
+        <div className="mt-4">
+          <MultiplayerGameContent
+            gameState={gameState}
+            playerNumber={playerNumber}
+            isMyTurn={isMyTurn}
+            selectedPiece={selectedPiece}
+            previewPosition={previewPosition}
+            isValidPlacement={isValidPlacement}
+            isPowerupActive={isPowerupActive}
+            activePowerupType={activePowerupType}
+            onCellClick={onCellClick}
+            onCellHover={onCellHover}
+            onSelectPiece={onSelectPiece}
+            onRotatePiece={onRotatePiece}
+            onFlipPiece={onFlipPiece}
+            onUndo={onUndo}
+            onReset={onReset}
+            onPass={onPass}
             onHome={onHome}
+            cancelPowerupMode={cancelPowerupMode}
+            onUsePowerup={onUsePowerup}
           />
-        ) : (
-          <>
-            <PowerupActiveIndicator 
-              isActive={isPowerupActive} 
-              isMyTurn={isMyTurn}
-              powerupType={activePowerupType}
-              onCancel={cancelPowerupMode}
-            />
-            
-            <TurnIndicator 
-              gameState={gameState}
-              isMyTurn={isMyTurn}
-              isPowerupActive={isPowerupActive}
-              activePowerupType={activePowerupType}
-            />
-            
-            <MultiplayerGameContent
-              gameState={gameState}
-              playerNumber={playerNumber}
-              isMyTurn={isMyTurn}
-              selectedPiece={selectedPiece}
-              previewPosition={previewPosition}
-              isValidPlacement={isValidPlacement}
-              isPowerupActive={isPowerupActive}
-              activePowerupType={activePowerupType}
-              onCellClick={onCellClick}
-              onCellHover={onCellHover}
-              onSelectPiece={onSelectPiece}
-              onRotatePiece={onRotatePiece}
-              onFlipPiece={onFlipPiece}
-              onUndo={onUndo}
-              onReset={onReset}
-              onPass={onPass}
-              onHome={onHome}
-              cancelPowerupMode={cancelPowerupMode}
-            />
-          </>
-        )}
+        </div>
       </div>
     </div>
   );
-};
+}
 
 export default MultiplayerGameContainer;

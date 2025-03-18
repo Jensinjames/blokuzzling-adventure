@@ -5,11 +5,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 import TurnIndicator from '@/components/multiplayer/TurnIndicator';
 import PowerupActiveIndicator from '@/components/multiplayer/PowerupActiveIndicator';
-import PlayerInfo from '@/components/PlayerInfo';
 import GameResult from '@/components/GameResult';
 import MultiplayerGameBoard from '@/components/multiplayer/GameBoard';
 import MultiplayerGameControls from '@/components/multiplayer/GameControls';
 import PieceSelectorWrapper from '@/components/multiplayer/PieceSelectorWrapper';
+import PlayerInfoWrapper from '@/components/multiplayer/PlayerInfoWrapper';
 
 interface MultiplayerGameContentProps {
   gameState: GameState;
@@ -30,6 +30,7 @@ interface MultiplayerGameContentProps {
   onPass: () => void;
   onHome: () => void;
   cancelPowerupMode: () => void;
+  onUsePowerup?: (playerId: number, powerupType: string) => void;
 }
 
 const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
@@ -50,9 +51,22 @@ const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
   onReset,
   onPass,
   onHome,
-  cancelPowerupMode
+  cancelPowerupMode,
+  onUsePowerup
 }) => {
   const isMobile = useIsMobile();
+  
+  // Show game result if the game is over
+  if (gameState.gameStatus === "finished" || gameState.gameStatus === "completed") {
+    return (
+      <GameResult 
+        players={gameState.players}
+        winner={gameState.winner}
+        onRestart={onReset}
+        onHome={onHome}
+      />
+    );
+  }
   
   return (
     <>
@@ -68,6 +82,13 @@ const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
         isMyTurn={isMyTurn}
         isPowerupActive={isPowerupActive}
         activePowerupType={activePowerupType}
+      />
+      
+      <PlayerInfoWrapper
+        gameState={gameState}
+        playerNumber={playerNumber}
+        isMyTurn={isMyTurn}
+        onUsePowerup={onUsePowerup}
       />
       
       <MultiplayerGameBoard
