@@ -54,12 +54,15 @@ export const signUpUser = async (email: string, password: string) => {
 export const signOutUser = async () => {
   try {
     console.log('Signing out user');
-    await supabase.auth.signOut();
-    toast.success('Signed out successfully');
+    // Clear session but don't navigate (that's handled in AuthProvider)
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Sign out error:', error);
+      return { error };
+    }
     return { error: null };
   } catch (error: any) {
     console.error('Sign out error:', error);
-    toast.error(error.message || 'An error occurred during sign out');
     return { error };
   }
 };

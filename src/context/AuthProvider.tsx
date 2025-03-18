@@ -2,7 +2,7 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { Session, User, supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from './AuthHooks';
 import { signInUser, signUpUser, signOutUser, refreshUserSession } from './AuthOperations';
 
@@ -11,6 +11,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Function to refresh the session
   const refreshSession = async () => {
@@ -55,7 +56,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(data.session?.user ?? null);
 
         // If no session, and we're not on the auth page or root, redirect to auth
-        if (!data.session && window.location.pathname !== '/auth' && window.location.pathname !== '/') {
+        if (!data.session && !location.pathname.match(/^\/(auth|)$/)) {
           console.log('No session detected, redirecting to auth');
           navigate('/auth');
         }
@@ -79,7 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log(`Auth state changed: ${event}`);
+        console.log(`Auth state changed: ${event}`, newSession?.user?.id || 'no user');
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false);
@@ -89,13 +90,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           toast.success('Signed in successfully');
           
           // Properly redirect to home after sign in
-          if (window.location.pathname === '/auth' || window.location.pathname === '/') {
+          if (location.pathname === '/auth' || location.pathname === '/') {
             navigate('/home');
           }
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
           toast.info('Signed out');
-          navigate('/');
+          // Force full page reload to clear any cached state
+          window.location.href = '/#/';
         } else if (event === 'TOKEN_REFRESHED') {
           console.log('Token refreshed successfully');
         } else if (event === 'USER_UPDATED') {
@@ -103,7 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else if (event === 'PASSWORD_RECOVERY') {
           console.log('Password recovery initiated');
           // If user is on the password reset page, don't redirect
-          if (!window.location.pathname.includes('/auth')) {
+          if (!location.pathname.includes('/auth')) {
             navigate('/auth');
           }
         }
@@ -116,7 +118,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       clearInterval(refreshInterval);
       authListener?.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   // Wrapper functions for auth operations
   const signIn = async (email: string, password: string) => {
@@ -128,9 +130,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signOut = async () => {
-    const { error } = await signOutUser();
-    if (!error) {
-      navigate('/');
+    console.log('Signing out user from AuthProvider');
+    try {
+      const { error } = await signOutUser();
+      if (error) {
+        console.error('Error during sign out:', error);
+        toast.error('Error signing out: ' + error.message);
+      }
+      // Reset local state
+      setUser(null);
+      setSession(null);
+      
+      // Force a full page reload to ensure clean state
+      window.location.href = '/#/';
+      return { error };
+    } catch (error: any) {
+      console.error('Unexpected error during sign out:', error);
+      toast.error('Error signing out: ' + (error.message || 'Unknown error'));
+      return { error };
     }
   };
 
@@ -139,7 +156,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       console.log('[Auth Debug] Requesting password reset for:', email);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?reset=true`,
+        redirectTo: `${window.location.origin}/#/auth?reset=true`,
       });
       
       if (error) {

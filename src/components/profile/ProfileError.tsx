@@ -20,10 +20,14 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
   
   const handleSignOut = async () => {
     try {
+      console.log('Initiating sign out from ProfileError component');
       await signOut();
-      // Navigation is handled in the signOut function
+      // Hard reload to ensure clean state
+      window.location.href = '/#/';
     } catch (error) {
       console.error('Error signing out:', error);
+      // Force navigation if there's an error
+      window.location.href = '/#/';
     }
   };
   

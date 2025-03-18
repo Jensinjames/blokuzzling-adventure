@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
 import { toast } from 'sonner';
 
@@ -44,6 +44,7 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
   
   const { user, session, loading: authLoading, refreshSession } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Perform auth check and redirect if needed
   useEffect(() => {
@@ -55,17 +56,17 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
       
       // Add returnTo if needed
       if (includeReturnTo) {
-        const currentPath = window.location.pathname;
+        const currentPath = location.pathname;
         navigate(`${redirectTo}?returnTo=${encodeURIComponent(currentPath)}`);
       } else {
         navigate(redirectTo);
       }
     }
-  }, [user, session, authLoading, navigate, redirectTo, includeReturnTo, message, skip]);
+  }, [user, session, authLoading, navigate, redirectTo, includeReturnTo, message, skip, location.pathname]);
   
   // Refresh session if it's expiring soon
   useEffect(() => {
-    if (session && new Date(session.expires_at * 1000) < new Date(Date.now() + 5 * 60 * 1000)) {
+    if (session && session.expires_at && new Date(session.expires_at * 1000) < new Date(Date.now() + 5 * 60 * 1000)) {
       console.log('Session expiring soon, refreshing...');
       refreshSession();
     }
