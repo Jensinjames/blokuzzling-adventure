@@ -11,6 +11,7 @@ export function useGameAccess(gameId: string | undefined) {
   const [isPlayer, setIsPlayer] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [creatorProfile, setCreatorProfile] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,12 +20,30 @@ export function useGameAccess(gameId: string | undefined) {
         setHasAccess(false);
         setIsCreator(false);
         setIsPlayer(false);
+        setCreatorProfile(null);
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
+
+        // Fetch the game data first
+        const { data: gameData, error: gameError } = await supabase
+          .from('game_sessions')
+          .select('*, creator:creator_id(username, id, avatar_url)')
+          .eq('id', gameId)
+          .single();
+
+        if (gameError) throw gameError;
+        if (!gameData) throw new Error('Game not found');
+        
+        // Store creator profile data
+        setCreatorProfile(gameData.creator);
+        
+        // Check if user is the creator
+        const isGameCreator = gameData && gameData.creator_id === user.id;
+        setIsCreator(isGameCreator);
 
         // Check if user is a player in this game
         const { data: playerData, error: playerError } = await supabase
@@ -38,18 +57,6 @@ export function useGameAccess(gameId: string | undefined) {
         const isPlayerInGame = playerData && playerData.length > 0;
         setIsPlayer(isPlayerInGame);
 
-        // Check if user is the creator
-        const { data: gameData, error: gameError } = await supabase
-          .from('game_sessions')
-          .select('*')
-          .eq('id', gameId)
-          .single();
-
-        if (gameError) throw gameError;
-        
-        const isGameCreator = gameData && gameData.creator_id === user.id;
-        setIsCreator(isGameCreator);
-
         // Set access status
         const userHasAccess = isPlayerInGame || isGameCreator;
         setHasAccess(userHasAccess);
@@ -62,6 +69,7 @@ export function useGameAccess(gameId: string | undefined) {
       } catch (error) {
         console.error('Error checking game access:', error);
         setHasAccess(false);
+        setCreatorProfile(null);
         toast.error('Failed to verify game access');
         navigate('/home');
       } finally {
@@ -75,7 +83,8 @@ export function useGameAccess(gameId: string | undefined) {
   return { 
     isCreator, 
     isPlayer, 
-    hasAccess, 
+    hasAccess,
+    creatorProfile,
     loading 
   };
 }

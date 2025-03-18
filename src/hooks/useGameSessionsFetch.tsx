@@ -25,10 +25,10 @@ export function useGameSessionsFetch() {
       try {
         setLoading(true);
         
-        // Fetch active sessions
+        // Fetch active sessions with creator profiles
         const { data: activeSessionsData, error: activeError } = await supabase
           .from('game_sessions')
-          .select('*')
+          .select('*, creator:profiles!creator_id(username, avatar_url)')
           .eq('status', 'waiting')
           .order('created_at', { ascending: false });
 
@@ -36,66 +36,66 @@ export function useGameSessionsFetch() {
           throw activeError;
         }
 
-        // Fetch user's sessions (both as creator and participant)
-        const [creatorResult, participantResult] = await Promise.all([
-          // Sessions created by the user
-          supabase
-            .from('game_sessions')
-            .select('*')
-            .eq('creator_id', user.id)
-            .order('created_at', { ascending: false }),
+        // Fetch user's created sessions with extended information
+        const { data: createdGames, error: createdGamesError } = await supabase
+          .from('game_sessions')
+          .select('*, creator:profiles!creator_id(username, avatar_url)')
+          .eq('creator_id', user.id)
+          .order('created_at', { ascending: false });
           
-          // Sessions where the user is a participant
-          supabase
-            .from('game_players')
-            .select('game_id')
-            .eq('player_id', user.id)
-        ]);
-
-        if (creatorResult.error) {
-          throw creatorResult.error;
+        if (createdGamesError) {
+          throw createdGamesError;
         }
 
-        if (participantResult.error) {
-          throw participantResult.error;
+        // Fetch games where the user is a participant
+        const { data: participatedData, error: participatedError } = await supabase
+          .from('game_players')
+          .select('game_id')
+          .eq('player_id', user.id);
+          
+        if (participatedError) {
+          throw participatedError;
         }
-
-        // Get unique game IDs where user is a participant but not the creator
-        const participantGameIds = participantResult.data
-          .map(player => player.game_id)
-          .filter(gameId => 
-            !creatorResult.data.some(session => session.id === gameId)
-          );
-
-        // Fetch those games if there are any
+        
+        // Get unique participant game IDs
+        const participantGameIds = participatedData
+          ? participatedData.map(player => player.game_id)
+          : [];
+        
+        // Fetch the games user is participating in but not creating
         let participantGames: GameSession[] = [];
         if (participantGameIds.length > 0) {
-          const { data: participantGamesData, error: participantError } = await supabase
+          const { data: participantGamesData, error: participantGamesError } = await supabase
             .from('game_sessions')
-            .select('*')
+            .select('*, creator:profiles!creator_id(username, avatar_url)')
             .in('id', participantGameIds)
+            .neq('creator_id', user.id)
             .order('created_at', { ascending: false });
             
-          if (participantError) {
-            throw participantError;
+          if (participantGamesError) {
+            throw participantGamesError;
           }
           
-          participantGames = safeDataCast<GameSession>(participantGamesData);
+          if (participantGamesData) {
+            participantGames = safeDataCast<GameSession>(participantGamesData);
+          }
         }
 
         // Combine creator games and participant games for user sessions
         const allUserSessions = [
-          ...safeDataCast<GameSession>(creatorResult.data),
+          ...safeDataCast<GameSession>(createdGames || []),
           ...participantGames
         ];
 
         // Set state with typechecked data
-        setActiveSessions(safeDataCast<GameSession>(activeSessionsData));
+        setActiveSessions(safeDataCast<GameSession>(activeSessionsData || []));
         setUserSessions(allUserSessions);
         
         console.log('Fetched sessions:', {
           active: activeSessionsData?.length || 0,
-          user: allUserSessions.length
+          created: createdGames?.length || 0,
+          participating: participantGames.length,
+          total_user: allUserSessions.length
         });
       } catch (error: any) {
         console.error('Error fetching game sessions:', error);
@@ -110,7 +110,7 @@ export function useGameSessionsFetch() {
 
     // Subscribe to game sessions changes for real-time updates
     const sessionsChannel = supabase
-      .channel('schema-db-changes')
+      .channel('game-sessions-changes')
       .on(
         'postgres_changes',
         {
@@ -119,22 +119,15 @@ export function useGameSessionsFetch() {
           table: 'game_sessions'
         },
         (payload) => {
-          if (payload.new && 'id' in payload.new) {
-            // Refresh sessions when there's a change
-            fetchGameSessions();
-          }
+          console.log('Game session change detected:', payload);
+          fetchGameSessions();
         }
       )
-      .subscribe((status) => {
-        console.log('Game sessions subscription status:', status);
-        if (status === 'CHANNEL_ERROR') {
-          toast.error('Lost connection to game server. Trying to reconnect...');
-        }
-      });
+      .subscribe();
 
-    // Also subscribe to game_players table to detect when the user is added/removed from games
+    // Also subscribe to game_players table to detect when user is added/removed from games
     const playersChannel = supabase
-      .channel('schema-db-players-changes')
+      .channel('game-players-changes')
       .on(
         'postgres_changes',
         {
@@ -144,7 +137,7 @@ export function useGameSessionsFetch() {
           filter: `player_id=eq.${user.id}`
         },
         (payload) => {
-          // Refresh sessions when the user's game participation changes
+          console.log('Game player change detected:', payload);
           fetchGameSessions();
         }
       )
@@ -165,23 +158,23 @@ export function useGameSessionsFetch() {
       // Fetch active sessions
       const { data: activeSessionsData, error: activeError } = await supabase
         .from('game_sessions')
-        .select('*')
+        .select('*, creator:profiles!creator_id(username, avatar_url)')
         .eq('status', 'waiting')
         .order('created_at', { ascending: false });
 
       if (activeError) throw activeError;
 
-      // Fetch user's sessions
+      // Fetch user's created sessions
       const { data: userSessionsData, error: userError } = await supabase
         .from('game_sessions')
-        .select('*')
+        .select('*, creator:profiles!creator_id(username, avatar_url)')
         .eq('creator_id', user.id)
         .order('created_at', { ascending: false });
 
       if (userError) throw userError;
 
-      setActiveSessions(safeDataCast<GameSession>(activeSessionsData));
-      setUserSessions(safeDataCast<GameSession>(userSessionsData));
+      setActiveSessions(safeDataCast<GameSession>(activeSessionsData || []));
+      setUserSessions(safeDataCast<GameSession>(userSessionsData || []));
     } catch (error: any) {
       console.error('Error refreshing game sessions:', error);
       setError(error);

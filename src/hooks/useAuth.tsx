@@ -25,8 +25,9 @@ export const useAuth = () => {
 
       try {
         setCheckingSubscription(true);
-        // In a real implementation, we would check for an actual subscription status
-        // For now, we assume all authenticated users have access
+        
+        // In a production environment, we would check against a subscriptions table
+        // For now, we validate against the profile and ensure data integrity
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -40,6 +41,7 @@ export const useAuth = () => {
         }
 
         // For MVP, all authenticated users have access
+        // In a production app, add subscription status checks here
         setHasSubscription(true);
       } catch (error) {
         console.error('Error checking subscription:', error);
@@ -61,7 +63,6 @@ export const useAuth = () => {
     }
 
     if (checkingSubscription) {
-      // Waiting for subscription check
       toast.info('Checking your account status...');
       return;
     }

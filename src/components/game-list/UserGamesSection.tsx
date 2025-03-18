@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import { GameSession } from '@/types/database';
 import GameSessionItem from './GameSessionItem';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UserGamesSectionProps {
   userSessions: GameSession[];
@@ -16,7 +17,14 @@ const UserGamesSection: React.FC<UserGamesSectionProps> = ({
   onView,
   onPlay
 }) => {
-  if (userSessions.length === 0) return null;
+  const { user } = useAuth();
+  
+  if (!user || userSessions.length === 0) return null;
+
+  // Filter games to only show those created by the current user
+  const createdSessions = userSessions.filter(session => session.creator_id === user.id);
+  
+  if (createdSessions.length === 0) return null;
 
   return (
     <motion.div
@@ -31,7 +39,7 @@ const UserGamesSection: React.FC<UserGamesSectionProps> = ({
       </h2>
 
       <div className="space-y-3">
-        {userSessions.map((session) => (
+        {createdSessions.map((session) => (
           <GameSessionItem
             key={session.id}
             session={session}

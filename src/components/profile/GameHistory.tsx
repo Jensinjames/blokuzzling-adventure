@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { deleteGameSession } from '@/context/AuthOperations';
 import { useAuth } from '@/context/AuthProvider';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GameHistoryProps {
   games: GameSession[];
@@ -32,17 +33,38 @@ const GameHistory: React.FC<GameHistoryProps> = ({ games, loading, onGameDeleted
     if (confirm('Are you sure you want to delete this game?')) {
       setDeletingGameId(gameId);
       
-      const { error } = await deleteGameSession(gameId);
-      
-      if (error) {
+      try {
+        // First delete all related game players
+        const { error: playersError } = await supabase
+          .from('game_players')
+          .delete()
+          .eq('game_id', gameId);
+          
+        if (playersError) throw playersError;
+        
+        // Then delete all related game invites
+        const { error: invitesError } = await supabase
+          .from('game_invites')
+          .delete()
+          .eq('game_id', gameId);
+          
+        if (invitesError) throw invitesError;
+        
+        // Finally delete the game session
+        const { error } = await deleteGameSession(gameId);
+        
+        if (error) throw error;
+        
+        if (onGameDeleted) {
+          onGameDeleted(gameId);
+          toast.success("Game deleted successfully");
+        }
+      } catch (error: any) {
         toast.error("Failed to delete game");
         console.error("Delete game error:", error);
-      } else if (onGameDeleted) {
-        onGameDeleted(gameId);
-        toast.success("Game deleted successfully");
+      } finally {
+        setDeletingGameId(null);
       }
-      
-      setDeletingGameId(null);
     }
   };
   
@@ -95,7 +117,9 @@ const GameHistory: React.FC<GameHistoryProps> = ({ games, loading, onGameDeleted
               </TableCell>
               <TableCell>
                 {game.winner_id ? (
-                  <span className="text-yellow-500 font-medium">{game.winner_id ? "Win" : "Loss"}</span>
+                  <span className="text-yellow-500 font-medium">
+                    {game.winner_id === user?.id ? "Win" : "Loss"}
+                  </span>
                 ) : (
                   <span className="text-gray-500">-</span>
                 )}
@@ -130,6 +154,7 @@ const GameStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   switch (status) {
     case 'waiting':
       return <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Waiting</Badge>;
+    case 'active':
     case 'playing':
       return <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300">In Progress</Badge>;
     case 'finished':
