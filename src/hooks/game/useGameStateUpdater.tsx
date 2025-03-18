@@ -59,15 +59,19 @@ export function useGameStateUpdater(
         lastUpdate: Date.now()
       };
 
+      // Check if the game is finished and handle saving game history and profile stats
+      const isGameFinished = newState.gameStatus === 'finished';
+      const winnerId = isGameFinished && newState.winner !== null ? 
+        newState.players[newState.winner].id : null;
+      
       // Update the game session with the new state
       const { error } = await supabase
         .from('game_sessions')
         .update({
           game_state: safeGameState,
           turn_history: safeGameState.turnHistory,
-          status: newState.gameStatus === 'finished' ? 'completed' : 'active',
-          winner_id: newState.gameStatus === 'finished' && newState.winner !== null ? 
-            newState.players[newState.winner].id : null
+          status: isGameFinished ? 'completed' : 'active',
+          winner_id: winnerId
         })
         .eq('id', gameId);
 
@@ -77,11 +81,84 @@ export function useGameStateUpdater(
       }
       
       console.log('Game state updated successfully');
+      
+      // Update profile stats if the game is finished
+      if (isGameFinished && user) {
+        await updateProfileStats(newState, user.id);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error updating game state:', error);
       toast.error('Failed to update game state');
       return false;
+    }
+  };
+
+  // Helper function to update profile stats based on game result
+  const updateProfileStats = async (gameState: GameState, userId: string) => {
+    if (!gameState.players || gameState.gameStatus !== 'finished') return;
+    
+    try {
+      console.log('Updating profile stats for user:', userId);
+      
+      // Find the player index in the game
+      const playerIndex = gameState.players.findIndex(p => {
+        // Handle both string and number IDs
+        const playerId = typeof p.id === 'string' ? p.id : p.id.toString();
+        const currentUserId = typeof userId === 'string' ? userId : userId.toString();
+        
+        return playerId === currentUserId;
+      });
+      
+      if (playerIndex === -1) {
+        console.log('Player not found in game state, cannot update stats');
+        return;
+      }
+      
+      console.log('Found player at index:', playerIndex, 'Winner:', gameState.winner);
+      
+      // Get current profile
+      const { data, error: fetchError } = await supabase
+        .from('profiles')
+        .select('wins, losses, draws')
+        .eq('id', userId)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching profile stats:', fetchError);
+        return;
+      }
+      
+      // Determine what to update based on the game result
+      let updateObj: {wins?: number, losses?: number, draws?: number} = {};
+      
+      if (gameState.winner === playerIndex) {
+        updateObj.wins = (data.wins || 0) + 1;
+        console.log('Updating wins for player', playerIndex);
+      } else if (gameState.winner === null) {
+        updateObj.draws = (data.draws || 0) + 1;
+        console.log('Updating draws for player', playerIndex);
+      } else {
+        updateObj.losses = (data.losses || 0) + 1;
+        console.log('Updating losses for player', playerIndex);
+      }
+      
+      // Update profile stats
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updateObj)
+        .eq('id', userId);
+      
+      if (updateError) {
+        console.error('Error updating profile stats:', updateError);
+        toast.error('Failed to update profile statistics');
+      } else {
+        console.log('Successfully updated profile stats with:', updateObj);
+        toast.success('Game results saved to your profile');
+      }
+    } catch (e) {
+      console.error('Error in updateProfileStats:', e);
     }
   };
 
