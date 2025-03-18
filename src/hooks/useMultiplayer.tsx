@@ -21,20 +21,35 @@ export function useMultiplayer() {
   const {
     invites,
     invitesLoading,
-    respondToInvite,
+    respondToInvite: baseRespondToInvite,
     fetchGameInvites
   } = useMultiplayerInvites();
 
   const { invitePlayer } = useMultiplayerInviteSender();
 
+  // Fixed handleRespondToInvite to correctly pass the joinGameSession function
+  // and handle the response appropriately
   const handleRespondToInvite = async (inviteId: string, accept: boolean) => {
     try {
-      const success = await respondToInvite(inviteId, accept);
-      if (success && accept && success.gameId) {
-        await joinGameSession(success.gameId);
-        return true;
+      if (!accept) {
+        // If declining, just respond with false and don't try to join
+        await baseRespondToInvite(inviteId, false);
+        return false;
       }
-      return false;
+      
+      // Find the invite to get the game_id before responding
+      const invite = invites?.find(inv => inv.id === inviteId);
+      if (!invite) {
+        console.error('Invite not found');
+        return false;
+      }
+      
+      // Now respond to the invite and pass the joinGameSession function
+      const success = await baseRespondToInvite(inviteId, true, joinGameSession);
+      
+      // The success value is a boolean since we're not using the return value
+      // from the baseRespondToInvite function directly anymore
+      return success;
     } catch (error) {
       console.error('Error responding to invite:', error);
       return false;

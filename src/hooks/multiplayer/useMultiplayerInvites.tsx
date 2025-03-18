@@ -14,8 +14,12 @@ export function useMultiplayerInvites() {
     fetchGameInvites
   } = useGameInvites();
 
-  // Extended respondToInvite that handles game joining after accepting
-  const respondToInvite = async (inviteId: string, accept: boolean, joinGameSession: (gameId: string) => Promise<boolean>) => {
+  // Refactored respondToInvite to properly handle the joinGameSession function
+  const respondToInvite = async (
+    inviteId: string, 
+    accept: boolean, 
+    joinGameSession?: (gameId: string) => Promise<boolean>
+  ) => {
     if (!user) {
       toast.error('You must be logged in to respond to invites');
       return false;
@@ -32,17 +36,13 @@ export function useMultiplayerInvites() {
       
       await baseRespondToInvite(inviteId, accept);
       
-      if (accept && invites) {
-        // Find the invite that was just accepted
-        const invite = invites.find(inv => inv.id === inviteId);
-        if (invite) {
-          // Join the game session
-          const success = await joinGameSession(invite.game_id);
-          if (success) {
-            // Navigate to the lobby page
-            navigate(`/lobby/${invite.game_id}`);
-            return true;
-          }
+      if (accept && invite && joinGameSession) {
+        // Join the game session if accepted and joinGameSession is provided
+        const success = await joinGameSession(invite.game_id);
+        if (success) {
+          // Navigate to the lobby page
+          navigate(`/lobby/${invite.game_id}`);
+          return true;
         }
       }
       
