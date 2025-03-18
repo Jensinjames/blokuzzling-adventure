@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RotateCcw, Home, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface GameResultProps {
   players: Player[];
@@ -15,6 +16,7 @@ interface GameResultProps {
 }
 
 const GameResult: React.FC<GameResultProps> = ({ players, winner, onRestart, onHome }) => {
+  const isMobile = useIsMobile();
   // Sort players by score for ranking
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   
@@ -69,7 +71,7 @@ const GameResult: React.FC<GameResultProps> = ({ players, winner, onRestart, onH
                 <span className="font-medium">{player.name}</span>
                 
                 {/* Show player ID if it's a string */}
-                {typeof player.id === 'string' && player.id.length > 8 && (
+                {typeof player.id === 'string' && player.id.length > 8 && !isMobile && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -96,6 +98,7 @@ const GameResult: React.FC<GameResultProps> = ({ players, winner, onRestart, onH
         <Button
           onClick={onRestart}
           className="control-button"
+          size={isMobile ? "sm" : "default"}
         >
           <RotateCcw className="h-4 w-4 mr-2" />
           Play Again
@@ -105,6 +108,7 @@ const GameResult: React.FC<GameResultProps> = ({ players, winner, onRestart, onH
           variant="outline"
           onClick={onHome}
           className="control-button"
+          size={isMobile ? "sm" : "default"}
         >
           <Home className="h-4 w-4 mr-2" />
           Main Menu

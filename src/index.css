@@ -152,8 +152,20 @@
     @apply rounded-xl p-3 shadow-sm;
   }
   
+  /* Fix for mobile game controls */
   .mobile-controls {
     @apply fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-3 border-t border-gray-200 dark:border-gray-700 z-10;
+  }
+  
+  /* Fix for game over screen on mobile */
+  @media (max-width: 768px) {
+    .game-result-mobile {
+      @apply fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm;
+    }
+    
+    .game-result-container {
+      @apply max-w-[90%] max-h-[90vh] overflow-y-auto;
+    }
   }
 }
 

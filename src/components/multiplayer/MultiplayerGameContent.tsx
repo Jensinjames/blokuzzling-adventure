@@ -8,6 +8,7 @@ import PieceSelector from '@/components/PieceSelector';
 import GameControls from '@/components/GameControls';
 import TurnIndicator from '@/components/multiplayer/TurnIndicator';
 import PowerupActiveIndicator from '@/components/multiplayer/PowerupActiveIndicator';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MultiplayerGameContentProps {
   gameState: GameState;
@@ -50,6 +51,8 @@ const MultiplayerGameContent: React.FC<MultiplayerGameContentProps> = ({
   onHome,
   cancelPowerupMode
 }) => {
+  const isMobile = useIsMobile();
+  
   // Helper function to handle board cell clicks
   const handleBoardCellClick = (position: BoardPosition) => {
     if (!isMyTurn) {
