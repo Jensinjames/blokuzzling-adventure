@@ -1,13 +1,86 @@
 
 import { useAuth as useAuthContext } from '@/context/AuthProvider';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 /**
- * Hook to access authentication context
- * Provides user, session, loading state, and authentication methods
+ * Enhanced hook to access authentication context
+ * Provides user, session, loading state, and authentication methods with subscription validation
  */
 export const useAuth = () => {
   const authContext = useAuthContext();
-  return authContext;
+  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
+  const [checkingSubscription, setCheckingSubscription] = useState<boolean>(false);
+  const navigate = useNavigate();
+
+  // Check if user has an active subscription
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!authContext.user) {
+        setHasSubscription(null);
+        return;
+      }
+
+      try {
+        setCheckingSubscription(true);
+        // In a real implementation, you would fetch the subscription status from your database
+        // For now, we'll assume all authenticated users have access
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authContext.user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          setHasSubscription(false);
+          return;
+        }
+
+        // All authenticated users have access for now
+        // In a real implementation, you would check for subscription status
+        setHasSubscription(true);
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        setHasSubscription(false);
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    checkSubscription();
+  }, [authContext.user]);
+
+  // Protect routes that require subscription
+  const requireSubscription = (callback: () => void) => {
+    if (!authContext.user) {
+      toast.error('You must be logged in to access this feature');
+      navigate('/auth');
+      return;
+    }
+
+    if (checkingSubscription) {
+      // Waiting for subscription check
+      return;
+    }
+
+    if (hasSubscription === false) {
+      toast.error('You need an active subscription to access this feature');
+      navigate('/settings');
+      return;
+    }
+
+    callback();
+  };
+
+  return {
+    ...authContext,
+    hasSubscription,
+    checkingSubscription,
+    requireSubscription
+  };
 };
 
 export default useAuth;
