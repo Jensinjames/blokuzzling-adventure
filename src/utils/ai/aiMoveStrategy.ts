@@ -5,7 +5,7 @@ import { rotatePiece, flipPiece } from '../pieceManipulation';
 import { BOARD_SIZE } from '../gameConstants';
 import { AIDifficulty, AIMove } from './aiTypes';
 import { getRotationOptions, getFlipOptions } from './difficultyUtils';
-import { calculateMoveScore } from './scoreCalculation';
+import { calculateMoveScore } from './score';
 import { chooseMove } from './moveSelection';
 
 // Main function to find the best move for the AI player
