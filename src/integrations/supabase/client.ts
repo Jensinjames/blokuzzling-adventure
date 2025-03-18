@@ -5,44 +5,34 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mfgpjwjpshnanjrxhmnm.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mZ3Bqd2pwc2huYW5qcnhobW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxNzAwNDgsImV4cCI6MjA1Nzc0NjA0OH0.eClbpmE2hNvSr7R3heIb_atkmFneCas2Y61g3nUZAHA';
 
-// Configure Supabase client with enhanced debug info
+// Configure Supabase client
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce', // Using PKCE flow for more secure redirects
+    flowType: 'pkce', // Using PKCE flow for secure redirects
     storage: {
-      // Enhanced storage implementation with better error and debug reporting
       getItem: async (key) => {
         try {
-          console.log(`[Auth Debug] Getting auth item: ${key}`);
           const value = localStorage.getItem(key);
-          if (value) {
-            console.log(`[Auth Debug] Auth item found for key: ${key}`);
-          } else {
-            console.log(`[Auth Debug] No auth item found for key: ${key}`);
-          }
           return value ? JSON.parse(value) : null;
         } catch (error) {
-          console.error('[Auth Debug] Error getting item from localStorage:', error);
           return null;
         }
       },
       setItem: async (key, value) => {
         try {
-          console.log(`[Auth Debug] Setting auth item: ${key}`);
           localStorage.setItem(key, JSON.stringify(value));
         } catch (error) {
-          console.error('[Auth Debug] Error setting item to localStorage:', error);
+          // Silent fail on storage errors
         }
       },
       removeItem: async (key) => {
         try {
-          console.log(`[Auth Debug] Removing auth item: ${key}`);
           localStorage.removeItem(key);
         } catch (error) {
-          console.error('[Auth Debug] Error removing item from localStorage:', error);
+          // Silent fail on storage errors
         }
       }
     }
@@ -54,48 +44,23 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 });
 
-// Enable debug mode for Supabase client to help troubleshoot
-if (import.meta.env.DEV) {
-  console.log('[Auth Debug] Supabase client initialized with the following configuration:');
-  console.log(`[Auth Debug] URL: ${supabaseUrl}`);
-  console.log('[Auth Debug] Anon Key: [key hidden for security]');
-  console.log('[Auth Debug] Auto Refresh Token: true');
-  console.log('[Auth Debug] Persist Session: true');
-  console.log('[Auth Debug] Detect Session In URL: true');
-  console.log('[Auth Debug] Flow Type: pkce');
-}
-
-// Add more robust error handling for data transformations
+// Helper functions without debug logging
 export function safeSingleDataCast<T>(data: any): T {
-  try {
-    if (!data) {
-      console.warn('[Data Debug] No data received for safe cast');
-      return {} as T;
-    }
-    return data as T;
-  } catch (error) {
-    console.error('[Data Debug] Error casting single data:', error);
+  if (!data) {
     return {} as T;
   }
+  return data as T;
 }
 
 export function safeDataCast<T>(data: any): T[] {
-  try {
-    if (!Array.isArray(data)) {
-      console.warn('[Data Debug] Data is not an array for safe cast');
-      return [];
-    }
-    return data as T[];
-  } catch (error) {
-    console.error('[Data Debug] Error casting data array:', error);
+  if (!Array.isArray(data)) {
     return [];
   }
+  return data as T[];
 }
 
-// Helper to get avatar URL from Json[] type
 export function getAvatarUrl(avatarUrl: any): string {
   try {
-    // If it's an array (Json[]), take the first element
     if (Array.isArray(avatarUrl) && avatarUrl.length > 0) {
       const firstItem = avatarUrl[0];
       if (typeof firstItem === 'string') return firstItem;
@@ -103,43 +68,30 @@ export function getAvatarUrl(avatarUrl: any): string {
         return firstItem.url as string;
       }
     }
-    // If it's a string, return directly
     if (typeof avatarUrl === 'string') return avatarUrl;
     
     return '';
   } catch (error) {
-    console.error('[Data Debug] Error parsing avatar URL:', error);
     return '';
   }
 }
 
-// Helper to normalize profiles from different sources
 export function normalizeProfile(profile: any) {
   if (!profile) return null;
   
   return {
     ...profile,
-    // Ensure avatar_url is always accessible in a consistent way
     avatar_url: getAvatarUrl(profile.avatar_url),
-    // Add other normalizations as needed
   };
 }
 
-// Helper to check if an error is a not found error
 export function isNotFoundError(error: any): boolean {
   return error?.message?.includes('not found') || error?.code === 'PGRST116';
 }
 
-// Debug helper to log auth errors
 export function logAuthError(action: string, error: any): void {
-  console.error(`[Auth Debug] Error during ${action}:`, {
-    message: error?.message,
-    code: error?.code,
-    status: error?.status,
-    details: error?.details,
-    hint: error?.hint,
-    name: error?.name,
-  });
+  // In production, we might want to send these to a monitoring service instead
+  // For now, we're simply disabling the logging
 }
 
 export {
