@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const Auth = () => {
@@ -16,14 +16,19 @@ const Auth = () => {
   const [error, setError] = useState<string | null>(null);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the return URL from query parameters
+  const searchParams = new URLSearchParams(location.search);
+  const returnTo = searchParams.get('returnTo') || '/home';
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      console.log('[Auth Debug] User already authenticated, redirecting to home');
-      navigate('/home');
+      console.log(`[Auth Debug] User already authenticated, redirecting to ${returnTo}`);
+      navigate(returnTo);
     }
-  }, [user, navigate]);
+  }, [user, navigate, returnTo]);
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -61,6 +66,7 @@ const Auth = () => {
           toast.error(`Sign in failed: ${result.error.message || 'Invalid login credentials'}`);
         } else {
           console.log('[Auth Debug] Sign in successful');
+          // Navigation handled by auth state change listener
         }
       } else {
         const result = await signUp(email, password);

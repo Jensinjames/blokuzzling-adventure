@@ -88,6 +88,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log('User signed in:', newSession?.user?.email);
           toast.success('Signed in successfully');
           
+          // Properly redirect to home after sign in
           if (window.location.pathname === '/auth' || window.location.pathname === '/') {
             navigate('/home');
           }

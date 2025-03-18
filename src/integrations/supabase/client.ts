@@ -11,6 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    flowType: 'pkce', // Using PKCE flow for more secure redirects
     storage: {
       // Enhanced storage implementation with better error and debug reporting
       getItem: async (key) => {
@@ -61,6 +62,7 @@ if (import.meta.env.DEV) {
   console.log('[Auth Debug] Auto Refresh Token: true');
   console.log('[Auth Debug] Persist Session: true');
   console.log('[Auth Debug] Detect Session In URL: true');
+  console.log('[Auth Debug] Flow Type: pkce');
 }
 
 // Add more robust error handling for data transformations
