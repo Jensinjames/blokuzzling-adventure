@@ -17,58 +17,63 @@ import Settings from '@/pages/Settings';
 import { AuthProvider } from '@/context/AuthProvider';
 import { Toaster } from 'sonner';
 
-// Add the new Settings route to the router configuration
+// Create a root component that wraps the routes with AuthProvider
+const AppRoot = ({ children }: { children: React.ReactNode }) => (
+  <AuthProvider>
+    {children}
+    <Toaster position="top-center" />
+  </AuthProvider>
+);
+
+// Define the router configuration with routes wrapped in AppRoot
 const router = createHashRouter([
   {
     path: "/",
-    element: <Index />,
-    errorElement: <NotFound />,
+    element: <AppRoot><Index /></AppRoot>,
+    errorElement: <AppRoot><NotFound /></AppRoot>,
   },
   {
     path: "/home",
-    element: <Home />,
+    element: <AppRoot><Home /></AppRoot>,
   },
   {
     path: "/auth",
-    element: <Auth />,
+    element: <AppRoot><Auth /></AppRoot>,
   },
   {
     path: "/profile",
-    element: <Profile />,
+    element: <AppRoot><Profile /></AppRoot>,
   },
   {
     path: "/game/:gameId",
-    element: <Game />,
+    element: <AppRoot><Game /></AppRoot>,
   },
   {
     path: "/lobby/:gameId",
-    element: <Lobby />,
+    element: <AppRoot><Lobby /></AppRoot>,
   },
   {
     path: "/multiplayer/:gameId",
-    element: <MultiplayerGame />,
+    element: <AppRoot><MultiplayerGame /></AppRoot>,
   },
   {
     path: "/settings",
-    element: <Settings />,
+    element: <AppRoot><Settings /></AppRoot>,
   },
   {
     path: "/rules",
-    element: <Rules />,
+    element: <AppRoot><Rules /></AppRoot>,
   },
   {
     path: "*",
-    element: <NotFound />,
+    element: <AppRoot><NotFound /></AppRoot>,
   },
 ]);
 
 function App() {
   return (
     <React.StrictMode>
-      <AuthProvider>
-        <RouterProvider router={router} />
-        <Toaster position="top-center" />
-      </AuthProvider>
+      <RouterProvider router={router} />
     </React.StrictMode>
   );
 }
