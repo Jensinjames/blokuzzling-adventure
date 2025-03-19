@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
 import { toast } from 'sonner';
@@ -45,26 +45,34 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
   const { user, session, loading: authLoading, refreshSession } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [hasChecked, setHasChecked] = useState(false);
   
-  // Perform auth check and redirect if needed
+  // Perform auth check and redirect if needed, but only once
   useEffect(() => {
-    if (skip || authLoading) return;
-    
-    if (!user || !session) {
-      console.log('No authenticated user, redirecting to:', redirectTo);
-      toast.error(message);
+    const performCheck = async () => {
+      if (skip || authLoading || hasChecked) return;
       
-      // Add returnTo if needed
-      if (includeReturnTo) {
-        const currentPath = location.pathname;
-        navigate(`${redirectTo}?returnTo=${encodeURIComponent(currentPath)}`);
-      } else {
-        navigate(redirectTo);
+      if (!user || !session) {
+        console.log('No authenticated user, redirecting to:', redirectTo);
+        toast.error(message);
+        
+        // Add returnTo if needed
+        if (includeReturnTo) {
+          const currentPath = location.pathname;
+          navigate(`${redirectTo}?returnTo=${encodeURIComponent(currentPath)}`);
+        } else {
+          navigate(redirectTo);
+        }
       }
-    }
-  }, [user, session, authLoading, navigate, redirectTo, includeReturnTo, message, skip, location.pathname]);
+      
+      // Prevent further checks
+      setHasChecked(true);
+    };
+    
+    performCheck();
+  }, [user, session, authLoading, navigate, redirectTo, includeReturnTo, message, skip, location.pathname, hasChecked]);
   
-  // Refresh session if it's expiring soon
+  // Refresh session if it's expiring soon - only check once when component mounts
   useEffect(() => {
     if (session && session.expires_at && new Date(session.expires_at * 1000) < new Date(Date.now() + 5 * 60 * 1000)) {
       console.log('Session expiring soon, refreshing...');

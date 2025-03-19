@@ -1,21 +1,24 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { LogIn, Play, Info } from 'lucide-react';
-import { useAuthCheck } from '@/hooks/useAuthCheck';
+import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, isLoading } = useAuthCheck({ skip: true });
+  const { user, loading } = useAuth();
 
+  // Only trigger navigation after initial loading is complete
   useEffect(() => {
-    if (!isLoading && user) {
+    if (!loading && user) {
       navigate('/home');
     }
-  }, [user, isLoading, navigate]);
+  }, [user, loading, navigate]);
 
-  if (isLoading || user) {
+  // Don't render anything while checking authentication
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="animate-pulse h-10 w-10 rounded-full bg-primary/50"></div>
