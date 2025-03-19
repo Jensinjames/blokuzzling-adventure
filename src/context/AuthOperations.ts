@@ -1,10 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { AuthResponse } from '@supabase/supabase-js';
 
 // Authentication operations
-export const signInUser = async (email: string, password: string): Promise<{ data: AuthResponse['data'] | null; error: any | null }> => {
+export const signInUser = async (email: string, password: string) => {
   try {
     console.log('Signing in user:', email);
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -28,16 +27,16 @@ export const signInUser = async (email: string, password: string): Promise<{ dat
   }
 };
 
-export const signUpUser = async (email: string, password: string): Promise<{ data: AuthResponse['data'] | null; error: any | null }> => {
+export const signUpUser = async (email: string, password: string) => {
   try {
     console.log('Signing up user:', email);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/#/auth?confirmation=true`,
+        emailRedirectTo: window.location.origin + '/auth?confirmation=true',
         data: {
-          email_confirm_redirect_url: `${window.location.origin}/#/auth?confirmation=true`
+          email_confirm_redirect_url: window.location.origin + '/auth?confirmation=true'
         }
       }
     });
@@ -65,7 +64,7 @@ export const signUpUser = async (email: string, password: string): Promise<{ dat
   }
 };
 
-export const signOutUser = async (): Promise<{ error: any | null }> => {
+export const signOutUser = async () => {
   try {
     console.log('Signing out user');
     // Clear session but don't navigate (that's handled in AuthProvider)
@@ -81,7 +80,7 @@ export const signOutUser = async (): Promise<{ error: any | null }> => {
   }
 };
 
-export const refreshUserSession = async (): Promise<{ data: AuthResponse['data'] | null; error: any | null }> => {
+export const refreshUserSession = async () => {
   try {
     console.log('Manually refreshing session...');
     const { data, error } = await supabase.auth.refreshSession();
@@ -94,14 +93,14 @@ export const refreshUserSession = async (): Promise<{ data: AuthResponse['data']
       return { data, error: null };
     }
     return { data: null, error: null };
-  } catch (error: any) {
+  } catch (error) {
     console.error('Unexpected error refreshing session:', error);
     return { error, data: null };
   }
 };
 
 // New function to delete a game session
-export const deleteGameSession = async (gameId: string): Promise<{ error: any | null }> => {
+export const deleteGameSession = async (gameId: string) => {
   try {
     console.log('Deleting game session:', gameId);
     

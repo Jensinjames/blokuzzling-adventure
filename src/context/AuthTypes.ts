@@ -1,21 +1,19 @@
 
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User } from '@/integrations/supabase/client';
 
-export interface SubscriptionInfo {
-  tier: string | null;
-  status: string | null;
-  isActive: boolean;
-  isPremium: boolean;
-}
-
-export interface AuthContextType {
+export type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ data: any | null; error: any | null }>;
-  signUp: (email: string, password: string) => Promise<{ data: any | null; error: any | null }>;
-  signOut: () => Promise<{ error: any | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: any; data: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any; data: any }>;
+  signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: any | null }>;
-  subscription: SubscriptionInfo;
-}
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  subscription: {
+    tier: string | null;
+    status: string | null;
+    isActive: boolean;
+    isPremium: boolean;
+  };
+};
