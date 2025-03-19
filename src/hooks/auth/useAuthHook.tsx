@@ -2,6 +2,7 @@
 import { useAuth as useAuthContext } from '@/context/AuthProvider';
 import { useSubscription } from './useSubscription';
 import { useAccessControl } from './useAccessControl';
+import { useCallback } from 'react';
 
 /**
  * Enhanced hook to access authentication context
@@ -21,11 +22,31 @@ export const useAuthHook = () => {
     checkingSubscription
   );
 
+  // Enhanced user object with subscription data
+  const enhancedUser = authContext.user ? {
+    ...authContext.user,
+    subscription: subscriptionState
+  } : null;
+
+  // Memoize the refreshSession function
+  const refreshSession = useCallback(async () => {
+    console.log('[Auth] Refreshing session');
+    try {
+      await authContext.refreshSession();
+      return { error: null };
+    } catch (error: any) {
+      console.error('[Auth] Error refreshing session:', error);
+      return { error };
+    }
+  }, [authContext]);
+
   return {
     ...authContext,
+    user: enhancedUser,
     hasSubscription,
     checkingSubscription,
     requireSubscription,
-    subscription: subscriptionState
+    subscription: subscriptionState,
+    refreshSession
   };
 };

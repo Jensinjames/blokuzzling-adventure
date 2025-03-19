@@ -1,27 +1,36 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LogIn, Play, Info } from 'lucide-react';
+import { LogIn, Play, Info, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Only trigger navigation after initial loading is complete
   useEffect(() => {
     if (!loading && user) {
-      navigate('/home');
+      setIsRedirecting(true);
+      // Small delay to prevent flash of content
+      const timeout = setTimeout(() => {
+        navigate('/home');
+      }, 100);
+      return () => clearTimeout(timeout);
     }
   }, [user, loading, navigate]);
 
-  // Don't render anything while checking authentication
-  if (loading) {
+  // Don't render anything while checking authentication or redirecting
+  if (loading || isRedirecting) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="animate-pulse h-10 w-10 rounded-full bg-primary/50"></div>
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-10 w-10 animate-spin text-primary/70" />
+          <p className="text-sm text-gray-500">Loading your experience...</p>
+        </div>
       </div>
     );
   }

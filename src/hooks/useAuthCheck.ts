@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthProvider';
 import { toast } from 'sonner';
@@ -28,6 +28,18 @@ type AuthCheckOptions = {
    * @default false
    */
   skip?: boolean;
+  
+  /**
+   * Check if subscription is required
+   * @default false
+   */
+  requireSubscription?: boolean;
+  
+  /**
+   * Minimum subscription tier required
+   * @default 'basic'
+   */
+  subscriptionTier?: 'free' | 'basic' | 'premium';
 };
 
 /**
@@ -39,44 +51,97 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
     redirectTo = '/auth', 
     includeReturnTo = false,
     message = 'You must be logged in to access this page',
-    skip = false
+    skip = false,
+    requireSubscription = false,
+    subscriptionTier = 'basic'
   } = options;
   
-  const { user, session, loading: authLoading, refreshSession } = useAuth();
+  const { 
+    user, 
+    session, 
+    loading: authLoading, 
+    refreshSession,
+    subscription,
+    checkingSubscription
+  } = useAuth();
+  
   const navigate = useNavigate();
   const location = useLocation();
   const [hasChecked, setHasChecked] = useState(false);
   
+  // Memoize the check function to prevent recreating it on each render
+  const performCheck = useCallback(async () => {
+    // Don't perform check if we should skip, are still loading, or have already checked
+    if (skip || authLoading || hasChecked) return;
+    
+    // Mark as checked first to prevent multiple checks
+    setHasChecked(true);
+    
+    if (!user || !session) {
+      console.log('No authenticated user, redirecting to:', redirectTo);
+      toast.error(message);
+      
+      // Add returnTo if needed
+      if (includeReturnTo) {
+        const currentPath = location.pathname;
+        navigate(`${redirectTo}?returnTo=${encodeURIComponent(currentPath)}`);
+      } else {
+        navigate(redirectTo);
+      }
+      return;
+    }
+    
+    // Check subscription if required
+    if (requireSubscription && !checkingSubscription) {
+      const hasSufficientTier = 
+        subscriptionTier === 'free' || 
+        (subscription.tier === 'premium') || 
+        (subscriptionTier === 'basic' && ['basic', 'premium'].includes(subscription.tier || ''));
+      
+      if (!subscription.isActive || !hasSufficientTier) {
+        toast.error(`You need an active ${subscriptionTier} subscription to access this feature`);
+        navigate('/settings');
+        return;
+      }
+    }
+  }, [
+    skip, 
+    authLoading, 
+    hasChecked, 
+    user, 
+    session, 
+    requireSubscription, 
+    checkingSubscription, 
+    subscription, 
+    subscriptionTier,
+    message,
+    redirectTo,
+    includeReturnTo,
+    location.pathname,
+    navigate
+  ]);
+  
   // Perform auth check and redirect if needed, but only once
   useEffect(() => {
-    const performCheck = async () => {
-      if (skip || authLoading || hasChecked) return;
-      
-      if (!user || !session) {
-        console.log('No authenticated user, redirecting to:', redirectTo);
-        toast.error(message);
-        
-        // Add returnTo if needed
-        if (includeReturnTo) {
-          const currentPath = location.pathname;
-          navigate(`${redirectTo}?returnTo=${encodeURIComponent(currentPath)}`);
-        } else {
-          navigate(redirectTo);
-        }
-      }
-      
-      // Prevent further checks
-      setHasChecked(true);
-    };
+    if (!authLoading) {
+      performCheck();
+    }
     
-    performCheck();
-  }, [user, session, authLoading, navigate, redirectTo, includeReturnTo, message, skip, location.pathname, hasChecked]);
+    // Cleanup function to handle component unmounting
+    return () => {};
+  }, [authLoading, performCheck]);
   
   // Refresh session if it's expiring soon - only check once when component mounts
   useEffect(() => {
-    if (session && session.expires_at && new Date(session.expires_at * 1000) < new Date(Date.now() + 5 * 60 * 1000)) {
-      console.log('Session expiring soon, refreshing...');
-      refreshSession();
+    // Only check if we have a session
+    if (session && session.expires_at) {
+      const expiryTime = new Date(session.expires_at * 1000);
+      const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+      
+      if (expiryTime < fiveMinutesFromNow) {
+        console.log('Session expiring soon, refreshing...');
+        refreshSession();
+      }
     }
   }, [session, refreshSession]);
   
@@ -84,7 +149,9 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
     user,
     session,
     isAuthenticated: !!user && !!session,
-    isLoading: authLoading
+    isLoading: authLoading,
+    hasSubscription: subscription?.isActive || false,
+    subscriptionTier: subscription?.tier || 'free'
   };
 };
 
