@@ -30,14 +30,22 @@ export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ chil
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('syncing');
   const { user, session } = useAuth();
+  const [retryCount, setRetryCount] = useState(0);
+  const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null);
 
   const configureRealtime = async () => {
     try {
       console.log('Configuring Supabase Realtime connection...');
       setSyncStatus('syncing');
       
-      // Create a channel to test connection
-      const channel = supabase.channel('connection-test', {
+      // Clean up any existing channel before creating a new one
+      if (channel) {
+        await supabase.removeChannel(channel);
+      }
+      
+      // Create a channel with unique name based on user ID or timestamp to prevent conflicts
+      const channelId = `connection-${user?.id || 'anonymous'}-${Date.now()}`;
+      const newChannel = supabase.channel(channelId, {
         config: {
           presence: {
             key: user?.id || 'anonymous'
@@ -45,22 +53,29 @@ export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ chil
         }
       });
       
-      channel
+      newChannel
         .on('system', { event: 'online' }, () => {
           console.log('Supabase Realtime connection established');
           setIsConnected(true);
           setConnectionError(null);
           setSyncStatus('synced');
+          setRetryCount(0); // Reset retry counter on successful connection
         })
         .on('system', { event: 'offline' }, () => {
           console.log('Supabase Realtime connection lost');
           setIsConnected(false);
           setConnectionError('Connection lost');
           setSyncStatus('error');
-          toast.error('Lost connection to the server. Some features may not work properly.');
+          
+          // Only show toast if we were previously connected to avoid spam
+          if (isConnected) {
+            toast.error('Lost connection to the server. Attempting to reconnect...', {
+              id: 'connection-error', // Use ID to prevent duplicate toasts
+            });
+          }
         })
         .on('presence', { event: 'sync' }, () => {
-          const state = channel.presenceState();
+          const state = newChannel.presenceState();
           console.log('Presence state synced:', state);
           setSyncStatus('synced');
         })
@@ -70,7 +85,7 @@ export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ chil
         .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
           console.log('User left:', key, leftPresences);
         })
-        .subscribe((status) => {
+        .subscribe(async (status) => {
           console.log('Supabase channel subscription status:', status);
           if (status === 'SUBSCRIBED') {
             setIsConnected(true);
@@ -78,52 +93,97 @@ export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ chil
             
             // Track user presence if authenticated
             if (user) {
-              channel.track({
-                user_id: user.id,
-                online_at: new Date().toISOString(),
-                status: 'online'
+              try {
+                await newChannel.track({
+                  user_id: user.id,
+                  online_at: new Date().toISOString(),
+                  status: 'online'
+                });
+              } catch (presenceErr) {
+                console.error('Error tracking presence:', presenceErr);
+              }
+            }
+          } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+            setIsConnected(false);
+            const errorMsg = status === 'CHANNEL_ERROR' 
+              ? 'Failed to connect to realtime service' 
+              : 'Connection closed';
+            setConnectionError(errorMsg);
+            setSyncStatus('error');
+            
+            // Implement exponential backoff for reconnection
+            if (retryCount < 5) {
+              const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+              console.log(`Will attempt to reconnect in ${retryDelay/1000} seconds`);
+              
+              setTimeout(() => {
+                setRetryCount(prevCount => prevCount + 1);
+                reconnect();
+              }, retryDelay);
+            } else {
+              toast.error('Connection error. Please refresh the page.', {
+                id: 'connection-error',
+                duration: 5000,
               });
             }
-          } else if (status === 'CHANNEL_ERROR') {
-            setIsConnected(false);
-            setConnectionError('Failed to connect to realtime service');
-            setSyncStatus('error');
-            toast.error('Connection error. Some features may not work properly.');
           }
         });
 
-      return channel;
+      setChannel(newChannel);
+      return newChannel;
     } catch (err: any) {
       console.error('Error setting up realtime:', err);
       setConnectionError(err.message);
       setSyncStatus('error');
-      toast.error(`Failed to connect: ${err.message}`);
+      toast.error(`Failed to connect: ${err.message}`, {
+        id: 'connection-error',
+      });
       return null;
     }
   };
 
-  // Set up realtime connection
+  // Set up realtime connection when user or session changes
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let mounted = true;
     
     const setup = async () => {
-      channel = await configureRealtime();
+      if (!mounted) return;
+      
+      try {
+        const newChannel = await configureRealtime();
+        if (mounted && newChannel) {
+          setChannel(newChannel);
+        }
+      } catch (err) {
+        console.error('Error during realtime setup:', err);
+      }
     };
+    
+    // Reset connection state when user changes
+    setIsConnected(false);
+    setConnectionError(null);
+    setSyncStatus('syncing');
+    setRetryCount(0);
     
     setup();
     
     return () => {
+      mounted = false;
       if (channel) {
         console.log('Cleaning up Supabase Realtime connection');
-        supabase.removeChannel(channel);
+        supabase.removeChannel(channel).catch(err => {
+          console.error('Error removing channel:', err);
+        });
       }
     };
-  }, [user?.id]); // Reconnect when user changes
+  }, [user?.id, session?.access_token]); // Reconnect when user or access token changes
 
   // Function to manually reconnect
   const reconnect = async () => {
-    if (connectionError) {
+    try {
       await configureRealtime();
+    } catch (err) {
+      console.error('Error during manual reconnection:', err);
     }
   };
 
