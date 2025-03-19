@@ -96,7 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Listen for auth changes
     const setupAuthListener = async () => {
       if (authListenerRef.current) {
-        authListenerRef.current.subscription.unsubscribe();
+        // Fix: Correctly access the unsubscribe method
+        authListenerRef.current.data.subscription.unsubscribe();
       }
       
       authListenerRef.current = supabase.auth.onAuthStateChange(
@@ -152,7 +153,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         refreshIntervalRef.current = undefined;
       }
       if (authListenerRef.current) {
-        authListenerRef.current.subscription.unsubscribe();
+        // Fix: Correctly access the unsubscribe method
+        authListenerRef.current.data.subscription.unsubscribe();
         authListenerRef.current = null;
       }
     };
