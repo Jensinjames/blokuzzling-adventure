@@ -11,7 +11,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce', // Using PKCE flow for secure redirects
+    // Remove any Auth0 specific config and use PKCE flow which is more secure
+    flowType: 'pkce',
     storage: {
       getItem: async (key) => {
         try {

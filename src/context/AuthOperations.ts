@@ -34,9 +34,9 @@ export const signUpUser = async (email: string, password: string) => {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin + '/auth?confirmation=true',
+        emailRedirectTo: `${window.location.origin}/#/auth?confirmation=true`,
         data: {
-          email_confirm_redirect_url: window.location.origin + '/auth?confirmation=true'
+          email_confirm_redirect_url: `${window.location.origin}/#/auth?confirmation=true`
         }
       }
     });

@@ -1,16 +1,16 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { LogIn, Play, Info } from 'lucide-react';
 import { useAuthCheck } from '@/hooks/useAuthCheck';
-import { supabase } from '@/integrations/supabase/client';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { toast } from 'sonner';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, isLoading } = useAuthCheck({ skip: true });
+  const { signInWithGoogle, loading: googleLoading } = useGoogleAuth();
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -19,24 +19,7 @@ const Index = () => {
   }, [user, isLoading, navigate]);
 
   const handleGoogleSignIn = async () => {
-    try {
-      console.log('[Auth Debug] Attempting to sign in with Google from landing page');
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/home`,
-        }
-      });
-      
-      if (error) {
-        console.error('[Auth Debug] Google sign in error:', error);
-        toast.error(`Google sign in failed: ${error.message}`);
-      }
-    } catch (error: any) {
-      console.error('[Auth Debug] Google sign in error:', error);
-      toast.error(`Google sign in error: ${error.message || 'An unexpected error occurred'}`);
-    }
+    await signInWithGoogle('/home');
   };
 
   if (isLoading || user) {

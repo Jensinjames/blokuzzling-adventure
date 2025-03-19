@@ -51,12 +51,19 @@ const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
         if (result.error) {
           console.error('[Auth Debug] Sign in error:', result.error);
           
+          // Improved error handling with more specific messages
           if (result.error.message.includes('Email not confirmed')) {
             setError('Please confirm your email address before signing in. Check your inbox for a confirmation link.');
             toast.error('Email not confirmed. Please check your inbox.');
+          } else if (result.error.message.includes('Invalid login credentials')) {
+            setError('The email or password you entered is incorrect.');
+            toast.error('Invalid login credentials. Please try again.');
+          } else if (result.error.message.includes('rate limit')) {
+            setError('Too many attempts. Please try again later.');
+            toast.error('Too many login attempts. Please try again later.');
           } else {
-            setError(result.error.message || 'Invalid login credentials');
-            toast.error(`Sign in failed: ${result.error.message || 'Invalid login credentials'}`);
+            setError(result.error.message || 'An error occurred during sign in');
+            toast.error(`Sign in failed: ${result.error.message || 'An unknown error occurred'}`);
           }
         } else {
           console.log('[Auth Debug] Sign in successful');
@@ -73,6 +80,9 @@ const LoginSignupForm: React.FC<LoginSignupFormProps> = ({
             setError('Server configuration error. Please contact support.');
             toast.error('Server configuration error');
             console.error('[Auth Debug] Database configuration error:', result.error);
+          } else if (result.error.message?.includes('strong password')) {
+            setError('Please use a stronger password with at least one number and one special character.');
+            toast.error('Password is too weak');
           } else {
             setError(result.error.message || 'An error occurred during sign up');
             toast.error(`Sign up failed: ${result.error.message || 'An unknown error occurred'}`);

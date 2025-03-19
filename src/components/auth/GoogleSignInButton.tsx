@@ -2,23 +2,35 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
 interface GoogleSignInButtonProps {
   isLogin: boolean;
-  loading: boolean;
-  onClick: () => Promise<void>;
+  loading?: boolean;
+  onClick?: () => Promise<void>;
 }
 
 const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ 
   isLogin,
-  loading,
-  onClick
+  loading: externalLoading,
+  onClick: externalOnClick
 }) => {
+  const { signInWithGoogle, loading: internalLoading } = useGoogleAuth();
+  const loading = externalLoading !== undefined ? externalLoading : internalLoading;
+  
+  const handleClick = async () => {
+    if (externalOnClick) {
+      await externalOnClick();
+    } else {
+      await signInWithGoogle();
+    }
+  };
+
   return (
     <Button 
       variant="outline" 
       className="w-full flex justify-center items-center gap-2"
-      onClick={onClick}
+      onClick={handleClick}
       disabled={loading}
     >
       {loading ? (
