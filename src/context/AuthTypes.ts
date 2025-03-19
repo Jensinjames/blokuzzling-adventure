@@ -1,6 +1,13 @@
 
 import { Session, User } from '@/integrations/supabase/client';
 
+export type Subscription = {
+  tier: string | null;
+  status: string | null;
+  isActive: boolean;
+  isPremium: boolean;
+};
+
 export type AuthContextType = {
   user: User | null;
   session: Session | null;
@@ -10,10 +17,5 @@ export type AuthContextType = {
   signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
-  subscription: {
-    tier: string | null;
-    status: string | null;
-    isActive: boolean;
-    isPremium: boolean;
-  };
+  subscription: Subscription;
 };
