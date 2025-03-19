@@ -1,17 +1,22 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, safeSingleDataCast, isNotFoundError } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { Profile } from '@/types/database';
 import { toast } from 'sonner';
 
+/**
+ * Hook for fetching and managing user profile data
+ * Works with the updated auth structure and improves error handling
+ */
 export function useProfile() {
-  const { user } = useAuth();
+  const { user, subscription } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Fetch profile data whenever the user changes
   useEffect(() => {
     if (!user) {
       setProfile(null);
@@ -44,11 +49,23 @@ export function useProfile() {
         if (data) {
           console.log("Profile loaded successfully:", data);
           const profileData = safeSingleDataCast<Profile>(data);
-          setProfile(profileData);
+          
+          // Ensure profile has subscription data in sync with auth context
+          if (subscription && (
+            profileData.subscription_tier !== subscription.tier ||
+            profileData.subscription_status !== subscription.status ||
+            profileData.subscription_expiry !== subscription.expiry
+          )) {
+            console.log('Syncing profile subscription data with auth context');
+            const updatedProfile = await syncProfileSubscription(profileData, subscription);
+            setProfile(updatedProfile);
+          } else {
+            setProfile(profileData);
+          }
         } else {
           console.log("No profile found, creating a new one");
           
-          // Create a new profile
+          // Create a new profile with subscription data from auth context
           const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
@@ -57,6 +74,9 @@ export function useProfile() {
               wins: 0,
               losses: 0,
               draws: 0,
+              subscription_tier: subscription?.tier || 'free',
+              subscription_status: subscription?.status || 'inactive',
+              subscription_expiry: subscription?.expiry || null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               avatar_url: null
@@ -84,8 +104,38 @@ export function useProfile() {
     };
 
     fetchProfile();
-  }, [user]);
+  }, [user, subscription]);
 
+  // Helper function to sync profile subscription with auth context
+  const syncProfileSubscription = async (profile: Profile, subscriptionData: any) => {
+    try {
+      const updates = {
+        subscription_tier: subscriptionData.tier || profile.subscription_tier || 'free',
+        subscription_status: subscriptionData.status || profile.subscription_status || 'inactive',
+        subscription_expiry: subscriptionData.expiry || profile.subscription_expiry || null,
+        updated_at: new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', profile.id)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Error syncing profile subscription:', error);
+        return profile;
+      }
+      
+      return safeSingleDataCast<Profile>(data);
+    } catch (e) {
+      console.error('Failed to sync profile subscription:', e);
+      return profile;
+    }
+  };
+
+  // Function to update profile data
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) {
       toast.error('You must be logged in to update your profile');
@@ -143,5 +193,14 @@ export function useProfile() {
     }
   };
 
-  return { profile, loading, error, updateProfile, saving };
+  return { 
+    profile, 
+    loading, 
+    error, 
+    updateProfile, 
+    saving, 
+    hasSubscription: !!subscription?.isActive 
+  };
 }
+
+export default useProfile;
