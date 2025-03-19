@@ -82,7 +82,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({
 
             <Separator className="my-2" />
 
-            <div className="flex justify-center p-4">
+            <div className="flex justify-center p-4 gap-4">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.href = '/#/settings'} 
+                className="text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-900 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+              >
+                Subscription Settings
+              </Button>
+              
               <Button 
                 variant="outline" 
                 onClick={signOut} 
