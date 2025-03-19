@@ -89,11 +89,6 @@ export function isNotFoundError(error: any): boolean {
   return error?.message?.includes('not found') || error?.code === 'PGRST116';
 }
 
-export function logAuthError(action: string, error: any): void {
-  // In production, we might want to send these to a monitoring service instead
-  // For now, we're simply disabling the logging
-}
-
 export {
   PostgrestError,
   SupabaseClient

@@ -13,16 +13,13 @@ export const signInUser = async (email: string, password: string) => {
 
     if (error) {
       console.error('Sign in error:', error);
-      toast.error(error.message);
       return { error, data: null };
     }
 
     console.log('Sign in successful');
-    toast.success('Signed in successfully');
     return { data, error: null };
   } catch (error: any) {
     console.error('Unexpected sign in error:', error);
-    toast.error(error.message || 'An error occurred during sign in');
     return { error, data: null };
   }
 };
@@ -34,32 +31,19 @@ export const signUpUser = async (email: string, password: string) => {
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin + '/auth?confirmation=true',
-        data: {
-          email_confirm_redirect_url: window.location.origin + '/auth?confirmation=true'
-        }
+        emailRedirectTo: `${window.location.origin}/#/auth?confirmation=true`,
       }
     });
 
     if (error) {
       console.error('Sign up error:', error);
-      toast.error(error.message);
       return { error, data: null };
     }
 
     console.log('Sign up successful, email confirmation may be required');
-    
-    // Check if email confirmation is needed
-    if (data?.user?.identities?.length === 0 || data?.user?.email_confirmed_at === null) {
-      toast.info('Please check your email to confirm your account before signing in.');
-    } else {
-      toast.success('Signed up successfully!');
-    }
-    
     return { data, error: null };
   } catch (error: any) {
     console.error('Unexpected sign up error:', error);
-    toast.error(error.message || 'An error occurred during sign up');
     return { error, data: null };
   }
 };
@@ -67,7 +51,6 @@ export const signUpUser = async (email: string, password: string) => {
 export const signOutUser = async () => {
   try {
     console.log('Signing out user');
-    // Clear session but don't navigate (that's handled in AuthProvider)
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('Sign out error:', error);
@@ -99,7 +82,6 @@ export const refreshUserSession = async () => {
   }
 };
 
-// New function to delete a game session
 export const deleteGameSession = async (gameId: string) => {
   try {
     console.log('Deleting game session:', gameId);
@@ -141,11 +123,9 @@ export const deleteGameSession = async (gameId: string) => {
     }
     
     console.log('Game session deleted successfully');
-    toast.success('Game deleted successfully');
     return { error: null };
   } catch (error: any) {
     console.error('Unexpected error deleting game session:', error);
-    toast.error(error.message || 'An error occurred during game deletion');
     return { error };
   }
 };

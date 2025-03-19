@@ -5,17 +5,21 @@ import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from './AuthHooks';
 import { signInUser, signUpUser, signOutUser, refreshUserSession } from './AuthOperations';
+import { SubscriptionDetails } from '@/types/subscription';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [subscription, setSubscription] = useState({
+  const [subscription, setSubscription] = useState<SubscriptionDetails>({
     tier: null,
     status: null,
     isActive: false,
-    isPremium: false
+    isPremium: false,
+    isBasicOrHigher: false,
+    expiry: null
   });
+  
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -106,7 +110,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             tier: null,
             status: null,
             isActive: false,
-            isPremium: false
+            isPremium: false,
+            isBasicOrHigher: false,
+            expiry: null
           });
           // Force full page reload to clear any cached state
           window.location.href = '/#/';
@@ -156,7 +162,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         tier: null,
         status: null,
         isActive: false,
-        isPremium: false
+        isPremium: false,
+        isBasicOrHigher: false,
+        expiry: null
       });
       
       // Force a full page reload to ensure clean state
@@ -198,12 +206,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signOut,
     refreshSession,
     resetPassword,
-    subscription: {
-      tier: subscription.tier,
-      status: subscription.status,
-      isActive: subscription.isActive,
-      isPremium: subscription.isPremium
-    }
+    subscription
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
