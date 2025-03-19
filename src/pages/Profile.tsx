@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useProfile } from '@/hooks/useProfile';
+import { useProfile } from '@/hooks/profile';
 import { useNavigate } from 'react-router-dom';
 import ProfileView from '@/components/ProfileView';
 import ProfileLoading from '@/components/profile/ProfileLoading';
