@@ -4,6 +4,7 @@ import { Session } from '@/integrations/supabase/client';
 import { refreshUserSession } from '../AuthOperations';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseSessionRefreshOptions {
   session: Session | null;
@@ -69,6 +70,3 @@ export const useSessionRefresh = ({
   
   return { refreshSession };
 };
-
-// Import at the top
-import { supabase } from '@/integrations/supabase/client';
