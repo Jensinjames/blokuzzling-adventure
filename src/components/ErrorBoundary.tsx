@@ -38,7 +38,7 @@ class ErrorBoundary extends Component<Props, State> {
     window.location.reload();
   };
 
-  handleSignOut = async (): void => {
+  handleSignOut = async (): Promise<void> => {
     await supabase.auth.signOut();
     window.location.href = '/#/auth';
   };
