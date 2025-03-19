@@ -6,11 +6,13 @@ import AuthLayout from './AuthLayout';
 interface AuthContainerProps {
   defaultIsLogin?: boolean;
   onSuccessfulAuth: () => void;
+  onGoogleSignIn?: () => Promise<void>;
 }
 
 const AuthContainer: React.FC<AuthContainerProps> = ({ 
   defaultIsLogin = true,
-  onSuccessfulAuth
+  onSuccessfulAuth,
+  onGoogleSignIn
 }) => {
   const [isLogin, setIsLogin] = useState(defaultIsLogin);
 
@@ -31,6 +33,7 @@ const AuthContainer: React.FC<AuthContainerProps> = ({
         isLogin={isLogin} 
         onToggleMode={toggleAuthMode} 
         onSuccess={onSuccessfulAuth}
+        onGoogleSignIn={onGoogleSignIn}
       />
     </AuthLayout>
   );

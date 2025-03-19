@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +11,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 
-// Define validation schema
 const authFormSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -29,26 +27,25 @@ interface AuthFormProps {
   isLogin: boolean;
   onToggleMode: () => void;
   onSuccess: () => void;
+  onGoogleSignIn?: () => Promise<void>;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess }) => {
+const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess, onGoogleSignIn }) => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const { signIn, signUp, resetPassword } = useAuth();
 
-  // Initialize react-hook-form for auth
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authFormSchema),
     defaultValues: {
       email: '',
       password: '',
     },
-    mode: 'onBlur', // Validate on blur for better UX
+    mode: 'onBlur',
   });
 
-  // Initialize react-hook-form for password reset
   const resetForm = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
@@ -99,7 +96,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
         } else {
           console.log('[Auth Debug] Sign up successful');
           
-          // Check if email confirmation is needed
           if (result.data?.user?.identities?.length === 0 || 
               !result.data?.user?.email_confirmed_at) {
             toast.info('Please check your email to confirm your account before signing in.');
@@ -109,7 +105,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
           }
           
           onSuccess();
-          // Switch to login mode after successful signup
           if (!isLogin) {
             onToggleMode();
           }
@@ -140,7 +135,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
       } else {
         console.log('[Auth Debug] Password reset email sent successfully');
         toast.success('Password reset email sent. Please check your inbox.');
-        // Switch back to login mode after successful password reset request
         setIsForgotPassword(false);
       }
     } catch (error: any) {
@@ -158,20 +152,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ isLogin, onToggleMode, onSuccess })
       setError(null);
       console.log('[Auth Debug] Attempting to sign in with Google');
       
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/#/auth`
-        }
-      });
-      
-      if (error) {
-        console.error('[Auth Debug] Google sign in error:', error);
-        setError(error.message || 'Failed to sign in with Google');
-        toast.error(`Google sign in failed: ${error.message}`);
+      if (onGoogleSignIn) {
+        await onGoogleSignIn();
       } else {
-        console.log('[Auth Debug] Google sign in initiated successfully');
-        // No need to do anything else here - the redirect will happen automatically
+        toast.error('Google sign in is not configured properly');
       }
     } catch (error: any) {
       console.error('[Auth Debug] Google sign in error:', error);
