@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   createHashRouter,
@@ -13,16 +14,8 @@ import MultiplayerGame from '@/pages/MultiplayerGame';
 import NotFound from '@/pages/NotFound';
 import Rules from '@/pages/Rules';
 import Settings from '@/pages/Settings';
-
-function App() {
-  return (
-    <React.StrictMode>
-      <RouterProvider router={router} />
-    </React.StrictMode>
-  );
-}
-
-export default App;
+import { AuthProvider } from '@/context/AuthProvider';
+import { Toaster } from 'sonner';
 
 // Add the new Settings route to the router configuration
 const router = createHashRouter([
@@ -68,3 +61,16 @@ const router = createHashRouter([
     element: <NotFound />,
   },
 ]);
+
+function App() {
+  return (
+    <React.StrictMode>
+      <AuthProvider>
+        <RouterProvider router={router} />
+        <Toaster position="top-center" />
+      </AuthProvider>
+    </React.StrictMode>
+  );
+}
+
+export default App;
