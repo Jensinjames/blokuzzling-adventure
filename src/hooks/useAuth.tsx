@@ -54,7 +54,7 @@ export const useAuth = () => {
           return;
         }
 
-        const typedProfile = profile as Profile;
+        const typedProfile = profile as any;
         
         // Check if subscription is active and not expired
         const isSubscriptionActive = 

@@ -7,6 +7,15 @@ import { AuthContext } from './AuthHooks';
 import { signInUser, signUpUser, signOutUser, refreshUserSession } from './AuthOperations';
 import { SubscriptionDetails } from '@/types/subscription';
 
+// Define the auth listener reference type explicitly
+type AuthSubscription = {
+  data: {
+    subscription: {
+      unsubscribe: () => void;
+    }
+  }
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -23,7 +32,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const navigate = useNavigate();
   const location = useLocation();
   const refreshIntervalRef = useRef<number | undefined>();
-  const authListenerRef = useRef<{ data: { subscription: { unsubscribe: () => void } } } | null>(null);
+  const authListenerRef = useRef<AuthSubscription | null>(null);
 
   // Function to refresh the session
   const refreshSession = async () => {
@@ -96,11 +105,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Listen for auth changes
     const setupAuthListener = async () => {
       if (authListenerRef.current) {
-        // Fix: Correctly access the unsubscribe method
+        // Correctly access the unsubscribe method
         authListenerRef.current.data.subscription.unsubscribe();
       }
       
-      authListenerRef.current = supabase.auth.onAuthStateChange(
+      const authListener = supabase.auth.onAuthStateChange(
         async (event, newSession) => {
           console.log(`Auth state changed: ${event}`, newSession?.user?.id || 'no user');
           setSession(newSession);
@@ -141,6 +150,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
         }
       );
+      
+      authListenerRef.current = authListener as unknown as AuthSubscription;
     };
     
     setupAuthListener();
@@ -153,7 +164,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         refreshIntervalRef.current = undefined;
       }
       if (authListenerRef.current) {
-        // Fix: Correctly access the unsubscribe method
+        // Correctly access the unsubscribe method
         authListenerRef.current.data.subscription.unsubscribe();
         authListenerRef.current = null;
       }
