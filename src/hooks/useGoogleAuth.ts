@@ -8,7 +8,7 @@ export function useGoogleAuth() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const signInWithGoogle = async (redirectTo: string = '/home') => {
+  const signInWithGoogle = async (redirectTo: string = '/home'): Promise<{ error: any | null }> => {
     try {
       setLoading(true);
       console.log('[Auth Debug] Attempting to sign in with Google');

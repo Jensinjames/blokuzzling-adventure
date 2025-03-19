@@ -1,11 +1,13 @@
 
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 
+// Add CORS headers for the auth hook
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Main serve function for the auth hook
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -16,16 +18,15 @@ serve(async (req) => {
     const { event, type } = await req.json();
     console.log(`Auth webhook received: ${type}`, event);
 
-    // This is a replacement for the Auth0 hook
-    // Here we can add custom logic for auth events (signup, login, etc.)
-    // For now, we're just logging the event and returning success
-    
-    // Example: Add custom claims or validation
+    // Process different auth events
     if (type === 'signup') {
-      // We could add custom signup validation here
+      // You could add custom signup validation here
       console.log('New user signed up', event?.user?.id);
+      
+      // Example: Initialize user profile on signup
+      // This could be done here or in a separate database trigger
     } else if (type === 'login') {
-      // We could add custom login logic here
+      // You could add custom login logic here
       console.log('User logged in', event?.user?.id);
     }
 

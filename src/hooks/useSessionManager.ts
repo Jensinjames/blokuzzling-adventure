@@ -13,7 +13,7 @@ export const useSessionManager = () => {
   const location = useLocation();
 
   // Function to refresh the session
-  const refreshSession = useCallback(async () => {
+  const refreshSession = useCallback(async (): Promise<void> => {
     try {
       const { data, error } = await refreshUserSession();
       
@@ -38,7 +38,7 @@ export const useSessionManager = () => {
 
   useEffect(() => {
     // Get initial session
-    const getInitialSession = async () => {
+    const getInitialSession = async (): Promise<void> => {
       try {
         setLoading(true);
         console.log('Getting initial session...');
