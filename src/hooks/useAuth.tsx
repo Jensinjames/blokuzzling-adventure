@@ -1,10 +1,8 @@
-
 import { useAuth as useAuthContext } from '@/context/AuthProvider';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Profile } from '@/types/database';
 
 /**
  * Enhanced hook to access authentication context

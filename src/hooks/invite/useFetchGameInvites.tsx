@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase, safeDataCast } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthProvider';
 import { GameInvite } from '@/types/database';
 
 export function useFetchGameInvites() {
@@ -92,4 +92,4 @@ export function useFetchGameInvites() {
     loading,
     fetchGameInvites
   };
-}
+};
