@@ -44,8 +44,8 @@ export function useProfileUpdate(profile: Profile | null, setProfile: (profile: 
         throw error;
       }
 
-      // Update local state
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      // Update local state - fixed typings for setProfile function
+      setProfile(profile ? { ...profile, ...updates } : null);
       toast.success('Profile updated successfully');
       
       // Fetch updated profile to ensure we have the latest data

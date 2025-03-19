@@ -1,15 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, safeSingleDataCast, isNotFoundError } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Profile } from '@/types/database';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
 
 /**
  * Hook for fetching user profile data
  */
 export function useProfileFetch() {
-  const { user } = useAuth();
+  const { user, subscription } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export function useProfileFetch() {
         } else {
           console.log("No profile found, creating a new one");
           
-          // Create a new profile
+          // Create a new profile with subscription data from auth context
           const { data: createdProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
@@ -60,9 +60,9 @@ export function useProfileFetch() {
               wins: 0,
               losses: 0,
               draws: 0,
-              subscription_tier: 'free',
-              subscription_status: 'inactive',
-              subscription_expiry: null,
+              subscription_tier: subscription?.tier || 'free',
+              subscription_status: subscription?.status || 'inactive',
+              subscription_expiry: subscription?.expiry || null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
               avatar_url: null
@@ -90,7 +90,7 @@ export function useProfileFetch() {
     };
 
     fetchProfile();
-  }, [user]);
+  }, [user, subscription]);
 
   return { profile, setProfile, loading, error };
 }
