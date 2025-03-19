@@ -12,4 +12,6 @@ export type AuthContextType = {
   refreshSession: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   subscription: SubscriptionDetails;
+  checkingSubscription: boolean;
+  hasSubscription: boolean | null;
 };

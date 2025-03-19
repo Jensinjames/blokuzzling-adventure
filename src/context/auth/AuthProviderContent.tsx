@@ -19,6 +19,8 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
+  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionDetails>({
     tier: null,
     status: null,
@@ -118,7 +120,9 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
     signOut,
     refreshSession,
     resetPassword,
-    subscription
+    subscription,
+    checkingSubscription,
+    hasSubscription
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -62,7 +62,8 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
     loading: authLoading, 
     refreshSession,
     subscription,
-    checkingSubscription
+    checkingSubscription,
+    hasSubscription
   } = useAuth();
   
   const navigate = useNavigate();
@@ -150,7 +151,7 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
     session,
     isAuthenticated: !!user && !!session,
     isLoading: authLoading,
-    hasSubscription: subscription?.isActive || false,
+    hasSubscription: !!hasSubscription,
     subscriptionTier: subscription?.tier || 'free'
   };
 };
