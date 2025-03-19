@@ -1,136 +1,166 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import { corsHeaders } from '../_shared/cors.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
-const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || ''
-const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
-// Initialize client with anonymous key - for standard auth user operations
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
-
-// Initialize admin client with service role key - for admin operations
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
-
-// Handle subscription updates
-Deno.serve(async (req) => {
-  // Handle CORS preflight request
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
+    })
+  }
+
+  // Get the authorization token from the request
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'No authorization header' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   try {
-    // Get the authorization header from the request
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({
-          error: 'No authorization header provided'
-        }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    // Extract the token
+    // Create authenticated Supabase client with the user's JWT
     const token = authHeader.replace('Bearer ', '')
-    
-    // Verify the token and get user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
-    
-    if (authError || !user) {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    })
+
+    // Get user data from the token to verify identity
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token)
+
+    if (userError || !user) {
       return new Response(
-        JSON.stringify({
-          error: 'Invalid token'
-        }),
+        JSON.stringify({ error: 'Invalid token', details: userError }),
         {
           status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       )
     }
 
-    // Parse the request body
-    const { tier, action } = await req.json()
+    // Parse the request data
+    const { action, subscriptionData } = await req.json()
 
-    // Validate input
-    if (!tier || !['free', 'basic', 'premium'].includes(tier)) {
-      return new Response(
-        JSON.stringify({
-          error: 'Invalid subscription tier'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    // Handle different actions
+    switch (action) {
+      case 'check':
+        // Retrieve the user's current subscription
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('subscription_tier, subscription_status, subscription_expiry')
+          .eq('id', user.id)
+          .single()
+
+        if (profileError) {
+          return new Response(
+            JSON.stringify({
+              error: 'Failed to fetch subscription data',
+              details: profileError,
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          )
         }
-      )
-    }
 
-    if (!action || !['subscribe', 'cancel'].includes(action)) {
-      return new Response(
-        JSON.stringify({
-          error: 'Invalid action'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        // Check if the subscription is active and not expired
+        const isActive =
+          profile.subscription_status === 'active' &&
+          (!profile.subscription_expiry ||
+            new Date(profile.subscription_expiry) > new Date())
+
+        return new Response(
+          JSON.stringify({
+            subscription: {
+              ...profile,
+              isActive,
+              isPremium: profile.subscription_tier === 'premium' && isActive,
+            },
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+
+      case 'update':
+        // Update the user's subscription status
+        if (!subscriptionData) {
+          return new Response(
+            JSON.stringify({ error: 'No subscription data provided' }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          )
         }
-      )
-    }
 
-    // Calculate expiry date (30 days from now for simplicity)
-    const expiryDate = new Date()
-    expiryDate.setDate(expiryDate.getDate() + 30)
+        const { data: updateData, error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            subscription_tier: subscriptionData.tier,
+            subscription_status: subscriptionData.status,
+            subscription_expiry: subscriptionData.expiry,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id)
+          .select()
+          .single()
 
-    // Update the user's profile with subscription information
-    const { data, error } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        subscription_tier: tier,
-        subscription_status: action === 'subscribe' ? 'active' : 'cancelled',
-        subscription_expiry: action === 'subscribe' ? expiryDate.toISOString() : null,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error updating subscription:', error)
-      return new Response(
-        JSON.stringify({
-          error: 'Failed to update subscription'
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        if (updateError) {
+          return new Response(
+            JSON.stringify({
+              error: 'Failed to update subscription',
+              details: updateError,
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          )
         }
-      )
-    }
 
-    return new Response(
-      JSON.stringify({
-        data,
-        message: action === 'subscribe' 
-          ? `Successfully subscribed to ${tier} tier` 
-          : `Successfully cancelled ${tier} subscription`
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
+        return new Response(
+          JSON.stringify({
+            message: 'Subscription updated successfully',
+            subscription: updateData,
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+
+      default:
+        return new Response(
+          JSON.stringify({ error: 'Invalid action requested' }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        )
+    }
   } catch (error) {
-    console.error('Error processing request:', error)
+    console.error('Error handling request:', error)
     return new Response(
-      JSON.stringify({
-        error: 'Internal server error'
-      }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )
   }

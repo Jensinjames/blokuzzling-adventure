@@ -43,6 +43,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Check and update user subscription status
+  const checkUserSubscription = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('subscription_tier, subscription_status, subscription_expiry')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching subscription details:', error);
+        return;
+      }
+
+      // Check if subscription is active and not expired
+      const isSubscriptionActive = 
+        profile.subscription_status === 'active' &&
+        (!profile.subscription_expiry || new Date(profile.subscription_expiry) > new Date());
+      
+      setSubscription({
+        tier: profile.subscription_tier || 'free',
+        status: profile.subscription_status || 'inactive',
+        isActive: isSubscriptionActive,
+        isPremium: profile.subscription_tier === 'premium' && isSubscriptionActive
+      });
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+    }
+  };
+
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
@@ -56,10 +86,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           toast.error('Failed to retrieve your session');
         } else {
           console.log('Initial session retrieved:', data.session ? 'Session found' : 'No session');
+          
+          setSession(data.session);
+          setUser(data.session?.user ?? null);
+          
+          // Check subscription for logged-in user
+          if (data.session?.user) {
+            await checkUserSubscription(data.session.user.id);
+          }
         }
-        
-        setSession(data.session);
-        setUser(data.session?.user ?? null);
 
         // If no session, and we're not on the auth page or root, redirect to auth
         if (!data.session && !location.pathname.match(/^\/(auth|)$/)) {
@@ -87,9 +122,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log(`Auth state changed: ${event}`, newSession?.user?.id || 'no user');
+        
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false);
+
+        // Check subscription status when auth state changes
+        if (newSession?.user) {
+          await checkUserSubscription(newSession.user.id);
+        }
 
         if (event === 'SIGNED_IN') {
           console.log('User signed in:', newSession?.user?.email);
