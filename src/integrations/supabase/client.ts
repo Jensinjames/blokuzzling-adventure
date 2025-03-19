@@ -18,7 +18,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
           const value = localStorage.getItem(key);
           return value ? JSON.parse(value) : null;
         } catch (error) {
-          console.error('[Supabase Storage] Error retrieving item:', key, error);
           return null;
         }
       },
@@ -26,7 +25,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
         try {
           localStorage.setItem(key, JSON.stringify(value));
         } catch (error) {
-          console.error('[Supabase Storage] Error setting item:', key, error);
           // Silent fail on storage errors
         }
       },
@@ -34,7 +32,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
         try {
           localStorage.removeItem(key);
         } catch (error) {
-          console.error('[Supabase Storage] Error removing item:', key, error);
           // Silent fail on storage errors
         }
       }
