@@ -45,15 +45,15 @@ const Game: React.FC<GameProps> = ({ numPlayers = 2 }) => {
 
   // Set player IDs correctly when game starts
   useEffect(() => {
-    if (gameStarted && user) {
-      console.log('Setting player IDs for game, user ID:', user.id);
-      // Set human player ID to user's ID for stats tracking
+    if (gameStarted) {
+      console.log('Setting player IDs for game, user ID:', user?.id || 'guest');
+      // Set human player ID to user's ID for stats tracking or 'guest' for anonymous play
       setGameState(prevState => {
         const updatedPlayers = [...prevState.players];
         if (updatedPlayers[0]) {
           updatedPlayers[0] = {
             ...updatedPlayers[0],
-            id: user.id // Use authenticated user ID
+            id: user?.id || 'guest' // Use authenticated user ID or 'guest'
           };
         }
         // Ensure AI player has a consistent ID

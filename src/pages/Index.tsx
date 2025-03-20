@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -15,7 +16,7 @@ const Index = () => {
     }
   }, [user, isLoading, navigate]);
 
-  if (isLoading || user) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="animate-pulse h-10 w-10 rounded-full bg-primary/50"></div>
@@ -62,7 +63,7 @@ const Index = () => {
           
           <Button 
             variant="outline"
-            onClick={() => navigate('/home')}
+            onClick={() => navigate('/game')} // Direct to single player game for guests
             className="w-full py-6 text-lg"
           >
             <Play className="h-5 w-5 mr-2" />

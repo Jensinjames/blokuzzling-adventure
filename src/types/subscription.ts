@@ -1,6 +1,6 @@
 
 export type SubscriptionTier = 'free' | 'basic' | 'premium' | 'pro' | null;
-export type SubscriptionStatusType = 'active' | 'inactive' | 'trial' | 'expired' | 'cancelled' | null;
+export type SubscriptionStatusType = 'active' | 'inactive' | 'trial' | 'expired' | 'canceled' | 'pending' | null;
 
 export interface SubscriptionStatus {
   tier: SubscriptionTier;
@@ -13,13 +13,10 @@ export interface SubscriptionStatus {
   expiresAt: Date | null;
 }
 
-// For backward compatibility
-export type SubscriptionDetails = SubscriptionStatus;
-
-// Default subscription state for unauthenticated users
+// Default subscription for non-authenticated users
 export const defaultSubscription: SubscriptionStatus = {
-  tier: null,
-  status: null,
+  tier: 'free',
+  status: 'inactive',
   isActive: false,
   isPremium: false,
   isBasicOrHigher: false,
@@ -27,3 +24,6 @@ export const defaultSubscription: SubscriptionStatus = {
   hasSubscription: false,
   expiresAt: null
 };
+
+// Alias for backward compatibility if needed
+export type SubscriptionDetails = SubscriptionStatus;

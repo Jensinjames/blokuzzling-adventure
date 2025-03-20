@@ -28,6 +28,12 @@ type AuthCheckOptions = {
    * @default false
    */
   skip?: boolean;
+  
+  /**
+   * Allow guest access (don't redirect)
+   * @default false
+   */
+  allowGuest?: boolean;
 };
 
 /**
@@ -39,7 +45,8 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
     redirectTo = '/auth', 
     includeReturnTo = false,
     message = 'You must be logged in to access this page',
-    skip = false
+    skip = false,
+    allowGuest = false
   } = options;
   
   const { user, session, loading: authLoading, refreshSession } = useAuth();
@@ -48,6 +55,9 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
   // Perform auth check and redirect if needed
   useEffect(() => {
     if (skip || authLoading) return;
+    
+    // Don't redirect if guest access is allowed
+    if (allowGuest) return;
     
     if (!user || !session) {
       console.log('No authenticated user, redirecting to:', redirectTo);
@@ -61,7 +71,7 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
         navigate(redirectTo);
       }
     }
-  }, [user, session, authLoading, navigate, redirectTo, includeReturnTo, message, skip]);
+  }, [user, session, authLoading, navigate, redirectTo, includeReturnTo, message, skip, allowGuest]);
   
   // Refresh session if it's expiring soon
   useEffect(() => {
@@ -75,7 +85,8 @@ export const useAuthCheck = (options: AuthCheckOptions = {}) => {
     user,
     session,
     isAuthenticated: !!user && !!session,
-    isLoading: authLoading
+    isLoading: authLoading,
+    isGuest: !user && !session
   };
 };
 
