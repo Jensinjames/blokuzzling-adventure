@@ -44,7 +44,7 @@ export function useProfileUpdate(profile: Profile | null, setProfile: (profile: 
         throw error;
       }
 
-      // Update local state - fixed typings for setProfile function
+      // Update local state
       setProfile(profile ? { ...profile, ...updates } : null);
       toast.success('Profile updated successfully');
       
