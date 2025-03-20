@@ -14,8 +14,10 @@ import MultiplayerGame from '@/pages/MultiplayerGame';
 import NotFound from '@/pages/NotFound';
 import Rules from '@/pages/Rules';
 import Settings from '@/pages/Settings';
+import Subscription from '@/pages/Subscription';
 import { AuthProvider } from '@/context/AuthProvider';
 import { Toaster } from 'sonner';
+import { ProtectedRoute } from '@/middleware/ProtectedRoutes';
 
 // Create a root component that wraps the routes with AuthProvider
 const AppRoot = ({ children }: { children: React.ReactNode }) => (
@@ -42,7 +44,7 @@ const router = createHashRouter([
   },
   {
     path: "/profile",
-    element: <AppRoot><Profile /></AppRoot>,
+    element: <AppRoot><ProtectedRoute requiresAuth={true}><Profile /></ProtectedRoute></AppRoot>,
   },
   {
     path: "/game/:gameId",
@@ -50,19 +52,23 @@ const router = createHashRouter([
   },
   {
     path: "/lobby/:gameId",
-    element: <AppRoot><Lobby /></AppRoot>,
+    element: <AppRoot><ProtectedRoute requiresAuth={true}><Lobby /></ProtectedRoute></AppRoot>,
   },
   {
     path: "/multiplayer/:gameId",
-    element: <AppRoot><MultiplayerGame /></AppRoot>,
+    element: <AppRoot><ProtectedRoute requiresAuth={true} requiresSubscription={true}><MultiplayerGame /></ProtectedRoute></AppRoot>,
   },
   {
     path: "/settings",
-    element: <AppRoot><Settings /></AppRoot>,
+    element: <AppRoot><ProtectedRoute requiresAuth={true}><Settings /></ProtectedRoute></AppRoot>,
   },
   {
     path: "/rules",
     element: <AppRoot><Rules /></AppRoot>,
+  },
+  {
+    path: "/subscription",
+    element: <AppRoot><ProtectedRoute requiresAuth={true}><Subscription /></ProtectedRoute></AppRoot>,
   },
   {
     path: "*",
