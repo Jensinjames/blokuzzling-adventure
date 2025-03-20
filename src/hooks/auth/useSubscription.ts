@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { checkUserSubscription } from '@/utils/subscriptionUtils';
@@ -13,6 +14,11 @@ export const useSubscription = (user: User | null) => {
     hasSubscription: false,
     tier: null,
     expiresAt: null,
+    status: null,
+    expiry: null,
+    isActive: false,
+    isPremium: false,
+    isBasicOrHigher: false
   });
   const [checkingSubscription, setCheckingSubscription] = useState(true);
   
@@ -28,6 +34,11 @@ export const useSubscription = (user: User | null) => {
               hasSubscription: false,
               tier: null,
               expiresAt: null,
+              status: null,
+              expiry: null,
+              isActive: false,
+              isPremium: false,
+              isBasicOrHigher: false
             });
             setCheckingSubscription(false);
           }
@@ -40,9 +51,19 @@ export const useSubscription = (user: User | null) => {
         // Use the utility function to check subscription
         const status = await checkUserSubscription(user.id);
         
+        // Enhance the response with additional derived properties
+        const enhancedStatus: SubscriptionStatus = {
+          ...status,
+          status: status.tier ? 'active' : 'inactive',
+          expiry: status.expiresAt,
+          isActive: status.hasSubscription,
+          isPremium: status.tier === 'premium',
+          isBasicOrHigher: status.tier === 'basic' || status.tier === 'premium'
+        };
+        
         if (isMounted) {
-          setSubscriptionState(status);
-          console.log('Subscription status:', status);
+          setSubscriptionState(enhancedStatus);
+          console.log('Subscription status:', enhancedStatus);
         }
       } catch (error) {
         console.error('Error checking subscription:', error);
@@ -51,6 +72,11 @@ export const useSubscription = (user: User | null) => {
             hasSubscription: false,
             tier: null,
             expiresAt: null,
+            status: null,
+            expiry: null,
+            isActive: false,
+            isPremium: false,
+            isBasicOrHigher: false
           });
         }
       } finally {

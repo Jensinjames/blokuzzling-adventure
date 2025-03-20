@@ -10,7 +10,16 @@ import { SubscriptionStatus } from '@/types/subscription';
 export async function checkUserSubscription(userId: string): Promise<SubscriptionStatus> {
   try {
     if (!userId) {
-      return { hasSubscription: false, tier: null, expiresAt: null };
+      return { 
+        hasSubscription: false, 
+        tier: null, 
+        expiresAt: null,
+        status: null,
+        expiry: null,
+        isActive: false,
+        isPremium: false,
+        isBasicOrHigher: false
+      };
     }
     
     console.log('Checking subscription for user:', userId);
@@ -32,10 +41,16 @@ export async function checkUserSubscription(userId: string): Promise<Subscriptio
     
     // If user has an active subscription, return the details
     if (subscriptionData) {
+      const tier = subscriptionData.tier || 'standard';
       return {
         hasSubscription: true,
-        tier: subscriptionData.tier || 'standard',
-        expiresAt: subscriptionData.expires_at
+        tier: tier,
+        expiresAt: subscriptionData.expires_at,
+        status: 'active',
+        expiry: subscriptionData.expires_at,
+        isActive: true,
+        isPremium: tier === 'premium',
+        isBasicOrHigher: tier === 'basic' || tier === 'premium'
       };
     }
     
@@ -45,7 +60,16 @@ export async function checkUserSubscription(userId: string): Promise<Subscriptio
       
       if (userError || !userData.user) {
         console.error('Error getting user for subscription check:', userError);
-        return { hasSubscription: false, tier: null, expiresAt: null };
+        return { 
+          hasSubscription: false, 
+          tier: null, 
+          expiresAt: null,
+          status: null,
+          expiry: null,
+          isActive: false,
+          isPremium: false,
+          isBasicOrHigher: false
+        };
       }
       
       const { data, error } = await supabase.functions.invoke('auth-email-handler', {
@@ -57,21 +81,54 @@ export async function checkUserSubscription(userId: string): Promise<Subscriptio
       
       if (error) {
         console.error('Error verifying subscription with edge function:', error);
-        return { hasSubscription: false, tier: null, expiresAt: null };
+        return { 
+          hasSubscription: false, 
+          tier: null, 
+          expiresAt: null,
+          status: null,
+          expiry: null,
+          isActive: false,
+          isPremium: false,
+          isBasicOrHigher: false
+        };
       }
       
+      const tier = data?.tier || null;
       return {
         hasSubscription: data?.hasSubscription || false,
-        tier: data?.tier || null,
-        expiresAt: data?.expiresAt || null
+        tier: tier,
+        expiresAt: data?.expiresAt || null,
+        status: data?.hasSubscription ? 'active' : 'inactive',
+        expiry: data?.expiresAt || null,
+        isActive: data?.hasSubscription || false,
+        isPremium: tier === 'premium',
+        isBasicOrHigher: tier === 'basic' || tier === 'premium'
       };
     } catch (error) {
       console.error('Error in subscription verification:', error);
-      return { hasSubscription: false, tier: null, expiresAt: null };
+      return { 
+        hasSubscription: false, 
+        tier: null, 
+        expiresAt: null,
+        status: null,
+        expiry: null,
+        isActive: false,
+        isPremium: false,
+        isBasicOrHigher: false
+      };
     }
   } catch (error) {
     console.error('Subscription check failed:', error);
-    return { hasSubscription: false, tier: null, expiresAt: null };
+    return { 
+      hasSubscription: false, 
+      tier: null, 
+      expiresAt: null,
+      status: null,
+      expiry: null,
+      isActive: false,
+      isPremium: false,
+      isBasicOrHigher: false
+    };
   }
 }
 
