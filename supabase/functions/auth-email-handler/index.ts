@@ -34,6 +34,7 @@ serve(async (req) => {
     
     console.log(`Processing auth action: ${action} for email: ${email}`);
     console.log(`Using site URL: ${siteUrl}`);
+    console.log(`Request origin: ${origin}`);
 
     if (action === "resend-confirmation") {
       // Get user by email
@@ -49,13 +50,15 @@ serve(async (req) => {
         });
       }
 
-      // Resend confirmation email with proper redirect
-      // For hash routing (#/auth), use the full URL structure
-      const redirectPath = origin.includes("localhost") ? 
+      // Determine appropriate redirect URL based on environment
+      // For local development with hash routing use /#/auth format
+      // For production deployments use /auth format
+      const isLocalhost = origin.includes("localhost") || origin.includes("127.0.0.1");
+      const redirectPath = isLocalhost ? 
         `${siteUrl}/#/auth?confirmation=true` : 
         `${siteUrl}/auth?confirmation=true`;
         
-      console.log(`Using redirect path: ${redirectPath}`);
+      console.log(`Using redirect path for confirmation: ${redirectPath}`);
         
       const { error } = await supabaseAdmin.auth.admin.generateLink({
         type: "signup",
@@ -83,13 +86,15 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     } else if (action === "send-magic-link") {
-      // Send a magic link for passwordless login
-      // For hash routing (#/auth), use the full URL structure
-      const redirectPath = origin.includes("localhost") ? 
+      // Determine appropriate redirect URL based on environment
+      // For local development with hash routing use /#/auth format
+      // For production deployments use /auth format
+      const isLocalhost = origin.includes("localhost") || origin.includes("127.0.0.1");
+      const redirectPath = isLocalhost ? 
         `${siteUrl}/#/auth?magic-link=true` : 
         `${siteUrl}/auth?magic-link=true`;
         
-      console.log(`Using redirect path: ${redirectPath}`);
+      console.log(`Using redirect path for magic link: ${redirectPath}`);
         
       const { error } = await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
