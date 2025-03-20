@@ -12,13 +12,8 @@ export interface GameSession {
   ai_enabled?: boolean;
   ai_count?: number;
   ai_difficulty?: string;
-  current_players: number;
-  winner_id?: string;
-  creator?: {
-    username: string;
-    avatar_url?: string | null;
-    id?: string;
-  };
+  current_players: number; // Added to match usage in code
+  winner_id?: string; // Added to match usage in code
 }
 
 export interface GamePlayer {
@@ -36,13 +31,10 @@ export interface Profile {
   full_name?: string;
   avatar_url?: string | null;
   website?: string;
-  wins: number;
-  losses: number;
-  draws: number;
+  wins: number; // Added to match usage in code
+  losses: number; // Added to match usage in code
+  draws: number; // Added to match usage in code
   created_at?: string;
-  subscription_tier?: string;
-  subscription_status?: string;
-  subscription_expiry?: string;
 }
 
 export interface GameInvite {
@@ -52,19 +44,10 @@ export interface GameInvite {
   sender_id: string;
   recipient_id: string;
   status: 'pending' | 'accepted' | 'rejected' | 'expired';
-  expires_at: string;
-  sender?: {
+  expires_at: string; // Added to match usage in code
+  sender?: { // Added sender profile relation
     id: string;
     username: string;
     avatar_url?: string;
   };
-}
-
-export interface Subscription {
-  id: string;
-  user_id: string;
-  tier: 'free' | 'basic' | 'premium';
-  status: 'active' | 'cancelled' | 'expired';
-  created_at: string;
-  expires_at?: string;
 }

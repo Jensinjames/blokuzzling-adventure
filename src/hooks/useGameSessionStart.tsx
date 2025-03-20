@@ -74,21 +74,23 @@ export function useGameSessionStart() {
       // Create initial game state with appropriate number of players
       const initialGameState = createInitialGameState(totalPlayers);
       
-      // Simplify AI player handling to avoid deep nesting
+      // Mark AI players in the game state
       if (aiEnabled && aiCount > 0) {
         // Human players have index 0 to humanPlayers.length-1
         // AI players have index humanPlayers.length to totalPlayers-1
         for (let i = humanPlayers.length; i < totalPlayers; i++) {
-          if (initialGameState.players[i]) {
-            initialGameState.players[i].isAI = true;
-            initialGameState.players[i].aiDifficulty = aiDifficulty;
-            initialGameState.players[i].name = `AI Player ${i - humanPlayers.length + 1}`;
-          }
+          initialGameState.players[i] = {
+            ...initialGameState.players[i],
+            isAI: true,
+            aiDifficulty: aiDifficulty,
+            name: `AI Player ${i - humanPlayers.length + 1}`
+          };
         }
       }
 
-      // Create a stringifiable version of the game state to avoid circular references
-      const safeGameState = JSON.parse(JSON.stringify({
+      // Create a simpler serializable version of the game state
+      // This avoids circular references and deep nesting
+      const safeGameState = {
         ...initialGameState,
         players: initialGameState.players.map(player => ({
           ...player,
@@ -101,7 +103,7 @@ export function useGameSessionStart() {
           }))
         })),
         turnHistory: initialGameState.turnHistory || []
-      }));
+      };
 
       // Update game status and set initial state
       const { error: updateError } = await supabase

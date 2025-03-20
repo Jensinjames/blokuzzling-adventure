@@ -1,86 +1,57 @@
 
 import React from 'react';
-import {
-  createHashRouter,
-  RouterProvider,
-} from "react-router-dom";
-import Index from '@/pages/Index';
-import Home from '@/pages/Home';
-import Auth from '@/pages/Auth';
-import Profile from '@/pages/Profile';
-import Game from '@/pages/Game';
-import Lobby from '@/pages/Lobby';
-import MultiplayerGame from '@/pages/MultiplayerGame';
-import NotFound from '@/pages/NotFound';
-import Rules from '@/pages/Rules';
-import Settings from '@/pages/Settings';
-import Subscription from '@/pages/Subscription';
-import { AuthProvider } from '@/context/AuthProvider';
-import { Toaster } from 'sonner';
-import { ProtectedRoute } from '@/middleware/ProtectedRoutes';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './App.css';
+import Index from './pages/Index';
+import Game from './pages/Game';
+import MultiplayerGame from './pages/MultiplayerGame';
+import Lobby from './pages/Lobby';
+import Rules from './pages/Rules';
+import Home from './pages/Home';
+import Profile from './pages/Profile';
+import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
+import Auth from './pages/Auth';
+import { ThemeProvider } from './components/ThemeProvider';
+import { Toaster } from './components/ui/sonner';
+import { AuthProvider } from './context/AuthProvider';
+import SupabaseRealtimeProvider from './components/SupabaseRealtimeProvider';
+import DatabaseConnectionStatus from './components/DatabaseConnectionStatus';
+import MetaPixelLoader from './components/MetaPixelLoader';
 
-// Create a root component that wraps the routes with AuthProvider
-const AppRoot = ({ children }: { children: React.ReactNode }) => (
-  <AuthProvider>
-    {children}
-    <Toaster position="top-center" />
-  </AuthProvider>
-);
-
-// Define the router configuration with routes wrapped in AppRoot
-const router = createHashRouter([
-  {
-    path: "/",
-    element: <AppRoot><Index /></AppRoot>,
-    errorElement: <AppRoot><NotFound /></AppRoot>,
-  },
-  {
-    path: "/home",
-    element: <AppRoot><Home /></AppRoot>,
-  },
-  {
-    path: "/auth",
-    element: <AppRoot><Auth /></AppRoot>,
-  },
-  {
-    path: "/profile",
-    element: <AppRoot><ProtectedRoute requiresAuth={true}><Profile /></ProtectedRoute></AppRoot>,
-  },
-  {
-    path: "/game/:gameId",
-    element: <AppRoot><Game /></AppRoot>,
-  },
-  {
-    path: "/lobby/:gameId",
-    element: <AppRoot><ProtectedRoute requiresAuth={true}><Lobby /></ProtectedRoute></AppRoot>,
-  },
-  {
-    path: "/multiplayer/:gameId",
-    element: <AppRoot><ProtectedRoute requiresAuth={true} requiresSubscription={true}><MultiplayerGame /></ProtectedRoute></AppRoot>,
-  },
-  {
-    path: "/settings",
-    element: <AppRoot><ProtectedRoute requiresAuth={true}><Settings /></ProtectedRoute></AppRoot>,
-  },
-  {
-    path: "/rules",
-    element: <AppRoot><Rules /></AppRoot>,
-  },
-  {
-    path: "/subscription",
-    element: <AppRoot><ProtectedRoute requiresAuth={true}><Subscription /></ProtectedRoute></AppRoot>,
-  },
-  {
-    path: "*",
-    element: <AppRoot><NotFound /></AppRoot>,
-  },
-]);
+// Wrapper component with authentication and navigation
+const AppWithAuth = () => {
+  return (
+    <AuthProvider>
+      <SupabaseRealtimeProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/game" element={<Game />} />
+          <Route path="/multiplayer/:gameId" element={<MultiplayerGame />} />
+          <Route path="/lobby/:gameId" element={<Lobby />} />
+          <Route path="/rules" element={<Rules />} />
+          <Route path="/profile/:username?" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <DatabaseConnectionStatus />
+        <Toaster />
+      </SupabaseRealtimeProvider>
+    </AuthProvider>
+  );
+};
 
 function App() {
   return (
-    <React.StrictMode>
-      <RouterProvider router={router} />
-    </React.StrictMode>
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <Router>
+        <AppWithAuth />
+        {/* Facebook Meta Pixel is conditionally loaded only in production */}
+        <MetaPixelLoader />
+      </Router>
+    </ThemeProvider>
   );
 }
 

@@ -19,7 +19,8 @@ const Lobby = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { startGameSession } = useGameSessionStart();
+  const { startGameSession: baseStartGameSession } = useMultiplayer();
+  const { startGameSession } = useGameSessionStart(); // Use the optimized version
   const [gameSession, setGameSession] = useState<GameSession | null>(null);
   const [players, setPlayers] = useState<(GamePlayer & { profile: Profile })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,8 +151,6 @@ const Lobby = () => {
     setStarting(true);
     
     try {
-      let success = false;
-      
       // First update AI player settings if enabled
       if (aiEnabled && aiCount > 0) {
         console.log('Updating game session with AI settings:', {
@@ -160,14 +159,16 @@ const Lobby = () => {
           aiDifficulty
         });
         
-        // Update AI settings with a simpler, flatter object
+        // Simplified AI settings object
+        const aiSettings = {
+          ai_enabled: aiEnabled,
+          ai_count: aiCount,
+          ai_difficulty: aiDifficulty
+        };
+        
         const { error } = await supabase
           .from('game_sessions')
-          .update({
-            ai_enabled: aiEnabled,
-            ai_count: aiCount,
-            ai_difficulty: aiDifficulty
-          })
+          .update(aiSettings)
           .eq('id', gameId);
           
         if (error) {
@@ -177,7 +178,7 @@ const Lobby = () => {
       }
       
       // Then start the game with our optimized startGameSession function
-      success = await startGameSession(gameId);
+      const success = await startGameSession(gameId);
       
       if (success) {
         console.log('Game started successfully, redirecting to game');

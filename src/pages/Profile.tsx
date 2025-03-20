@@ -1,49 +1,61 @@
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useProfile } from '@/hooks/useProfile';
 import { useNavigate } from 'react-router-dom';
-import { useProfile } from '@/hooks/profile';
-import { useProfileActions } from '@/hooks/profile/useProfileActions';
-import { useGameManagement } from '@/hooks/profile/useGameManagement';
-import { useUserGames } from '@/hooks/useUserGames';
-import { useAuthCheck } from '@/hooks/useAuthCheck';
 import ProfileView from '@/components/ProfileView';
 import ProfileLoading from '@/components/profile/ProfileLoading';
 import ProfileError from '@/components/profile/ProfileError';
 import ProfileNotFound from '@/components/profile/ProfileNotFound';
-import ProfilePageContainer from '@/components/profile/ProfilePageContainer';
+import { useUserGames } from '@/hooks/useUserGames';
+import { toast } from 'sonner';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
+import { useAuth } from '@/context/AuthProvider';
 
 const Profile = () => {
   const { profile, loading: profileLoading, error: profileError, updateProfile, saving } = useProfile();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
+  const [username, setUsername] = useState('');
+  const [editing, setEditing] = useState(false);
+  const { games, loading: gamesLoading } = useUserGames(profile);
+  
+  // Use our auth check hook
   const { user, isLoading: authLoading } = useAuthCheck();
   
-  // Profile actions management
-  const { 
-    username, setUsername, 
-    editing, setEditing, 
-    initializeUsername, 
-    handleUpdateProfile, 
-    handleSignOut, 
-  } = useProfileActions(profile, updateProfile, saving);
-  
-  // User games management
-  const { games: fetchedGames, loading: gamesLoading } = useUserGames(profile);
-  const { games, updateGames, handleGameDeleted } = useGameManagement(fetchedGames);
-
-  // Combined loading state
   const isLoading = profileLoading || authLoading;
 
-  // Initialize username when profile loads
   useEffect(() => {
     if (profile) {
-      initializeUsername(profile);
+      setUsername(profile.username);
     }
   }, [profile]);
 
-  // Update games when fetched games change
-  useEffect(() => {
-    updateGames(fetchedGames);
-  }, [fetchedGames]);
+  const handleUpdateProfile = async () => {
+    if (!username.trim()) {
+      toast.error('Username cannot be empty');
+      return;
+    }
+    
+    try {
+      await updateProfile({ username });
+      toast.success('Profile updated successfully');
+      setEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    }
+  };
+
+  const handleSignOut = async () => {
+    console.log('Initiating sign out from Profile page');
+    try {
+      await signOut();
+      // Navigation is handled in the signOut function
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out');
+    }
+  };
 
   const handleBack = () => {
     navigate('/home');
@@ -62,22 +74,19 @@ const Profile = () => {
   }
 
   return profile ? (
-    <ProfilePageContainer onBack={handleBack}>
-      <ProfileView
-        profile={profile}
-        username={username}
-        setUsername={setUsername}
-        editing={editing}
-        setEditing={setEditing}
-        saving={saving}
-        handleUpdateProfile={handleUpdateProfile}
-        handleBack={handleBack}
-        signOut={handleSignOut}
-        games={games}
-        gamesLoading={gamesLoading}
-        onGameDeleted={handleGameDeleted}
-      />
-    </ProfilePageContainer>
+    <ProfileView
+      profile={profile}
+      username={username}
+      setUsername={setUsername}
+      editing={editing}
+      setEditing={setEditing}
+      saving={saving}
+      handleUpdateProfile={handleUpdateProfile}
+      handleBack={handleBack}
+      signOut={handleSignOut}
+      games={games}
+      gamesLoading={gamesLoading}
+    />
   ) : (
     <ProfileNotFound message="We couldn't find your profile data" />
   );

@@ -10,14 +10,12 @@ interface ProfileTabsProps {
   profile: Profile;
   games?: GameSession[];
   gamesLoading?: boolean;
-  onGameDeleted?: (gameId: string) => void;
 }
 
 const ProfileTabs: React.FC<ProfileTabsProps> = ({ 
   profile, 
   games = [], 
-  gamesLoading = false,
-  onGameDeleted
+  gamesLoading = false 
 }) => {
   return (
     <Tabs defaultValue="stats" className="w-full">
@@ -34,7 +32,7 @@ const ProfileTabs: React.FC<ProfileTabsProps> = ({
       </TabsContent>
       
       <TabsContent value="history" className="px-6 pb-6 focus-visible:outline-none focus-visible:ring-0">
-        <GameHistory games={games} loading={gamesLoading} onGameDeleted={onGameDeleted} />
+        <GameHistory games={games} loading={gamesLoading} />
       </TabsContent>
       
       <TabsContent value="achievements" className="px-6 pb-6 focus-visible:outline-none focus-visible:ring-0">

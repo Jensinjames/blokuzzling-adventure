@@ -1,82 +1,28 @@
-
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LogIn, Play, Info, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { LogIn, Play, Info } from 'lucide-react';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  const redirectAttemptedRef = useRef(false);
-  const mountedRef = useRef(true);
+  const { user, isLoading } = useAuthCheck({ skip: true });
 
-  // Track component mounted state to prevent state updates after unmounting
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  // Memoize navigation functions to prevent unnecessary re-renders
-  const navigateToHome = useCallback(() => {
-    navigate('/home');
-  }, [navigate]);
-
-  const navigateToAuth = useCallback(() => {
-    navigate('/auth');
-  }, [navigate]);
-
-  const navigateToRules = useCallback(() => {
-    navigate('/rules');
-  }, [navigate]);
-
-  // Only trigger navigation after initial loading is complete and only once
-  useEffect(() => {
-    // Skip if still loading, already redirecting, or already attempted
-    if (loading || isRedirecting || redirectAttemptedRef.current) {
-      return;
+    if (!isLoading && user) {
+      navigate('/home');
     }
-    
-    // If user is logged in, redirect to home
-    if (user) {
-      console.log('User is logged in, preparing to redirect to home');
-      
-      // Mark that we've attempted a redirect to prevent repeated attempts
-      redirectAttemptedRef.current = true;
-      
-      if (mountedRef.current) {
-        setIsRedirecting(true);
-        
-        // Small delay to prevent flash of content
-        setTimeout(() => {
-          if (mountedRef.current) {
-            console.log('Navigating to /home');
-            navigate('/home');
-          }
-        }, 100);
-      }
-    } else {
-      console.log('User is not logged in, staying on landing page');
-    }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
-  // Don't render anything while checking authentication or redirecting
-  if (loading || isRedirecting) {
+  if (isLoading || user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-10 w-10 animate-spin text-primary/70" />
-          <p className="text-sm text-gray-500">Loading your experience...</p>
-        </div>
+        <div className="animate-pulse h-10 w-10 rounded-full bg-primary/50"></div>
       </div>
     );
   }
 
-  // Regular render with landing page content
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       <div className="w-full max-w-md">
@@ -101,7 +47,7 @@ const Index = () => {
           className="space-y-4"
         >
           <Button 
-            onClick={navigateToAuth}
+            onClick={() => navigate('/auth')}
             className="w-full py-6 text-lg"
           >
             <LogIn className="h-5 w-5 mr-2" />
@@ -116,7 +62,7 @@ const Index = () => {
           
           <Button 
             variant="outline"
-            onClick={navigateToHome}
+            onClick={() => navigate('/home')}
             className="w-full py-6 text-lg"
           >
             <Play className="h-5 w-5 mr-2" />
@@ -125,7 +71,7 @@ const Index = () => {
           
           <Button 
             variant="link"
-            onClick={navigateToRules}
+            onClick={() => navigate('/rules')}
             className="w-full"
           >
             <Info className="h-4 w-4 mr-2" />

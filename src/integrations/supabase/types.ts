@@ -223,9 +223,6 @@ export type Database = {
           draws: number
           id: string
           losses: number
-          subscription_expiry: string | null
-          subscription_status: string | null
-          subscription_tier: string | null
           updated_at: string
           username: string
           wins: number
@@ -236,9 +233,6 @@ export type Database = {
           draws?: number
           id: string
           losses?: number
-          subscription_expiry?: string | null
-          subscription_status?: string | null
-          subscription_tier?: string | null
           updated_at?: string
           username: string
           wins?: number
@@ -249,9 +243,6 @@ export type Database = {
           draws?: number
           id?: string
           losses?: number
-          subscription_expiry?: string | null
-          subscription_status?: string | null
-          subscription_tier?: string | null
           updated_at?: string
           username?: string
           wins?: number
@@ -290,9 +281,6 @@ export type Database = {
               draws: number
               id: string
               losses: number
-              subscription_expiry: string | null
-              subscription_status: string | null
-              subscription_tier: string | null
               updated_at: string
               username: string
               wins: number

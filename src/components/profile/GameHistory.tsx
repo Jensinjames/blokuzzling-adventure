@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Table, 
   TableBody, 
@@ -12,62 +12,14 @@ import {
 import { GameSession } from '@/types/database';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Gamepad, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { deleteGameSession } from '@/context/AuthOperations';
-import { useAuth } from '@/context/AuthProvider';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { Gamepad } from 'lucide-react';
 
 interface GameHistoryProps {
   games: GameSession[];
   loading: boolean;
-  onGameDeleted?: (gameId: string) => void;
 }
 
-const GameHistory: React.FC<GameHistoryProps> = ({ games, loading, onGameDeleted }) => {
-  const { user } = useAuth();
-  const [deletingGameId, setDeletingGameId] = useState<string | null>(null);
-  
-  const handleDeleteGame = async (gameId: string) => {
-    if (confirm('Are you sure you want to delete this game?')) {
-      setDeletingGameId(gameId);
-      
-      try {
-        // First delete all related game players
-        const { error: playersError } = await supabase
-          .from('game_players')
-          .delete()
-          .eq('game_id', gameId);
-          
-        if (playersError) throw playersError;
-        
-        // Then delete all related game invites
-        const { error: invitesError } = await supabase
-          .from('game_invites')
-          .delete()
-          .eq('game_id', gameId);
-          
-        if (invitesError) throw invitesError;
-        
-        // Finally delete the game session
-        const { error } = await deleteGameSession(gameId);
-        
-        if (error) throw error;
-        
-        if (onGameDeleted) {
-          onGameDeleted(gameId);
-          toast.success("Game deleted successfully");
-        }
-      } catch (error: any) {
-        toast.error("Failed to delete game");
-        console.error("Delete game error:", error);
-      } finally {
-        setDeletingGameId(null);
-      }
-    }
-  };
-  
+const GameHistory: React.FC<GameHistoryProps> = ({ games, loading }) => {
   if (loading) {
     return (
       <div className="text-center py-8">
@@ -102,7 +54,6 @@ const GameHistory: React.FC<GameHistoryProps> = ({ games, loading, onGameDeleted
             <TableHead>Players</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Result</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -117,29 +68,9 @@ const GameHistory: React.FC<GameHistoryProps> = ({ games, loading, onGameDeleted
               </TableCell>
               <TableCell>
                 {game.winner_id ? (
-                  <span className="text-yellow-500 font-medium">
-                    {game.winner_id === user?.id ? "Win" : "Loss"}
-                  </span>
+                  <span className="text-yellow-500 font-medium">{game.winner_id ? "Win" : "Loss"}</span>
                 ) : (
                   <span className="text-gray-500">-</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {/* Only show delete button for games created by the current user */}
-                {user && game.creator_id === user.id && (
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-gray-500 hover:text-red-500"
-                    onClick={() => handleDeleteGame(game.id)}
-                    disabled={deletingGameId === game.id}
-                    title="Delete game"
-                  >
-                    {deletingGameId === game.id ? 
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" /> : 
-                      <Trash2 className="h-4 w-4" />
-                    }
-                  </Button>
                 )}
               </TableCell>
             </TableRow>
@@ -154,7 +85,6 @@ const GameStatusBadge: React.FC<{ status: string }> = ({ status }) => {
   switch (status) {
     case 'waiting':
       return <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">Waiting</Badge>;
-    case 'active':
     case 'playing':
       return <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300">In Progress</Badge>;
     case 'finished':

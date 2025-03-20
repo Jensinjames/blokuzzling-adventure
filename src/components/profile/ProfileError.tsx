@@ -4,7 +4,6 @@ import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/context/AuthProvider';
 
 interface ProfileErrorProps {
   error: string;
@@ -12,31 +11,14 @@ interface ProfileErrorProps {
 
 const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
   
   const handleGoHome = () => {
     navigate('/home');
   };
   
-  const handleSignOut = async () => {
-    try {
-      console.log('Initiating sign out from ProfileError component');
-      await signOut();
-      // Hard reload to ensure clean state
-      window.location.href = '/#/';
-    } catch (error) {
-      console.error('Error signing out:', error);
-      // Force navigation if there's an error
-      window.location.href = '/#/';
-    }
-  };
-  
   const getErrorMessage = (error: string) => {
     if (error.includes("permission denied for table users")) {
       return "We're unable to access user information. This is likely a database permissions issue that our team is working on.";
-    }
-    if (error.includes("permission denied for")) {
-      return "Database access denied. Your account may not have sufficient permissions to access this feature.";
     }
     if (error.includes("schema")) {
       return "Database schema configuration error. Please try again or contact support.";
@@ -46,12 +28,6 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
     }
     if (error.includes("has no call signatures")) {
       return "Database client configuration error. The application needs to be updated to match the new schema.";
-    }
-    if (error.includes("Row level security violation")) {
-      return "You don't have permission to access this data. This is a security restriction set by the database.";
-    }
-    if (error.includes("JWT")) {
-      return "Your authentication token has expired or is invalid. Please try signing in again.";
     }
     return error;
   };
@@ -80,16 +56,6 @@ const ProfileError: React.FC<ProfileErrorProps> = ({ error }) => {
             className="text-gray-700 dark:text-gray-300"
           >
             Go Home
-          </Button>
-        </div>
-        
-        <div className="mt-4">
-          <Button 
-            onClick={handleSignOut} 
-            variant="ghost" 
-            className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-          >
-            Sign Out
           </Button>
         </div>
         

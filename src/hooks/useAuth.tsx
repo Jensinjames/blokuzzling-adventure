@@ -1,10 +1,13 @@
 
-import { useAuthHook } from './auth/useAuthHook';
+import { useAuth as useAuthContext } from '@/context/AuthProvider';
 
 /**
- * Enhanced hook to access authentication context
- * Provides user, session, loading state, and authentication methods with subscription validation
+ * Hook to access authentication context
+ * Provides user, session, loading state, and authentication methods
  */
-export const useAuth = useAuthHook;
+export const useAuth = () => {
+  const authContext = useAuthContext();
+  return authContext;
+};
 
 export default useAuth;
