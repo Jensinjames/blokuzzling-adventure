@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Session, User } from '@/integrations/supabase/client';
 import { AuthContext } from '../AuthHooks';
 import { signInUser, signUpUser, signOutUser } from '../AuthOperations';
@@ -20,7 +20,7 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkingSubscription, setCheckingSubscription] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionDetails>({
     tier: null,
     status: null,
@@ -44,18 +44,23 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
     setLoading 
   });
 
+  // Update hasSubscription whenever subscription changes
+  useEffect(() => {
+    setHasSubscription(subscription?.isActive || false);
+  }, [subscription.isActive]);
+
+  // Set up auth listener with memoized setSubscription callback
+  const memoizedSetSubscription = useCallback((newSubscription: SubscriptionDetails) => {
+    setSubscription(newSubscription);
+  }, []);
+
   // Set up auth listener
   useAuthListener({
     setUser,
     setSession,
     setLoading,
-    setSubscription
+    setSubscription: memoizedSetSubscription
   });
-
-  // Update hasSubscription whenever subscription changes
-  useEffect(() => {
-    setHasSubscription(subscription?.isActive || false);
-  }, [subscription]);
 
   // Auth operation wrappers
   const signIn = async (email: string, password: string) => {
@@ -66,7 +71,7 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
     return await signUpUser(email, password);
   };
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     console.log('Signing out user from AuthProvider');
     try {
       const { error } = await signOutUser();
@@ -95,7 +100,7 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
       toast.error('Error signing out: ' + (error.message || 'Unknown error'));
       return { error };
     }
-  };
+  }, []);
 
   // Add resetPassword function
   const resetPassword = async (email: string) => {

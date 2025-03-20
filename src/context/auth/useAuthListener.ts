@@ -46,21 +46,14 @@ export const useAuthListener = ({
       const authListener = supabase.auth.onAuthStateChange(
         async (event, newSession) => {
           console.log(`Auth state changed: ${event}`, newSession?.user?.id || 'no user');
-          setSession(newSession);
-          setUser(newSession?.user ?? null);
-          setLoading(false);
-
-          if (event === 'SIGNED_IN') {
-            console.log('User signed in:', newSession?.user?.email);
-            toast.success('Signed in successfully');
-            
-            // Properly redirect to home after sign in
-            if (location.pathname === '/auth' || location.pathname === '/') {
-              navigate('/home');
-            }
-          } else if (event === 'SIGNED_OUT') {
+          
+          // Update session and user in a single pass to avoid multiple renders
+          if (event === 'SIGNED_OUT') {
             console.log('User signed out');
-            toast.info('Signed out');
+            
+            // Update state in a single batch
+            setSession(null);
+            setUser(null);
             setSubscription({
               tier: null,
               status: null,
@@ -69,19 +62,38 @@ export const useAuthListener = ({
               isBasicOrHigher: false,
               expiry: null
             });
+            
+            toast.info('Signed out');
             // Force full page reload to clear any cached state
             window.location.href = '/#/';
-          } else if (event === 'TOKEN_REFRESHED') {
-            console.log('Token refreshed successfully');
-          } else if (event === 'USER_UPDATED') {
-            console.log('User updated');
-          } else if (event === 'PASSWORD_RECOVERY') {
-            console.log('Password recovery initiated');
-            // If user is on the password reset page, don't redirect
-            if (!location.pathname.includes('/auth')) {
-              navigate('/auth');
+          } else {
+            // For other events, update session and user normally
+            setSession(newSession);
+            setUser(newSession?.user ?? null);
+            
+            // Handle other events
+            if (event === 'SIGNED_IN') {
+              console.log('User signed in:', newSession?.user?.email);
+              toast.success('Signed in successfully');
+              
+              // Properly redirect to home after sign in
+              if (location.pathname === '/auth' || location.pathname === '/') {
+                navigate('/home');
+              }
+            } else if (event === 'TOKEN_REFRESHED') {
+              console.log('Token refreshed successfully');
+            } else if (event === 'USER_UPDATED') {
+              console.log('User updated');
+            } else if (event === 'PASSWORD_RECOVERY') {
+              console.log('Password recovery initiated');
+              // If user is on the password reset page, don't redirect
+              if (!location.pathname.includes('/auth')) {
+                navigate('/auth');
+              }
             }
           }
+          
+          setLoading(false);
         }
       );
       
