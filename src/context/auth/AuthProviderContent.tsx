@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Session, User } from '@/integrations/supabase/client';
 import { AuthContext } from '../AuthHooks';
 import { signInUser, signUpUser, signOutUser } from '../AuthOperations';
@@ -20,7 +20,6 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkingSubscription, setCheckingSubscription] = useState(false);
-  const [hasSubscription, setHasSubscription] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionDetails>({
     tier: null,
     status: null,
@@ -29,6 +28,10 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
     isBasicOrHigher: false,
     expiry: null
   });
+  
+  // Use a ref to track if we're in the middle of processing subscription state
+  const processingSubscriptionRef = useRef(false);
+  const [hasSubscription, setHasSubscription] = useState(false);
 
   // Set up session refresh
   const { refreshSession } = useSessionRefresh({ 
@@ -44,25 +47,23 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
     setLoading 
   });
 
-  // Update hasSubscription whenever subscription changes
-  // Use callback to prevent excessive re-renders
-  const updateHasSubscription = useCallback(() => {
-    setHasSubscription(subscription?.isActive || false);
-  }, [subscription.isActive]);
-  
-  // Use useEffect with dependencies to prevent infinite loop
+  // Update hasSubscription whenever subscription changes, but only once
   useEffect(() => {
-    updateHasSubscription();
-  }, [updateHasSubscription]);
+    if (!processingSubscriptionRef.current) {
+      processingSubscriptionRef.current = true;
+      setHasSubscription(subscription?.isActive || false);
+      processingSubscriptionRef.current = false;
+    }
+  }, [subscription.isActive]);
 
   // Set up auth listener with memoized setSubscription callback
   const memoizedSetSubscription = useCallback((newSubscription: SubscriptionDetails) => {
     setSubscription(prev => {
       // Only update if different to prevent unnecessary re-renders
-      if (JSON.stringify(prev) === JSON.stringify(newSubscription)) {
-        return prev;
+      if (JSON.stringify(prev) !== JSON.stringify(newSubscription)) {
+        return newSubscription;
       }
-      return newSubscription;
+      return prev;
     });
   }, []);
 
@@ -90,7 +91,9 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
       if (error) {
         console.error('Error during sign out:', error);
         toast.error('Error signing out: ' + error.message);
+        return { error };
       }
+      
       // Reset local state
       setUser(null);
       setSession(null);
@@ -106,7 +109,7 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
       
       // Force a full page reload to ensure clean state
       window.location.href = '/#/';
-      return { error };
+      return { error: null };
     } catch (error: any) {
       console.error('Unexpected error during sign out:', error);
       toast.error('Error signing out: ' + (error.message || 'Unknown error'));

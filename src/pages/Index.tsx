@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const redirectAttemptedRef = useRef(false);
 
   // Memoize navigation to prevent unnecessary re-renders
   const navigateToHome = useCallback(() => {
@@ -26,12 +27,16 @@ const Index = () => {
 
   // Only trigger navigation after initial loading is complete
   useEffect(() => {
-    if (!loading && user && !isRedirecting) {
+    // Prevent multiple redirect attempts
+    if (!loading && user && !isRedirecting && !redirectAttemptedRef.current) {
+      redirectAttemptedRef.current = true;
       setIsRedirecting(true);
+      
       // Small delay to prevent flash of content
       const timeout = setTimeout(() => {
         navigate('/home');
       }, 100);
+      
       return () => clearTimeout(timeout);
     }
   }, [user, loading, navigate, isRedirecting]);

@@ -2,7 +2,7 @@
 import { useAuth as useAuthContext } from '@/context/AuthProvider';
 import { useSubscription } from './useSubscription';
 import { useAccessControl } from './useAccessControl';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 /**
  * Enhanced hook to access authentication context
@@ -22,11 +22,13 @@ export const useAuthHook = () => {
     checkingSubscription
   );
 
-  // Enhanced user object with subscription data
-  const enhancedUser = authContext.user ? {
-    ...authContext.user,
-    subscription: subscriptionState
-  } : null;
+  // Enhanced user object with subscription data - memoized to prevent rerenders
+  const enhancedUser = useMemo(() => {
+    return authContext.user ? {
+      ...authContext.user,
+      subscription: subscriptionState
+    } : null;
+  }, [authContext.user, subscriptionState]);
 
   // Memoize the refreshSession function
   const refreshSession = useCallback(async () => {
@@ -40,7 +42,8 @@ export const useAuthHook = () => {
     }
   }, [authContext]);
 
-  return {
+  // Memoize the entire return value to prevent unnecessary re-renders
+  return useMemo(() => ({
     ...authContext,
     user: enhancedUser,
     hasSubscription,
@@ -48,5 +51,13 @@ export const useAuthHook = () => {
     requireSubscription,
     subscription: subscriptionState,
     refreshSession
-  };
+  }), [
+    authContext,
+    enhancedUser,
+    hasSubscription,
+    checkingSubscription,
+    requireSubscription,
+    subscriptionState,
+    refreshSession
+  ]);
 };

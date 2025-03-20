@@ -35,6 +35,7 @@ export const useAuthListener = ({
   const location = useLocation();
   const authListenerRef = useRef<AuthSubscription | null>(null);
   const processingAuthChangeRef = useRef(false);
+  const initialized = useRef(false);
   
   // Memoize handler to prevent recreation on each render
   const handleAuthChange = useCallback(async (event: string, newSession: Session | null) => {
@@ -64,9 +65,14 @@ export const useAuthListener = ({
           expiry: null
         });
         
-        toast.info('Signed out');
-        // Force full page reload to clear any cached state
-        window.location.href = '/#/';
+        // Wait until next event loop to ensure state updates have time to propagate
+        setTimeout(() => {
+          toast.info('Signed out');
+          // Navigate instead of full page reload to prevent potential loops
+          if (location.pathname !== '/') {
+            navigate('/');
+          }
+        }, 0);
       } else {
         // For other events, update session and user normally
         setSession(newSession);
@@ -95,11 +101,18 @@ export const useAuthListener = ({
       }
     } finally {
       processingAuthChangeRef.current = false;
-      setLoading(false);
+      if (!initialized.current) {
+        setLoading(false);
+        initialized.current = true;
+      }
     }
   }, [navigate, location.pathname, setUser, setSession, setLoading, setSubscription]);
 
   useEffect(() => {
+    if (authListenerRef.current) {
+      return; // Already initialized
+    }
+    
     // Set up auth state listener
     const setupAuthListener = async () => {
       if (authListenerRef.current) {
@@ -107,6 +120,7 @@ export const useAuthListener = ({
         authListenerRef.current.data.subscription.unsubscribe();
       }
       
+      console.log('Setting up auth listener...');
       const authListener = supabase.auth.onAuthStateChange(handleAuthChange);
       
       authListenerRef.current = authListener as unknown as AuthSubscription;
