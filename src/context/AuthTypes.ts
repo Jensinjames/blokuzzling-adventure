@@ -1,5 +1,6 @@
 
 import { Session, User } from '@/integrations/supabase/client';
+import { SubscriptionStatus } from '@/types/subscription';
 
 export type AuthContextType = {
   user: User | null;
@@ -10,4 +11,5 @@ export type AuthContextType = {
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
+  subscription: SubscriptionStatus;
 };
