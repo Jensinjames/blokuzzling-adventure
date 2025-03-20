@@ -45,13 +45,25 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
   });
 
   // Update hasSubscription whenever subscription changes
-  useEffect(() => {
+  // Use callback to prevent excessive re-renders
+  const updateHasSubscription = useCallback(() => {
     setHasSubscription(subscription?.isActive || false);
   }, [subscription.isActive]);
+  
+  // Use useEffect with dependencies to prevent infinite loop
+  useEffect(() => {
+    updateHasSubscription();
+  }, [updateHasSubscription]);
 
   // Set up auth listener with memoized setSubscription callback
   const memoizedSetSubscription = useCallback((newSubscription: SubscriptionDetails) => {
-    setSubscription(newSubscription);
+    setSubscription(prev => {
+      // Only update if different to prevent unnecessary re-renders
+      if (JSON.stringify(prev) === JSON.stringify(newSubscription)) {
+        return prev;
+      }
+      return newSubscription;
+    });
   }, []);
 
   // Set up auth listener
@@ -63,13 +75,13 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
   });
 
   // Auth operation wrappers
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     return await signInUser(email, password);
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string) => {
     return await signUpUser(email, password);
-  };
+  }, []);
 
   const signOut = useCallback(async () => {
     console.log('Signing out user from AuthProvider');
@@ -103,7 +115,7 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   // Add resetPassword function
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     try {
       console.log('[Auth Debug] Requesting password reset for:', email);
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -120,7 +132,7 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
       console.error('[Auth Debug] Unexpected error requesting password reset:', error);
       return { error };
     }
-  };
+  }, []);
 
   const value = {
     user,

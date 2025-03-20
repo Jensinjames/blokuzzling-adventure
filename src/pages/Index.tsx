@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,22 @@ const Index = () => {
   const { user, loading } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
+  // Memoize navigation to prevent unnecessary re-renders
+  const navigateToHome = useCallback(() => {
+    navigate('/home');
+  }, [navigate]);
+
+  const navigateToAuth = useCallback(() => {
+    navigate('/auth');
+  }, [navigate]);
+
+  const navigateToRules = useCallback(() => {
+    navigate('/rules');
+  }, [navigate]);
+
   // Only trigger navigation after initial loading is complete
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !isRedirecting) {
       setIsRedirecting(true);
       // Small delay to prevent flash of content
       const timeout = setTimeout(() => {
@@ -21,7 +34,7 @@ const Index = () => {
       }, 100);
       return () => clearTimeout(timeout);
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isRedirecting]);
 
   // Don't render anything while checking authentication or redirecting
   if (loading || isRedirecting) {
@@ -59,7 +72,7 @@ const Index = () => {
           className="space-y-4"
         >
           <Button 
-            onClick={() => navigate('/auth')}
+            onClick={navigateToAuth}
             className="w-full py-6 text-lg"
           >
             <LogIn className="h-5 w-5 mr-2" />
@@ -74,7 +87,7 @@ const Index = () => {
           
           <Button 
             variant="outline"
-            onClick={() => navigate('/home')}
+            onClick={navigateToHome}
             className="w-full py-6 text-lg"
           >
             <Play className="h-5 w-5 mr-2" />
@@ -83,7 +96,7 @@ const Index = () => {
           
           <Button 
             variant="link"
-            onClick={() => navigate('/rules')}
+            onClick={navigateToRules}
             className="w-full"
           >
             <Info className="h-4 w-4 mr-2" />
