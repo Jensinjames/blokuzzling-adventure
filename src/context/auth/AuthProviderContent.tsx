@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Session, User } from '@/integrations/supabase/client';
 import { AuthContext } from '../AuthHooks';
 import { signInUser, signUpUser, signOutUser } from '../AuthOperations';
@@ -52,6 +52,11 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
     setSubscription
   });
 
+  // Update hasSubscription whenever subscription changes
+  useEffect(() => {
+    setHasSubscription(subscription?.isActive || false);
+  }, [subscription]);
+
   // Auth operation wrappers
   const signIn = async (email: string, password: string) => {
     return await signInUser(email, password);
@@ -80,6 +85,7 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
         isBasicOrHigher: false,
         expiry: null
       });
+      setHasSubscription(false);
       
       // Force a full page reload to ensure clean state
       window.location.href = '/#/';
