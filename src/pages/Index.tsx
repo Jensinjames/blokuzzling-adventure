@@ -43,20 +43,24 @@ const Index = () => {
     
     // If user is logged in, redirect to home
     if (user) {
+      console.log('User is logged in, preparing to redirect to home');
+      
+      // Mark that we've attempted a redirect to prevent repeated attempts
       redirectAttemptedRef.current = true;
       
       if (mountedRef.current) {
         setIsRedirecting(true);
+        
+        // Small delay to prevent flash of content
+        setTimeout(() => {
+          if (mountedRef.current) {
+            console.log('Navigating to /home');
+            navigate('/home');
+          }
+        }, 100);
       }
-      
-      // Small delay to prevent flash of content
-      const timeout = setTimeout(() => {
-        if (mountedRef.current) {
-          navigate('/home');
-        }
-      }, 100);
-      
-      return () => clearTimeout(timeout);
+    } else {
+      console.log('User is not logged in, staying on landing page');
     }
   }, [user, loading, navigate]);
 

@@ -28,7 +28,9 @@ serve(async (req) => {
     );
 
     // Get site URL from environment or use a default
-    const siteUrl = Deno.env.get("SITE_URL") || req.headers.get("origin") || "";
+    const origin = req.headers.get("origin") || "";
+    // Ensure we have a proper site URL without hash routing
+    const siteUrl = Deno.env.get("SITE_URL") || origin;
     
     console.log(`Processing auth action: ${action} for email: ${email}`);
     console.log(`Using site URL: ${siteUrl}`);
@@ -48,11 +50,18 @@ serve(async (req) => {
       }
 
       // Resend confirmation email with proper redirect
+      // For hash routing (#/auth), use the full URL structure
+      const redirectPath = origin.includes("localhost") ? 
+        `${siteUrl}/#/auth?confirmation=true` : 
+        `${siteUrl}/auth?confirmation=true`;
+        
+      console.log(`Using redirect path: ${redirectPath}`);
+        
       const { error } = await supabaseAdmin.auth.admin.generateLink({
         type: "signup",
         email,
         options: {
-          redirectTo: `${siteUrl}/auth?confirmation=true`,
+          redirectTo: redirectPath,
         }
       });
 
@@ -75,11 +84,18 @@ serve(async (req) => {
       });
     } else if (action === "send-magic-link") {
       // Send a magic link for passwordless login
+      // For hash routing (#/auth), use the full URL structure
+      const redirectPath = origin.includes("localhost") ? 
+        `${siteUrl}/#/auth?magic-link=true` : 
+        `${siteUrl}/auth?magic-link=true`;
+        
+      console.log(`Using redirect path: ${redirectPath}`);
+        
       const { error } = await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
         email,
         options: {
-          redirectTo: `${siteUrl}/auth?magic-link=true`,
+          redirectTo: redirectPath,
         }
       });
 

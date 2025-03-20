@@ -29,10 +29,17 @@ const ResendConfirmation: React.FC = () => {
   const handleResend = async (values: ResendFormValues) => {
     setLoading(true);
     try {
-      // Call our custom edge function
-      const { error } = await supabase.functions.invoke('auth-email-handler', {
-        body: { action: 'resend-confirmation', email: values.email }
+      console.log('Sending confirmation email resend request for:', values.email);
+      
+      // Call the edge function
+      const { error, data } = await supabase.functions.invoke('auth-email-handler', {
+        body: { 
+          action: 'resend-confirmation', 
+          email: values.email 
+        }
       });
+
+      console.log('Response from edge function:', { error, data });
 
       if (error) {
         console.error('Error resending confirmation:', error);
