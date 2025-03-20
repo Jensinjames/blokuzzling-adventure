@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Session, User } from '@/integrations/supabase/client';
 import { AuthContext } from '../AuthHooks';
 import { signInUser, signUpUser, signOutUser } from '../AuthOperations';
@@ -16,72 +16,114 @@ import { toast } from 'sonner';
 export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({ 
   children 
 }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [checkingSubscription, setCheckingSubscription] = useState(false);
-  const [subscription, setSubscription] = useState<SubscriptionDetails>({
-    tier: null,
-    status: null,
-    isActive: false,
-    isPremium: false,
-    isBasicOrHigher: false,
-    expiry: null
+  // Use refs to track initialization and prevent excessive state updates
+  const isInitialized = useRef(false);
+  const isLoading = useRef(true);
+  const isMountedRef = useRef(false);
+  
+  // Combine state initializations to reduce render cycles
+  const [authState, setAuthState] = useState({
+    user: null as User | null,
+    session: null as Session | null,
+    loading: true,
+    checkingSubscription: false,
+    hasSubscription: false,
+    subscription: {
+      tier: null,
+      status: null,
+      isActive: false,
+      isPremium: false,
+      isBasicOrHigher: false,
+      expiry: null
+    } as SubscriptionDetails
   });
   
-  // Use a ref to track if we're in the middle of processing subscription state
-  const processingSubscriptionRef = useRef(false);
-  const [hasSubscription, setHasSubscription] = useState(false);
-
-  // Set up session refresh
-  const { refreshSession } = useSessionRefresh({ 
-    session, 
-    setSession, 
-    setUser 
-  });
-
-  // Get initial session
+  // Use callback for batch-updating auth state to prevent multiple renders
+  const updateAuthState = useCallback((updates: Partial<typeof authState>) => {
+    if (!isMountedRef.current) return;
+    
+    setAuthState(prevState => {
+      // Only update if there are actual changes to prevent unnecessary renders
+      const hasChanges = Object.entries(updates).some(
+        ([key, value]) => prevState[key as keyof typeof prevState] !== value
+      );
+      
+      return hasChanges ? { ...prevState, ...updates } : prevState;
+    });
+  }, []);
+  
+  // Set loading state with debounce to prevent rapid toggle
+  const setLoading = useCallback((loading: boolean) => {
+    if (isLoading.current === loading) return;
+    isLoading.current = loading;
+    updateAuthState({ loading });
+  }, [updateAuthState]);
+  
+  // User and session setters that prevent unnecessary updates
+  const setUser = useCallback((user: User | null) => {
+    updateAuthState({ user });
+  }, [updateAuthState]);
+  
+  const setSession = useCallback((session: Session | null) => {
+    updateAuthState({ session });
+  }, [updateAuthState]);
+  
+  const setSubscription = useCallback((subscription: SubscriptionDetails) => {
+    updateAuthState({ 
+      subscription,
+      hasSubscription: subscription.isActive
+    });
+  }, [updateAuthState]);
+  
+  // Get initial session - this only runs once
   useInitialSession({ 
     setUser, 
     setSession, 
-    setLoading 
+    setLoading,
+    isInitialized
   });
 
-  // Update hasSubscription whenever subscription changes, but only once
-  useEffect(() => {
-    if (!processingSubscriptionRef.current) {
-      processingSubscriptionRef.current = true;
-      setHasSubscription(subscription?.isActive || false);
-      processingSubscriptionRef.current = false;
-    }
-  }, [subscription.isActive]);
-
-  // Set up auth listener with memoized setSubscription callback
-  const memoizedSetSubscription = useCallback((newSubscription: SubscriptionDetails) => {
-    setSubscription(prev => {
-      // Only update if different to prevent unnecessary re-renders
-      if (JSON.stringify(prev) !== JSON.stringify(newSubscription)) {
-        return newSubscription;
-      }
-      return prev;
-    });
-  }, []);
+  // Set up session refresh
+  const { refreshSession } = useSessionRefresh({ 
+    session: authState.session, 
+    setSession, 
+    setUser 
+  });
 
   // Set up auth listener
   useAuthListener({
     setUser,
     setSession,
     setLoading,
-    setSubscription: memoizedSetSubscription
+    setSubscription,
+    isMountedRef
   });
+  
+  // Mark component as mounted after first render
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-  // Auth operation wrappers
+  // Auth operation wrappers with proper memoization
   const signIn = useCallback(async (email: string, password: string) => {
-    return await signInUser(email, password);
+    try {
+      return await signInUser(email, password);
+    } catch (error: any) {
+      console.error('Error during sign in:', error);
+      return { error, data: null };
+    }
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    return await signUpUser(email, password);
+    try {
+      return await signUpUser(email, password);
+    } catch (error: any) {
+      console.error('Error during sign up:', error);
+      return { error, data: null };
+    }
   }, []);
 
   const signOut = useCallback(async () => {
@@ -94,21 +136,7 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
         return { error };
       }
       
-      // Reset local state
-      setUser(null);
-      setSession(null);
-      setSubscription({
-        tier: null,
-        status: null,
-        isActive: false,
-        isPremium: false,
-        isBasicOrHigher: false,
-        expiry: null
-      });
-      setHasSubscription(false);
-      
-      // Force a full page reload to ensure clean state
-      window.location.href = '/#/';
+      // No need to reset state here as the auth listener will handle this
       return { error: null };
     } catch (error: any) {
       console.error('Unexpected error during sign out:', error);
@@ -137,18 +165,19 @@ export const AuthProviderContent: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  // Provide context value
   const value = {
-    user,
-    session,
-    loading,
+    user: authState.user,
+    session: authState.session,
+    loading: authState.loading,
     signIn,
     signUp,
     signOut,
     refreshSession,
     resetPassword,
-    subscription,
-    checkingSubscription,
-    hasSubscription
+    subscription: authState.subscription,
+    checkingSubscription: authState.checkingSubscription,
+    hasSubscription: authState.hasSubscription
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

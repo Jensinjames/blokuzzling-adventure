@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { User } from '@/integrations/supabase/client';
 import { supabase } from '@/integrations/supabase/client';
 import { SubscriptionDetails } from '@/types/subscription';
@@ -15,23 +15,42 @@ export const useSubscription = (user: User | null) => {
     isBasicOrHigher: false,
     expiry: null
   });
+  const fetchingRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  // Default subscription for when no user is present
+  const defaultSubscription = useCallback((): SubscriptionDetails => ({
+    tier: null,
+    status: null,
+    isActive: false,
+    isPremium: false,
+    isBasicOrHigher: false,
+    expiry: null
+  }), []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const fetchSubscription = async () => {
-      if (!user) {
-        setHasSubscription(false);
-        setSubscriptionState({
-          tier: null,
-          status: null,
-          isActive: false,
-          isPremium: false,
-          isBasicOrHigher: false,
-          expiry: null
-        });
+      // Skip if already fetching or no user
+      if (fetchingRef.current || !user) {
+        if (!user) {
+          // Reset subscription if no user
+          if (mountedRef.current) {
+            setHasSubscription(false);
+            setSubscriptionState(defaultSubscription());
+          }
+        }
         return;
       }
 
-      setCheckingSubscription(true);
+      fetchingRef.current = true;
+      if (mountedRef.current) setCheckingSubscription(true);
       
       try {
         console.log('Fetching subscription for user:', user.id);
@@ -52,14 +71,11 @@ export const useSubscription = (user: User | null) => {
         const status = profile?.subscription_status || null;
         const expiry = profile?.subscription_expiry || null;
         
-        // Calculate whether subscription is active
+        // Calculate subscription state
         const isActive = status === 'active' && 
           (!expiry || new Date(expiry) > new Date());
           
-        // Set premium flag
         const isPremium = isActive && tier === 'premium';
-        
-        // Set basic or higher flag
         const isBasicOrHigher = isActive && 
           (tier === 'basic' || tier === 'premium');
         
@@ -74,27 +90,30 @@ export const useSubscription = (user: User | null) => {
         
         console.log('Subscription details:', subscriptionDetails);
         
-        setSubscriptionState(subscriptionDetails);
-        setHasSubscription(isActive);
-        
+        // Only update state if component is still mounted
+        if (mountedRef.current) {
+          // Check if subscription state has actually changed before updating
+          const hasChanged = JSON.stringify(subscriptionState) !== JSON.stringify(subscriptionDetails);
+          
+          if (hasChanged) {
+            setSubscriptionState(subscriptionDetails);
+            setHasSubscription(isActive);
+          }
+        }
       } catch (error) {
         console.error('Error fetching subscription:', error);
-        setSubscriptionState({
-          tier: null,
-          status: null,
-          isActive: false,
-          isPremium: false,
-          isBasicOrHigher: false,
-          expiry: null
-        });
-        setHasSubscription(false);
+        if (mountedRef.current) {
+          setSubscriptionState(defaultSubscription());
+          setHasSubscription(false);
+        }
       } finally {
-        setCheckingSubscription(false);
+        if (mountedRef.current) setCheckingSubscription(false);
+        fetchingRef.current = false;
       }
     };
 
     fetchSubscription();
-  }, [user]);
+  }, [user, defaultSubscription, subscriptionState]);
 
   return { 
     checkingSubscription, 

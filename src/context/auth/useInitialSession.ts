@@ -9,6 +9,7 @@ interface UseInitialSessionOptions {
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
   setLoading: (loading: boolean) => void;
+  isInitialized: React.MutableRefObject<boolean>;
 }
 
 /**
@@ -17,22 +18,23 @@ interface UseInitialSessionOptions {
 export const useInitialSession = ({ 
   setUser, 
   setSession, 
-  setLoading 
+  setLoading,
+  isInitialized
 }: UseInitialSessionOptions) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const initialSessionChecked = useRef(false);
+  const isRedirecting = useRef(false);
 
   useEffect(() => {
     // Only run once
-    if (initialSessionChecked.current) {
+    if (isInitialized.current) {
       return;
     }
     
     // Get initial session
     const getInitialSession = async () => {
       try {
-        initialSessionChecked.current = true;
+        isInitialized.current = true;
         setLoading(true);
         console.log('Getting initial session...');
         const { data, error } = await supabase.auth.getSession();
@@ -47,10 +49,12 @@ export const useInitialSession = ({
         setSession(data.session);
         setUser(data.session?.user ?? null);
 
-        // If no session, and we're not on the auth page or root, redirect to auth
-        // But don't redirect multiple times
-        if (!data.session && !location.pathname.match(/^\/(auth|)$/)) {
+        // Don't redirect during initial session check if we're on auth or root
+        if (!data.session && 
+            !location.pathname.match(/^\/(auth|)$/) && 
+            !isRedirecting.current) {
           console.log('No session detected, redirecting to auth');
+          isRedirecting.current = true;
           navigate('/auth');
         }
       } catch (error) {
@@ -61,5 +65,5 @@ export const useInitialSession = ({
     };
 
     getInitialSession();
-  }, [setUser, setSession, setLoading, navigate, location.pathname]);
+  }, [setUser, setSession, setLoading, navigate, location.pathname, isInitialized]);
 };

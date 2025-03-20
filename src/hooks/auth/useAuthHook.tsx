@@ -2,7 +2,7 @@
 import { useAuth as useAuthContext } from '@/context/AuthProvider';
 import { useSubscription } from './useSubscription';
 import { useAccessControl } from './useAccessControl';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 
 /**
  * Enhanced hook to access authentication context
@@ -10,24 +10,38 @@ import { useCallback, useMemo } from 'react';
  */
 export const useAuthHook = () => {
   const authContext = useAuthContext();
+  const mountedRef = useRef(true);
+  
+  // Use subscription hook with memoization
   const { 
     hasSubscription, 
     checkingSubscription, 
     subscriptionState 
   } = useSubscription(authContext.user);
   
+  // Set up access control
   const { requireSubscription } = useAccessControl(
     authContext.user, 
     subscriptionState, 
     checkingSubscription
   );
 
+  // Track component mounted state
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   // Enhanced user object with subscription data - memoized to prevent rerenders
   const enhancedUser = useMemo(() => {
-    return authContext.user ? {
+    if (!authContext.user) return null;
+    
+    return {
       ...authContext.user,
       subscription: subscriptionState
-    } : null;
+    };
   }, [authContext.user, subscriptionState]);
 
   // Memoize the refreshSession function
@@ -40,7 +54,7 @@ export const useAuthHook = () => {
       console.error('[Auth] Error refreshing session:', error);
       return { error };
     }
-  }, [authContext]);
+  }, [authContext.refreshSession]);
 
   // Memoize the entire return value to prevent unnecessary re-renders
   return useMemo(() => ({

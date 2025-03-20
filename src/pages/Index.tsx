@@ -11,8 +11,17 @@ const Index = () => {
   const { user, loading } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const redirectAttemptedRef = useRef(false);
+  const mountedRef = useRef(true);
 
-  // Memoize navigation to prevent unnecessary re-renders
+  // Track component mounted state to prevent state updates after unmounting
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  // Memoize navigation functions to prevent unnecessary re-renders
   const navigateToHome = useCallback(() => {
     navigate('/home');
   }, [navigate]);
@@ -25,21 +34,31 @@ const Index = () => {
     navigate('/rules');
   }, [navigate]);
 
-  // Only trigger navigation after initial loading is complete
+  // Only trigger navigation after initial loading is complete and only once
   useEffect(() => {
-    // Prevent multiple redirect attempts
-    if (!loading && user && !isRedirecting && !redirectAttemptedRef.current) {
+    // Skip if still loading, already redirecting, or already attempted
+    if (loading || isRedirecting || redirectAttemptedRef.current) {
+      return;
+    }
+    
+    // If user is logged in, redirect to home
+    if (user) {
       redirectAttemptedRef.current = true;
-      setIsRedirecting(true);
+      
+      if (mountedRef.current) {
+        setIsRedirecting(true);
+      }
       
       // Small delay to prevent flash of content
       const timeout = setTimeout(() => {
-        navigate('/home');
+        if (mountedRef.current) {
+          navigate('/home');
+        }
       }, 100);
       
       return () => clearTimeout(timeout);
     }
-  }, [user, loading, navigate, isRedirecting]);
+  }, [user, loading, navigate]);
 
   // Don't render anything while checking authentication or redirecting
   if (loading || isRedirecting) {
@@ -53,6 +72,7 @@ const Index = () => {
     );
   }
 
+  // Regular render with landing page content
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-blue-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       <div className="w-full max-w-md">
