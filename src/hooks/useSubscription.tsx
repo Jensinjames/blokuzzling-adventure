@@ -1,5 +1,5 @@
 
-import { useAuth } from '@/context/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { SubscriptionStatus, defaultSubscription } from '@/types/subscription';
 
 /**
