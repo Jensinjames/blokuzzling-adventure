@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Session, User, supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { refreshUserSession } from '@/context/AuthOperations';
+import { useAuthOperations } from '@/hooks/useAuthOperations';
 import { useSubscriptionData } from './useSubscriptionData';
 
 /**
@@ -15,6 +14,7 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { subscription, fetchSubscription, resetSubscription } = useSubscriptionData();
+  const { refreshUserSession } = useAuthOperations();
 
   // Function to refresh the session
   const refreshSession = useCallback(async () => {
@@ -41,7 +41,7 @@ export const useAuthState = () => {
       toast.error('An error occurred with your session. Please sign in again.');
       navigate('/auth');
     }
-  }, [navigate, fetchSubscription]);
+  }, [navigate, fetchSubscription, refreshUserSession]);
 
   // Handle auth state changes
   useEffect(() => {
