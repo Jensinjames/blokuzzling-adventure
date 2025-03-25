@@ -28,7 +28,13 @@ export const router = createBrowserRouter([
       },
       {
         path: 'auth',
-        element: <AuthLayout><Auth /></AuthLayout>,
+        element: 
+          <AuthLayout 
+            title="Welcome to BlokU"
+            subtitle="Sign in to your account or create a new one to start playing"
+          >
+            <Auth />
+          </AuthLayout>,
       },
       {
         path: 'home',
