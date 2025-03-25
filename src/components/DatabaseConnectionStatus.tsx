@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 export const DatabaseConnectionStatus: React.FC = () => {
   const { isConnected, connectionError, reconnect } = useRealtimeStatus();
 
+  // Only render when not connected
   if (isConnected) return null;
 
   return (
@@ -20,7 +21,10 @@ export const DatabaseConnectionStatus: React.FC = () => {
         variant="outline" 
         size="sm" 
         className="ml-2 bg-red-200 dark:bg-red-800"
-        onClick={reconnect}
+        onClick={(e) => {
+          e.preventDefault();
+          reconnect();
+        }}
       >
         <RefreshCw className="h-4 w-4 mr-1" />
         Retry

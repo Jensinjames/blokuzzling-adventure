@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Use default values if environment variables are not defined
@@ -24,10 +23,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     // Improved connection handling
     headers: {
       apikey: supabaseKey,
-    },
-    reconnect: {
-      delay: 2000, // Wait 2 seconds before reconnecting
-      retryAttempts: 3, // Only retry 3 times before giving up
     },
   },
   global: {

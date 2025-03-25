@@ -28,6 +28,7 @@ export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ chil
   const channelRef = useRef<any>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setupChannel = () => {
     if (channelRef.current) {
@@ -83,6 +84,11 @@ export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ chil
       return;
     }
 
+    // Clear any existing timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+
     reconnectAttempts.current += 1;
     console.log(`[Realtime Provider] Attempting to reconnect (attempt ${reconnectAttempts.current})`);
     toast.info('Attempting to reconnect...');
@@ -97,8 +103,11 @@ export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ chil
 
     return () => {
       console.log('[Realtime Provider] Cleaning up Supabase Realtime connection');
-      if (channel) {
-        supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
       }
     };
   }, []);
