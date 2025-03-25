@@ -8,7 +8,7 @@ export type AuthContextType = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any; data: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any; data: any }>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<{ error: any } | void>;  // Updated return type
   refreshSession: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   subscription: SubscriptionStatus;

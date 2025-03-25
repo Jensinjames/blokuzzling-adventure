@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
-import App from './App';
 import AuthLayout from './components/auth/AuthLayout';
 import Auth from './pages/Auth';
 import Game from './pages/Game';
@@ -15,14 +14,17 @@ import Rules from './pages/Rules';
 import Settings from './pages/Settings';
 import { SubscriptionGuard } from './components/auth/SubscriptionGuard';
 import AuthDebugPanel from './components/auth/AuthDebugPanel';
+import { AuthProvider } from './context/AuthProvider';
 
-// Layout component that includes AuthDebugPanel in development
+// Layout component that includes AuthProvider and AuthDebugPanel
 const MainLayout = () => (
-  <>
-    <Outlet />
-    {/* Debug panel only shown in development */}
-    {import.meta.env.DEV && <AuthDebugPanel show={true} />}
-  </>
+  <AuthProvider>
+    <>
+      <Outlet />
+      {/* Debug panel only shown in development */}
+      {import.meta.env.DEV && <AuthDebugPanel show={true} />}
+    </>
+  </AuthProvider>
 );
 
 // Define the router with routes
