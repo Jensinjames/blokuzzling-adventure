@@ -17,15 +17,20 @@ import AuthDebugPanel from './components/auth/AuthDebugPanel';
 import { AuthProvider } from './context/AuthProvider';
 
 // Layout component that includes AuthProvider and AuthDebugPanel
-const MainLayout = () => (
-  <AuthProvider>
-    <>
-      <Outlet />
-      {/* Debug panel only shown in development */}
-      {import.meta.env.DEV && <AuthDebugPanel show={true} />}
-    </>
-  </AuthProvider>
-);
+const MainLayout = () => {
+  // This helps us avoid infinite loops by preventing re-renders of AuthProvider
+  console.log('[Router] Rendering MainLayout');
+  
+  return (
+    <AuthProvider>
+      <>
+        <Outlet />
+        {/* Debug panel only shown in development */}
+        {import.meta.env.DEV && <AuthDebugPanel show={true} />}
+      </>
+    </AuthProvider>
+  );
+};
 
 // Define the router with routes
 export const router = createBrowserRouter([

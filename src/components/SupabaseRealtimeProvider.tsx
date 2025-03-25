@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -7,11 +7,13 @@ import { toast } from 'sonner';
 type RealtimeContextType = {
   isConnected: boolean;
   connectionError: string | null;
+  reconnect: () => void;
 };
 
 const RealtimeContext = createContext<RealtimeContextType>({
   isConnected: false,
-  connectionError: null
+  connectionError: null,
+  reconnect: () => {}
 });
 
 export const useRealtimeStatus = () => useContext(RealtimeContext);
@@ -23,58 +25,86 @@ interface RealtimeProviderProps {
 export const SupabaseRealtimeProvider: React.FC<RealtimeProviderProps> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const channelRef = useRef<any>(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 5;
+
+  const setupChannel = () => {
+    if (channelRef.current) {
+      console.log('[Realtime Provider] Removing existing channel before creating a new one');
+      supabase.removeChannel(channelRef.current);
+    }
+
+    console.log('[Realtime Provider] Setting up new channel');
+    const channel = supabase.channel('connection-test', {
+      config: {
+        broadcast: { self: true },
+      }
+    });
+    
+    channel
+      .on('system', { event: 'online' }, () => {
+        console.log('[Realtime Provider] Supabase Realtime connection established');
+        setIsConnected(true);
+        setConnectionError(null);
+        reconnectAttempts.current = 0;
+      })
+      .on('system', { event: 'offline' }, () => {
+        console.log('[Realtime Provider] Supabase Realtime connection lost');
+        setIsConnected(false);
+        setConnectionError('Connection lost');
+        
+        if (!connectionError) {
+          toast.error('Lost connection to the server. Some features may not work properly.');
+        }
+      })
+      .subscribe((status) => {
+        console.log('[Realtime Provider] Supabase channel subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true);
+        } else if (status === 'CHANNEL_ERROR') {
+          setIsConnected(false);
+          setConnectionError('Failed to connect to realtime service');
+          
+          if (!connectionError) {
+            toast.error('Connection error. Some features may not work properly.');
+          }
+        }
+      });
+
+    channelRef.current = channel;
+    return channel;
+  };
+
+  const reconnect = () => {
+    if (reconnectAttempts.current >= maxReconnectAttempts) {
+      console.log('[Realtime Provider] Maximum reconnect attempts reached');
+      toast.error('Could not reconnect after multiple attempts. Please refresh the page.');
+      return;
+    }
+
+    reconnectAttempts.current += 1;
+    console.log(`[Realtime Provider] Attempting to reconnect (attempt ${reconnectAttempts.current})`);
+    toast.info('Attempting to reconnect...');
+    
+    setupChannel();
+  };
 
   useEffect(() => {
-    // Enable and configure Supabase realtime
-    const configureRealtime = async () => {
-      try {
-        console.log('Configuring Supabase Realtime connection...');
-        
-        // Get the current session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // Create a channel to test connection
-        const channel = supabase.channel('connection-test');
-        
-        channel
-          .on('system', { event: 'online' }, () => {
-            console.log('Supabase Realtime connection established');
-            setIsConnected(true);
-            setConnectionError(null);
-          })
-          .on('system', { event: 'offline' }, () => {
-            console.log('Supabase Realtime connection lost');
-            setIsConnected(false);
-            setConnectionError('Connection lost');
-            toast.error('Lost connection to the server. Some features may not work properly.');
-          })
-          .subscribe((status) => {
-            console.log('Supabase channel subscription status:', status);
-            if (status === 'SUBSCRIBED') {
-              setIsConnected(true);
-            } else if (status === 'CHANNEL_ERROR') {
-              setIsConnected(false);
-              setConnectionError('Failed to connect to realtime service');
-              toast.error('Connection error. Some features may not work properly.');
-            }
-          });
+    console.log('[Realtime Provider] Initializing');
+    
+    const channel = setupChannel();
 
-        return () => {
-          console.log('Cleaning up Supabase Realtime connection');
-          supabase.removeChannel(channel);
-        };
-      } catch (err: any) {
-        console.error('Error setting up realtime:', err);
-        setConnectionError(err.message);
-        toast.error(`Failed to connect: ${err.message}`);
+    return () => {
+      console.log('[Realtime Provider] Cleaning up Supabase Realtime connection');
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
-
-    configureRealtime();
   }, []);
 
   return (
-    <RealtimeContext.Provider value={{ isConnected, connectionError }}>
+    <RealtimeContext.Provider value={{ isConnected, connectionError, reconnect }}>
       {children}
     </RealtimeContext.Provider>
   );

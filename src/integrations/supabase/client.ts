@@ -5,20 +5,42 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mfgpjwjpshnanjrxhmnm.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mZ3Bqd2pwc2huYW5qcnhobW5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxNzAwNDgsImV4cCI6MjA1Nzc0NjA0OH0.eClbpmE2hNvSr7R3heIb_atkmFneCas2Y61g3nUZAHA';
 
-// Configure Supabase client
+// Debug log to verify URLs
+console.log('[Supabase Client] Initializing with URL:', supabaseUrl);
+
+// Configure Supabase client with better connection settings
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce', // Using PKCE flow for secure redirects
-    storage: localStorage, // Explicitly use localStorage for session storage
+    detectSessionInUrl: false, // Changed to avoid routing issues
+    flowType: 'pkce',
+    storage: localStorage,
   },
   realtime: {
     params: {
       eventsPerSecond: 5,
     },
+    // Improved connection handling
+    headers: {
+      apikey: supabaseKey,
+    },
+    reconnect: {
+      delay: 2000, // Wait 2 seconds before reconnecting
+      retryAttempts: 3, // Only retry 3 times before giving up
+    },
   },
+  global: {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  },
+});
+
+// Log initial connection status
+console.log('[Supabase Client] Client initialized. Testing connection...');
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('[Supabase Client] Auth state changed:', event, session ? 'Session exists' : 'No session');
 });
 
 // Helper functions without debug logging
