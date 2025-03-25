@@ -12,30 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: 'pkce', // Using PKCE flow for secure redirects
-    storage: {
-      getItem: async (key) => {
-        try {
-          const value = localStorage.getItem(key);
-          return value ? JSON.parse(value) : null;
-        } catch (error) {
-          return null;
-        }
-      },
-      setItem: async (key, value) => {
-        try {
-          localStorage.setItem(key, JSON.stringify(value));
-        } catch (error) {
-          // Silent fail on storage errors
-        }
-      },
-      removeItem: async (key) => {
-        try {
-          localStorage.removeItem(key);
-        } catch (error) {
-          // Silent fail on storage errors
-        }
-      }
-    }
+    storage: localStorage, // Explicitly use localStorage for session storage
   },
   realtime: {
     params: {
@@ -90,8 +67,7 @@ export function isNotFoundError(error: any): boolean {
 }
 
 export function logAuthError(action: string, error: any): void {
-  // In production, we might want to send these to a monitoring service instead
-  // For now, we're simply disabling the logging
+  console.error(`[Auth Error] ${action}:`, error);
 }
 
 export {

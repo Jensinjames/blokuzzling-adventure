@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import App from './App';
 import AuthLayout from './components/auth/AuthLayout';
 import Auth from './pages/Auth';
@@ -14,12 +14,22 @@ import Profile from './pages/Profile';
 import Rules from './pages/Rules';
 import Settings from './pages/Settings';
 import { SubscriptionGuard } from './components/auth/SubscriptionGuard';
+import AuthDebugPanel from './components/auth/AuthDebugPanel';
+
+// Layout component that includes AuthDebugPanel in development
+const MainLayout = () => (
+  <>
+    <Outlet />
+    {/* Debug panel only shown in development */}
+    {import.meta.env.DEV && <AuthDebugPanel show={true} />}
+  </>
+);
 
 // Define the router with routes
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />,
+    element: <MainLayout />,
     errorElement: <NotFound />,
     children: [
       {
