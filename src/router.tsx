@@ -1,20 +1,29 @@
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import AuthLayout from './components/auth/AuthLayout';
 import Auth from './pages/Auth';
-import Game from './pages/Game';
-import Home from './pages/Home';
-import Index from './pages/Index';
-import Lobby from './pages/Lobby';
-import MultiplayerGame from './pages/MultiplayerGame';
 import NotFound from './pages/NotFound';
-import Profile from './pages/Profile';
-import Rules from './pages/Rules';
-import Settings from './pages/Settings';
 import { SubscriptionGuard } from './components/auth/SubscriptionGuard';
 import AuthDebugPanel from './components/auth/AuthDebugPanel';
 import { AuthProvider } from './context/AuthProvider';
+
+// Lazy load non-critical pages
+const Game = React.lazy(() => import('./pages/Game'));
+const Home = React.lazy(() => import('./pages/Home'));
+const Index = React.lazy(() => import('./pages/Index'));
+const Lobby = React.lazy(() => import('./pages/Lobby'));
+const MultiplayerGame = React.lazy(() => import('./pages/MultiplayerGame'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+const Rules = React.lazy(() => import('./pages/Rules'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+
+// Loading fallback for lazy-loaded components
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+  </div>
+);
 
 // Layout component that includes AuthProvider and AuthDebugPanel
 const MainLayout = () => {
@@ -24,7 +33,9 @@ const MainLayout = () => {
   return (
     <AuthProvider>
       <>
-        <Outlet />
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
         {/* Debug panel only shown in development */}
         {import.meta.env.DEV && <AuthDebugPanel show={true} />}
       </>

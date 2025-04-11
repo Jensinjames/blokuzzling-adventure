@@ -15,7 +15,7 @@ function App() {
       <SupabaseRealtimeProvider>
         <RouterProvider router={router} />
         <DatabaseConnectionStatus />
-        <Toaster />
+        <Toaster position="top-right" />
         {/* Facebook Meta Pixel is conditionally loaded only in production */}
         <MetaPixelLoader />
       </SupabaseRealtimeProvider>

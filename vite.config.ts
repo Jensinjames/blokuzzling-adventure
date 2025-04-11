@@ -12,7 +12,8 @@ export default defineConfig(({ mode }) => ({
     allowedHosts: [
       'localhost',
       '0c03ebe7-ade6-4cad-9954-3f4d2e5f1caf.lovableproject.com',
-      '.lovableproject.com' // This will allow all subdomains of lovableproject.com
+      '.lovableproject.com', // This will allow all subdomains of lovableproject.com
+      '.lovable.dev'
     ]
   },
   plugins: [

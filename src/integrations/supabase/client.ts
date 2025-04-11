@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Use default values if environment variables are not defined
@@ -20,7 +21,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     params: {
       eventsPerSecond: 5,
     },
-    // Improved connection handling
     headers: {
       apikey: supabaseKey,
     },
